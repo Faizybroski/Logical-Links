@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  /* Base */
+  --background: #f7f6f3;
+  --foreground: #111827;
+
+  /* Sidebar */
+  --sidebar: #060b16;
+  --sidebar-secondary: #0c1424;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  /* Brand */
+  --primary: oklch(70.509% 0.11237 80.678);
+  --primary-light: oklch(79.808% 0.11829 85.006);
+  --primary-dark: oklch(56.051% 0.11986 72.186);
+
+  /* Cards */
+  --card: #ffffff;
+  --card-border: #ebe8e1;
+
+  /* Text */
+  --muted: #6b7280;
+  --muted-light: #9ca3af;
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Charts */
+  --chart-gold: #c89b3c;
+  --chart-green: #22c55e;
+  --chart-blue: #3b82f6;
+  --chart-red: #ef4444;
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 45px rgba(0, 0, 0, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-secondary: var(--sidebar-secondary);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-chart-gold: var(--chart-gold);
+  --color-chart-green: var(--chart-green);
+  --color-chart-blue: var(--chart-blue);
+  --color-chart-red: var(--chart-red);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+body {
+  font-family: var(--font-inter);
+}
+
+h1,
+h3,
+.display-font {
+  font-family: var(--font-cormorant);
+}
