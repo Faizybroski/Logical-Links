@@ -17,6 +17,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { useUsers, useApproveUser } from "@/hooks/use-users";
+import { ShipperNotesSection } from "@/components/admin/ShipperNotesSection";
 import type { UserProfile } from "@/types/api.types";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -188,6 +189,9 @@ export default function AdminShipperDetailPage({
               />
             </div>
           </div>
+
+          {/* Internal Notes */}
+          <ShipperNotesSection shipperId={id} />
 
         </div>
       </div>

@@ -202,3 +202,27 @@ export type ListShipmentsQuery = {
   accountId?: string;
   search?: string;
 };
+
+// ── Shipper Notes (internal / admin-only) ─────────────────────────────────────
+
+export type ShipperNote = {
+  note_id: string;
+  entity_type: "shipper";
+  entity_id: string;
+  content: string;
+  is_internal: boolean;
+  created_by: string;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: null;
+  profiles: { id: string; full_name: string | null } | null;
+};
+
+export type CreateShipperNoteDto = {
+  content: string;
+};
+
+export type UpdateShipperNoteDto = {
+  content: string;
+};
