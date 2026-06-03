@@ -184,7 +184,7 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* ── Main content ── */}
-          <div className="mx-auto max-w-5xl space-y-5 px-6 py-8">
+          <div className="mx-auto max-w-5xl space-y-5 px-2 py-8">
 
             {/* Row 1: Shipment type + Assignment */}
             <div className="grid gap-5 lg:grid-cols-2">
@@ -204,7 +204,7 @@ export default function AdminCreateLoadPage() {
                         </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger className={`${F} h-10`}>
+                            <SelectTrigger className={`h-10`}>
                               <SelectValue />
                             </SelectTrigger>
                           </FormControl>
@@ -254,7 +254,7 @@ export default function AdminCreateLoadPage() {
                         value={field.value ?? ""}
                       >
                         <FormControl>
-                          <SelectTrigger className={`${F} h-10`}>
+                          <SelectTrigger className={`h-10`}>
                             <SelectValue placeholder="Unassigned — select later" />
                           </SelectTrigger>
                         </FormControl>

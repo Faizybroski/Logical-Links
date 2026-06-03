@@ -1,5 +1,14 @@
+import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreVertical, Pencil, Trash2, UserPlus, ArrowLeftRight } from "lucide-react";
+import {
+  MoreVertical,
+  Pencil,
+  Trash2,
+  UserPlus,
+  ArrowLeftRight,
+  FileText,
+  Receipt,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,50 +18,83 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/loads/status-badge";
-import { Shipment, ShipmentStatus, SHIPMENT_STATUS_LABELS } from "@/types/api.types";
+import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
+import {
+  Shipment,
+  ShipmentStatus,
+  SHIPMENT_STATUS_LABELS,
+} from "@/types/api.types";
 import { formatDate } from "@/lib/utils/format-date";
 
 // Status transitions mirrored from backend — used to determine when
 // "Change Status" should appear in the row action menu.
 const STATUS_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
-  pending:          ["confirmed",        "cancelled"],
-  confirmed:        ["assigned",         "cancelled"],
-  assigned:         ["picked_up",        "cancelled"],
-  picked_up:        ["in_transit",       "cancelled"],
-  in_transit:       ["out_for_delivery", "cancelled"],
-  out_for_delivery: ["delivered",        "cancelled"],
-  delivered:        [],
-  cancelled:        [],
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["assigned", "cancelled"],
+  assigned: ["picked_up", "cancelled"],
+  picked_up: ["in_transit", "cancelled"],
+  in_transit: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered", "cancelled"],
+  delivered: [],
+  cancelled: [],
 };
 
 type ColumnsOptions = {
   isAdmin: boolean;
+  basePath: string;
+  docBasePath: string;
   canEdit: (s: Shipment) => boolean;
   canDelete: (s: Shipment) => boolean;
   canAssign: (s: Shipment) => boolean;
-  onEdit: (s: Shipment) => void;
   onDelete: (s: Shipment) => void;
   onAssign: (s: Shipment) => void;
   onStatusChange: (s: Shipment) => void;
+  onCreateQuotation?: (s: Shipment) => void;
+  onCreateInvoice?: (s: Shipment) => void;
 };
 
 export function getLoadColumns({
   isAdmin,
+  basePath,
+  docBasePath,
   canEdit,
   canDelete,
   canAssign,
-  onEdit,
   onDelete,
   onAssign,
   onStatusChange,
+  onCreateQuotation,
+  onCreateInvoice,
 }: ColumnsOptions): ColumnDef<Shipment>[] {
   return [
     {
       accessorKey: "load_number",
       header: "Load #",
       cell: ({ row }) => (
-        <span className="font-semibold text-primary">{row.original.load_number}</span>
+        <span className="font-semibold text-primary">
+          {row.original.load_number}
+        </span>
       ),
+    },
+
+    {
+      id: "created_by_col",
+      header: "Created By",
+      cell: ({ row }) => {
+        const s = row.original;
+        const name = getCreatorName(s);
+        return (
+          <div className="flex flex-col gap-1">
+            <CreatorBadge shipment={s} size="sm" />
+            <span
+              className="text-xs text-muted truncate max-w-[120px]"
+              title={name}
+            >
+              {name}
+            </span>
+          </div>
+        );
+      },
     },
 
     {
@@ -74,7 +116,9 @@ export function getLoadColumns({
       accessorKey: "shipment_type",
       header: "Type",
       cell: ({ row }) => (
-        <span className="capitalize">{row.original.shipment_type.replace("_", " ")}</span>
+        <span className="capitalize">
+          {row.original.shipment_type.replace("_", " ")}
+        </span>
       ),
     },
 
@@ -94,7 +138,9 @@ export function getLoadColumns({
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => (
-        <span className="text-xs text-muted">{formatDate(row.original.created_at)}</span>
+        <span className="text-xs text-muted">
+          {formatDate(row.original.created_at)}
+        </span>
       ),
     },
 
@@ -103,14 +149,19 @@ export function getLoadColumns({
       header: "",
       cell: ({ row }) => {
         const s = row.original;
-        const editable  = canEdit(s);
+        const editable = canEdit(s);
         const deletable = canDelete(s);
         const assignable = canAssign(s);
-
         const transitions = STATUS_TRANSITIONS[s.status] ?? [];
         const canChangeStatus = transitions.length > 0;
 
-        const hasAnyAction = editable || deletable || assignable || canChangeStatus;
+        const hasAnyAction =
+          editable ||
+          deletable ||
+          assignable ||
+          canChangeStatus ||
+          !!onCreateQuotation ||
+          !!onCreateInvoice;
         if (!hasAnyAction) return null;
 
         return (
@@ -126,16 +177,28 @@ export function getLoadColumns({
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="border border-card-border bg-card shadow-md">
+              <DropdownMenuContent
+                align="end"
+                className="border border-card-border bg-card shadow-md"
+              >
                 {editable && (
-                  <DropdownMenuItem onClick={() => onEdit(s)} className="cursor-pointer">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
+                  <DropdownMenuItem
+                    asChild
+                    // onClick={() => onEdit(s)}
+                    className="cursor-pointer"
+                  >
+                    <Link href={`${basePath}/${s.shipment_id}/edit`}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Link>
                   </DropdownMenuItem>
                 )}
 
                 {canChangeStatus && (
-                  <DropdownMenuItem onClick={() => onStatusChange(s)} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => onStatusChange(s)}
+                    className="cursor-pointer"
+                  >
                     <ArrowLeftRight className="mr-2 h-4 w-4" />
                     Change Status
                   </DropdownMenuItem>
@@ -144,10 +207,47 @@ export function getLoadColumns({
                 {isAdmin && assignable && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onAssign(s)} className="cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={() => onAssign(s)}
+                      className="cursor-pointer"
+                    >
                       <UserPlus className="mr-2 h-4 w-4" />
                       Assign Shipper
                     </DropdownMenuItem>
+                  </>
+                )}
+
+                {(onCreateQuotation || onCreateInvoice) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    {onCreateQuotation && (
+                      <DropdownMenuItem
+                        asChild
+                        // onClick={() => onCreateQuotation(s)}
+                        className="cursor-pointer"
+                      >
+                        <Link
+                          href={`${docBasePath}/quotations/create?loadId=${s.shipment_id}`}
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          Create Quotation
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {onCreateInvoice && (
+                      <DropdownMenuItem
+                        asChild
+                        // onClick={() => onCreateInvoice(s)}
+                        className="cursor-pointer"
+                      >
+                        <Link
+                          href={`${docBasePath}/invoices/create?loadId=${s.shipment_id}`}
+                        >
+                          <Receipt className="mr-2 h-4 w-4" />
+                          Create Invoice
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </>
                 )}
 

@@ -32,10 +32,33 @@ type AuthState = {
 
   setAccessToken: (accessToken: string, expiresIn: number) => void;
 
+  // Used after a token refresh — updates both access and refresh tokens without
+  // needing to re-supply the user object (which the /refresh endpoint doesn't return).
+  setTokens: (accessToken: string, refreshToken: string, expiresIn: number) => void;
+
   clearAuth: () => void;
 
   setHasHydrated: (value: boolean) => void;
 };
+
+// ── Session hint cookie ───────────────────────────────────────────────────────
+// A non-sensitive cookie (value = role) readable by Next.js middleware.
+// It contains no token data — it is purely a routing hint so the middleware can
+// redirect unauthenticated users server-side without reading localStorage.
+// The real auth validation always happens client-side via AuthGuard / api.ts.
+const SESSION_COOKIE = "ll-session";
+
+function setSessionCookie(role: string) {
+  if (typeof document === "undefined") return;
+  // Session-scoped (no Max-Age / Expires) — cleared when the browser closes.
+  // SameSite=Lax prevents it from being sent on cross-origin requests.
+  document.cookie = `${SESSION_COOKIE}=${role}; path=/; SameSite=Lax`;
+}
+
+function clearSessionCookie() {
+  if (typeof document === "undefined") return;
+  document.cookie = `${SESSION_COOKIE}=; path=/; SameSite=Lax; Max-Age=0`;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -47,20 +70,27 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       _hasHydrated: false,
 
-      setAuth: ({ accessToken, refreshToken, expiresIn, user }) =>
-        set({ accessToken, refreshToken, expiresIn, user, isAuthenticated: true }),
+      setAuth: ({ accessToken, refreshToken, expiresIn, user }) => {
+        setSessionCookie(user.role);
+        set({ accessToken, refreshToken, expiresIn, user, isAuthenticated: true });
+      },
 
       setAccessToken: (accessToken, expiresIn) =>
         set({ accessToken, expiresIn }),
 
-      clearAuth: () =>
+      setTokens: (accessToken, refreshToken, expiresIn) =>
+        set({ accessToken, refreshToken, expiresIn }),
+
+      clearAuth: () => {
+        clearSessionCookie();
         set({
           accessToken: null,
           refreshToken: null,
           expiresIn: null,
           user: null,
           isAuthenticated: false,
-        }),
+        });
+      },
 
       setHasHydrated: (value) => set({ _hasHydrated: value }),
     }),
@@ -74,6 +104,15 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
+        // Re-sync the session cookie from persisted state on page load.
+        // This ensures the middleware hint stays in sync after a browser restart
+        // where the cookie was cleared but localStorage still has valid tokens.
+        if (state?.isAuthenticated && state.user) {
+          setSessionCookie(state.user.role);
+          console.info("[Auth][Store] Rehydrated — user=" + state.user.email + " role=" + state.user.role);
+        } else {
+          console.info("[Auth][Store] Rehydrated — no active session");
+        }
         state?.setHasHydrated(true);
       },
     },

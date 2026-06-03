@@ -146,11 +146,15 @@ export type Shipment = {
   reference_number: string | null;
 
   created_by: string;
+  /** 'shipper' = created by a shipper user; assignment is permanently locked. null = pre-migration row (treated as admin-created). */
+  created_by_role: 'admin' | 'shipper' | null;
   created_at: string;
   updated_at: string;
 
   // Joined (Supabase uses the table name as the relation key)
   accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null };
+  /** Profile of the user who created this load (joined via profiles!created_by). */
+  profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper' } | null;
 };
 
 export type CreateShipmentDto = {
@@ -225,4 +229,235 @@ export type CreateShipperNoteDto = {
 
 export type UpdateShipperNoteDto = {
   content: string;
+};
+
+// ── Documents: shared ─────────────────────────────────────────────────────────
+
+export type LineItemCategory =
+  | "freight_charge"
+  | "line_haul"
+  | "fuel_surcharge"
+  | "accessorial"
+  | "loading_fee"
+  | "unloading_fee"
+  | "lumper_fee"
+  | "toll_charges"
+  | "detention"
+  | "layover"
+  | "storage_fee"
+  | "customs_fee"
+  | "administrative_fee"
+  | "insurance"
+  | "miscellaneous"
+  | "custom";
+
+export const LINE_ITEM_CATEGORY_LABELS: Record<LineItemCategory, string> = {
+  freight_charge:    "Freight Charge",
+  line_haul:         "Line Haul",
+  fuel_surcharge:    "Fuel Surcharge",
+  accessorial:       "Accessorial",
+  loading_fee:       "Loading Fee",
+  unloading_fee:     "Unloading Fee",
+  lumper_fee:        "Lumper Fee",
+  toll_charges:      "Toll Charges",
+  detention:         "Detention",
+  layover:           "Layover",
+  storage_fee:       "Storage Fee",
+  customs_fee:       "Customs Fee",
+  administrative_fee: "Administrative Fee",
+  insurance:         "Insurance",
+  miscellaneous:     "Miscellaneous",
+  custom:            "Custom",
+};
+
+export type LineItem = {
+  id?:          string;
+  description:  string;
+  category:     LineItemCategory;
+  quantity:     number;
+  unit:         string;
+  unit_price:   number;
+  amount:       number;
+  notes?:       string | null;
+  sort_order:   number;
+  created_at?:  string;
+  updated_at?:  string;
+};
+
+// ── Quotations ────────────────────────────────────────────────────────────────
+
+export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+
+export const QUOTATION_STATUS_LABELS: Record<QuotationStatus, string> = {
+  draft:    "Draft",
+  sent:     "Sent",
+  accepted: "Accepted",
+  rejected: "Rejected",
+  expired:  "Expired",
+};
+
+export const QUOTATION_STATUS_COLORS: Record<QuotationStatus, string> = {
+  draft:    "bg-slate-50 text-slate-700 border-slate-200",
+  sent:     "bg-blue-50 text-blue-700 border-blue-200",
+  accepted: "bg-green-50 text-green-700 border-green-200",
+  rejected: "bg-red-50 text-red-700 border-red-200",
+  expired:  "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+export type Quotation = {
+  id:               string;
+  quotation_number: string;
+  profile_id:       string;
+  load_id:          string | null;
+  status:           QuotationStatus;
+  issue_date:       string;
+  expiry_date:      string | null;
+  customer_name:    string;
+  customer_company: string | null;
+  customer_email:   string | null;
+  customer_phone:   string | null;
+  billing_address:  string | null;
+  notes:            string | null;
+  terms:            string | null;
+  subtotal:         number;
+  discount:         number;
+  tax_rate:         number;
+  tax:              number;
+  total:            number;
+  currency:         string;
+  pdf_url:          string | null;
+  created_by:       string;
+  created_at:       string;
+  updated_at:       string;
+  deleted_at:       string | null;
+  profiles?:        { id: string; full_name: string | null; email: string } | null;
+  shipments?:       { shipment_id: string; load_number: string; origin_city: string; destination_city: string } | null;
+  quotation_items?: LineItem[];
+};
+
+export type CreateQuotationDto = {
+  profileId:       string;
+  loadId?:         string | null;
+  status?:         QuotationStatus;
+  issueDate:       string;
+  expiryDate?:     string | null;
+  customerName:    string;
+  customerCompany?: string | null;
+  customerEmail?:  string | null;
+  customerPhone?:  string | null;
+  billingAddress?: string | null;
+  notes?:          string | null;
+  terms?:          string | null;
+  subtotal?:       number;
+  discount?:       number;
+  taxRate?:        number;
+  tax?:            number;
+  total?:          number;
+  currency?:       string;
+  items?:          Omit<LineItem, "id" | "created_at" | "updated_at">[];
+};
+
+export type UpdateQuotationDto = Partial<Omit<CreateQuotationDto, "profileId">>;
+
+export type ListQuotationsQuery = {
+  page?:      number;
+  limit?:     number;
+  profileId?: string;
+  loadId?:    string;
+  status?:    QuotationStatus;
+  search?:    string;
+};
+
+// ── Invoices ──────────────────────────────────────────────────────────────────
+
+export type InvoiceStatus = "draft" | "unpaid" | "partially_paid" | "paid" | "overdue" | "cancelled";
+
+export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  draft:         "Draft",
+  unpaid:        "Unpaid",
+  partially_paid: "Partially Paid",
+  paid:          "Paid",
+  overdue:       "Overdue",
+  cancelled:     "Cancelled",
+};
+
+export const INVOICE_STATUS_COLORS: Record<InvoiceStatus, string> = {
+  draft:         "bg-slate-50 text-slate-700 border-slate-200",
+  unpaid:        "bg-yellow-50 text-yellow-700 border-yellow-200",
+  partially_paid: "bg-blue-50 text-blue-700 border-blue-200",
+  paid:          "bg-green-50 text-green-700 border-green-200",
+  overdue:       "bg-red-50 text-red-700 border-red-200",
+  cancelled:     "bg-slate-50 text-slate-500 border-slate-200",
+};
+
+export type Invoice = {
+  id:                    string;
+  invoice_number:        string;
+  profile_id:            string;
+  load_id:               string | null;
+  quotation_id:          string | null;
+  status:                InvoiceStatus;
+  issue_date:            string;
+  due_date:              string | null;
+  customer_name:         string;
+  customer_company:      string | null;
+  customer_email:        string | null;
+  customer_phone:        string | null;
+  billing_address:       string | null;
+  notes:                 string | null;
+  terms:                 string | null;
+  payment_instructions:  string | null;
+  subtotal:              number;
+  discount:              number;
+  tax_rate:              number;
+  tax:                   number;
+  total:                 number;
+  amount_paid:           number;
+  balance_due:           number;
+  currency:              string;
+  pdf_url:               string | null;
+  created_by:            string;
+  created_at:            string;
+  updated_at:            string;
+  deleted_at:            string | null;
+  profiles?:             { id: string; full_name: string | null; email: string } | null;
+  shipments?:            { shipment_id: string; load_number: string; origin_city: string; destination_city: string } | null;
+  quotations?:           { id: string; quotation_number: string } | null;
+  invoice_items?:        LineItem[];
+};
+
+export type CreateInvoiceDto = {
+  profileId:           string;
+  loadId?:             string | null;
+  quotationId?:        string | null;
+  status?:             InvoiceStatus;
+  issueDate:           string;
+  dueDate?:            string | null;
+  customerName:        string;
+  customerCompany?:    string | null;
+  customerEmail?:      string | null;
+  customerPhone?:      string | null;
+  billingAddress?:     string | null;
+  notes?:              string | null;
+  terms?:              string | null;
+  paymentInstructions?: string | null;
+  subtotal?:           number;
+  discount?:           number;
+  taxRate?:            number;
+  tax?:                number;
+  total?:              number;
+  amountPaid?:         number;
+  currency?:           string;
+  items?:              Omit<LineItem, "id" | "created_at" | "updated_at">[];
+};
+
+export type UpdateInvoiceDto = Partial<Omit<CreateInvoiceDto, "profileId">>;
+
+export type ListInvoicesQuery = {
+  page?:      number;
+  limit?:     number;
+  profileId?: string;
+  loadId?:    string;
+  status?:    InvoiceStatus;
+  search?:    string;
 };

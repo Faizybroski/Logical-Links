@@ -171,7 +171,7 @@ export default function ShipperEditLoadPage({ params }: { params: Promise<{ id: 
             </div>
           </div>
 
-          <div className="mx-auto max-w-5xl space-y-5 px-6 py-8">
+          <div className="mx-auto max-w-5xl space-y-5 px-2 py-8">
             <div className="grid gap-5 lg:grid-cols-2">
               <FormSection title="Origin" description="Pickup location" icon={<MapPin className="h-4 w-4" />}>
                 <div className="space-y-3">

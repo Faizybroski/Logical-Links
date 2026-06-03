@@ -145,7 +145,7 @@ export default function ShipperCreateLoadPage() {
             </div>
           </div>
 
-          <div className="mx-auto max-w-5xl space-y-5 px-6 py-8">
+          <div className="mx-auto max-w-5xl space-y-5 px-2 py-8">
             {/* Type */}
             <FormSection title="Shipment Details" description="Basic information" icon={<Package className="h-4 w-4" />}>
               <div className="grid grid-cols-2 gap-4">

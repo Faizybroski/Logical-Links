@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { api, type ApiResponse } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
@@ -15,6 +17,17 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? '/'
   const setAuth = useAuthStore((s) => s.setAuth)
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore()
+
+  // Redirect already-authenticated users straight to their dashboard.
+  // Must wait for Zustand to hydrate from localStorage before deciding.
+  useEffect(() => {
+    if (!_hasHydrated) return
+    if (isAuthenticated && user) {
+      const dest = user.role === 'admin' ? '/admin/dashboard' : '/shipper/dashboard'
+      router.replace(dest)
+    }
+  }, [isAuthenticated, user, _hasHydrated, router])
 
   const [form, setForm] = useState<LoginSchema>({ email: '', password: '' })
   const [errors, setErrors] = useState<Partial<Record<keyof LoginSchema, string>>>({})
@@ -89,19 +102,19 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
+              <Label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
                 Email Address
-              </label>
+              </Label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-                <input
+                <Input
                   id="email"
                   type="email"
                   autoComplete="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="you@example.com"
-                  className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-light focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  className="h-12 pl-12 pr-4"
                 />
               </div>
               {errors.email && <p className="mt-2 text-xs text-danger">{errors.email}</p>}
@@ -110,31 +123,32 @@ function LoginForm() {
             {/* Password */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
-                </label>
+                </Label>
                 <Link href="/forgot-password" className="text-xs font-medium text-primary hover:opacity-80">
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-                <input
+                <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
-                  className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-12 text-sm text-foreground outline-none transition-all placeholder:text-muted-light focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  className="h-12 pl-12 pr-12"
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  variant="ghost"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
+                </Button>
               </div>
               {errors.password && <p className="mt-2 text-xs text-danger">{errors.password}</p>}
             </div>
@@ -145,13 +159,13 @@ function LoginForm() {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="flex h-12 w-full items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-sidebar transition-all duration-200 hover:bg-primary-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full"
             >
               {loading ? 'Signing in...' : 'Sign In'}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-8 text-center">

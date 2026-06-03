@@ -19,10 +19,16 @@ import {
   Circle,
   XCircle,
   Calendar,
+  Lock,
+  FileText,
+  Receipt,
+  Plus,
+  Eye,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/loads/status-badge";
+import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
 import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dialog";
 import { AssignDialog } from "@/components/loads/dialogs/assign-dialog";
 
@@ -32,8 +38,10 @@ import {
   useAssignShipment,
 } from "@/hooks/use-shipments";
 import { useUsers } from "@/hooks/use-users";
+import { useInvoices } from "@/hooks/use-invoices";
+import { useQuotations } from "@/hooks/use-quotations";
 import { formatDate } from "@/lib/utils/format-date";
-import type { Shipment, ShipmentStatus, AssignShipmentDto } from "@/types/api.types";
+import type { Shipment, ShipmentStatus, AssignShipmentDto, Invoice, Quotation } from "@/types/api.types";
 
 /* ─── Status timeline ────────────────────────────────────────────────────── */
 
@@ -157,7 +165,11 @@ export default function AdminLoadDetailPage({
 
   const { data, isLoading }           = useShipment(id);
   const { data: shippersRes }         = useUsers({ role: "shipper", limit: 100 });
+  const { data: invoicesRes }         = useInvoices({ loadId: id });
+  const { data: quotationsRes }       = useQuotations({ loadId: id });
   const shipment: Shipment | undefined = data?.data as Shipment | undefined;
+  const loadInvoices   = (invoicesRes?.data   ?? []) as Invoice[];
+  const loadQuotations = (quotationsRes?.data ?? []) as Quotation[];
   const shippers = (shippersRes?.data ?? []).filter((s) => s.isApproved);
 
   const statusMut = useUpdateShipmentStatus(id);
@@ -200,8 +212,9 @@ export default function AdminLoadDetailPage({
     );
   }
 
+  const isShipperOwned = shipment.created_by_role === "shipper";
   const canEdit        = !["delivered", "cancelled"].includes(shipment.status);
-  const canAssign      = shipment.status === "confirmed";
+  const canAssign      = shipment.status === "confirmed" && !isShipperOwned;
   const STATUS_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
     pending:          ["confirmed",        "cancelled"],
     confirmed:        ["assigned",         "cancelled"],
@@ -238,6 +251,7 @@ export default function AdminLoadDetailPage({
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-xl font-bold text-foreground">{shipment.load_number}</h1>
                   <StatusBadge status={shipment.status} />
+                  <CreatorBadge shipment={shipment} />
                   <span className="text-xs text-muted capitalize">
                     {shipment.shipment_type.replace("_", " ")}
                   </span>
@@ -275,13 +289,15 @@ export default function AdminLoadDetailPage({
                 </Button>
               )}
               {canEdit && (
-                <Button
+                <Button asChild
                   type="button"
-                  onClick={() => router.push(`/admin/loads/${id}/edit`)}
+                  // onClick={() => router.push(`/admin/loads/${id}/edit`)}
                   className="h-8 rounded-lg bg-primary px-4 text-xs text-sidebar hover:bg-primary/85"
                 >
+                  <Link href={`/admin/loads/${id}/edit`}>
                   <Pencil className="mr-1.5 h-3.5 w-3.5" />
                   Edit
+                  </Link>
                 </Button>
               )}
             </div>
@@ -290,7 +306,7 @@ export default function AdminLoadDetailPage({
       </div>
 
       {/* ── Main content ── */}
-      <div className="mx-auto max-w-6xl px-6 py-8">
+      <div className="mx-auto max-w-6xl px-2 py-8">
         <div className="space-y-6">
 
           {/* Route strip */}
@@ -325,7 +341,7 @@ export default function AdminLoadDetailPage({
               </div>
 
               {/* Destination */}
-              <div className="flex-1 border-t border-card-border px-8 py-6 sm:border-l sm:border-t-0 sm:text-right">
+              <div className="flex-1 px-8 py-6 sm:text-right">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
                   Destination
                 </p>
@@ -343,6 +359,68 @@ export default function AdminLoadDetailPage({
             </div>
           </div>
 
+          {/* Ownership & Assignment */}
+          <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+            <div className="border-b border-card-border px-6 py-4">
+              <h2 className="text-sm font-semibold text-foreground">Ownership &amp; Assignment</h2>
+            </div>
+            <div className="grid gap-4 p-6 sm:grid-cols-3">
+              {/* Creator */}
+              <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-4">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Package className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">Created By</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">{getCreatorName(shipment)}</p>
+                  <div className="mt-1.5">
+                    <CreatorBadge shipment={shipment} size="sm" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Created at */}
+              <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-4">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">Created At</p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">{formatDate(shipment.created_at)}</p>
+                </div>
+              </div>
+
+              {/* Assignment type */}
+              <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-4">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Lock className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">Assignment Type</p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">
+                    {isShipperOwned ? "Shipper-Owned (Locked)" : "Admin Managed"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {isShipperOwned
+                      ? "Assigned shipper cannot be changed"
+                      : "Shipper can be reassigned by admin"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Shipper-owned notice */}
+            {isShipperOwned && (
+              <div className="flex items-start gap-3 border-t border-violet-200 bg-violet-50/60 px-6 py-4 dark:border-violet-800 dark:bg-violet-950/40">
+                <Truck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
+                <p className="text-sm text-violet-800 dark:text-violet-300">
+                  <span className="font-semibold">Shipper-Owned Load.</span>{" "}
+                  This load was created by a shipper and is permanently assigned to its creator. Reassignment is not allowed.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Info grid + Timeline */}
           <div className="grid gap-6 lg:grid-cols-3">
 
@@ -355,8 +433,17 @@ export default function AdminLoadDetailPage({
                 <div className="grid gap-3 p-6 sm:grid-cols-2">
                   <InfoTile
                     icon={<Package className="h-4 w-4" />}
-                    label="Shipper"
-                    value={shipment.accounts?.account_name ?? "Unassigned"}
+                    label={isShipperOwned ? "Shipper (Locked)" : "Shipper"}
+                    value={
+                      isShipperOwned ? (
+                        <span className="flex items-center gap-1.5">
+                          {shipment.accounts?.account_name ?? "Unassigned"}
+                          <Lock className="h-3 w-3 text-violet-500" />
+                        </span>
+                      ) : (
+                        shipment.accounts?.account_name ?? "Unassigned"
+                      )
+                    }
                   />
                   <InfoTile
                     icon={<Truck className="h-4 w-4" />}
@@ -457,6 +544,110 @@ export default function AdminLoadDetailPage({
               )}
             </div>
           </div>
+          {/* Financial Documents */}
+          <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
+              <h2 className="text-sm font-semibold text-foreground">Financial Documents</h2>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/quotations/create?loadId=${id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-card-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-primary/5 hover:text-primary"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New Quotation
+                </Link>
+                <Link
+                  href={`/admin/invoices/create?loadId=${id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-sidebar transition-colors hover:bg-primary/85"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New Invoice
+                </Link>
+              </div>
+            </div>
+
+            {/* Quotations */}
+            <div className="border-b border-card-border px-6 py-4">
+              <div className="mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Quotations ({loadQuotations.length})
+                </h3>
+              </div>
+              {loadQuotations.length === 0 ? (
+                <p className="text-sm text-muted italic">No quotations yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {loadQuotations.map((q) => (
+                    <div key={q.id} className="flex items-center justify-between rounded-xl border border-card-border bg-background px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{q.quotation_number}</p>
+                        <p className="text-xs text-muted">
+                          {formatDate(q.issue_date)} · <span className="capitalize">{q.status.replace("_", " ")}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm font-semibold tabular-nums text-foreground">
+                          {new Intl.NumberFormat("en-AU", { style: "currency", currency: q.currency ?? "AUD" }).format(q.total ?? 0)}
+                        </p>
+                        <Link
+                          href={`/admin/quotations/${q.id}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border bg-card text-muted transition-colors hover:text-primary"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Invoices */}
+            <div className="px-6 py-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-muted" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Invoices ({loadInvoices.length})
+                </h3>
+              </div>
+              {loadInvoices.length === 0 ? (
+                <p className="text-sm text-muted italic">No invoices yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {loadInvoices.map((inv) => (
+                    <div key={inv.id} className="flex items-center justify-between rounded-xl border border-card-border bg-background px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{inv.invoice_number}</p>
+                        <p className="text-xs text-muted">
+                          {formatDate(inv.issue_date)} · <span className="capitalize">{inv.status.replace("_", " ")}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold tabular-nums text-foreground">
+                            {new Intl.NumberFormat("en-AU", { style: "currency", currency: inv.currency ?? "AUD" }).format(inv.total ?? 0)}
+                          </p>
+                          {inv.balance_due > 0 && (
+                            <p className="text-xs text-danger tabular-nums">
+                              Due {new Intl.NumberFormat("en-AU", { style: "currency", currency: inv.currency ?? "AUD" }).format(inv.balance_due)}
+                            </p>
+                          )}
+                        </div>
+                        <Link
+                          href={`/admin/invoices/${inv.id}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border bg-card text-muted transition-colors hover:text-primary"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 

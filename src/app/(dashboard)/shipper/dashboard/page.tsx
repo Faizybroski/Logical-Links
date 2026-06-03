@@ -61,7 +61,7 @@ export default function ShipperDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-5">
+    <div className="min-h-screen bg-background p-4 lg:p-2">
       <div className="mx-auto max-w-5xl space-y-6">
 
         {/* Header */}

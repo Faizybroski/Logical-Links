@@ -136,7 +136,7 @@ export function DataTable<TData>({
                 {hg.headers.map((h) => (
                   <TableHead
                     key={h.id}
-                    className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
+                    className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
                   >
                     {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
                   </TableHead>
@@ -170,7 +170,7 @@ export function DataTable<TData>({
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-5 py-4 text-sm text-foreground">
+                    <TableCell key={cell.id} className="px-3 py-3 text-sm text-foreground">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

@@ -2,6 +2,14 @@ import { getAuthStore } from "@/store/auth.store";
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
+// ── Auth lifecycle logging ────────────────────────────────────────────────────
+// Prefix makes it easy to filter in browser DevTools: filter by "[Auth]"
+const authLog = {
+  info:  (...args: unknown[]) => console.info( "[Auth]", ...args),
+  warn:  (...args: unknown[]) => console.warn( "[Auth]", ...args),
+  error: (...args: unknown[]) => console.error("[Auth]", ...args),
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -22,8 +30,14 @@ const NO_REFRESH_PREFIXES = ["/api/v1/auth/login", "/api/v1/auth/register", "/ap
 let refreshPromise: Promise<string | null> | null = null;
 
 async function doRefresh(): Promise<string | null> {
-  const { refreshToken, setAccessToken, clearAuth } = getAuthStore();
-  if (!refreshToken) return null;
+  const { refreshToken, setTokens, clearAuth } = getAuthStore();
+
+  if (!refreshToken) {
+    authLog.warn("Token refresh skipped — no refresh token in store");
+    return null;
+  }
+
+  authLog.info("Attempting token refresh…");
 
   try {
     const res = await fetch(`${BASE}/api/v1/auth/refresh`, {
@@ -34,15 +48,22 @@ async function doRefresh(): Promise<string | null> {
     });
 
     if (!res.ok) {
+      authLog.warn("Token refresh failed — server responded", res.status, "— clearing session");
       clearAuth();
       return null;
     }
 
     const json = await res.json();
-    const { accessToken, expiresIn } = json.data ?? json;
-    setAccessToken(accessToken, expiresIn);
+    // The backend rotates the refresh token on every call (RFC 9068 token rotation).
+    // We MUST persist the new refreshToken here; failing to do so means the next
+    // refresh attempt will present a revoked token, triggering reuse-detection and
+    // revoking ALL user sessions — which is the root cause of random logouts.
+    const { accessToken, refreshToken: newRefreshToken, expiresIn } = json.data ?? json;
+    setTokens(accessToken, newRefreshToken, expiresIn);
+    authLog.info("Token refresh succeeded — new access token valid for", expiresIn, "s");
     return accessToken as string;
-  } catch {
+  } catch (err) {
+    authLog.error("Token refresh threw an exception — clearing session:", err);
     clearAuth();
     return null;
   }
@@ -87,6 +108,7 @@ export async function apiFetch<T = unknown>(
     const newToken = await refreshPromise;
 
     if (!newToken) {
+      authLog.warn("Session could not be restored — redirecting to /login");
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }

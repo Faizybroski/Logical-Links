@@ -265,7 +265,7 @@ export default function ShippersPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-8">
+    <div className="min-h-screen bg-background p-6 lg:p-2">
       <div className="mx-auto max-w-7xl space-y-7">
         {/* ── Page header ── */}
         <div>

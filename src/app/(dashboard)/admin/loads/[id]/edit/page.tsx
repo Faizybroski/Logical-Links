@@ -13,6 +13,9 @@ import {
   Package,
   ChevronRight,
   Trash2,
+  Lock,
+  User,
+  Calendar,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +40,8 @@ import {
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useShipment, useUpdateShipment, useDeleteShipment } from "@/hooks/use-shipments";
 import { DeleteConfirmDialog } from "@/components/loads/dialogs/delete-confirmation-dialog";
+import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
+import { formatDate } from "@/lib/utils/format-date";
 import { useState } from "react";
 
 /* ─── shared ─────────────────────────────────────────────────────────────── */
@@ -169,8 +174,9 @@ export default function AdminEditLoadPage({
     }
   }
 
-  const saving  = updateMut.isPending;
-  const canDelete = shipment && ["pending", "confirmed"].includes(shipment.status);
+  const saving         = updateMut.isPending;
+  const canDelete      = shipment && ["pending", "confirmed"].includes(shipment.status);
+  const isShipperOwned = shipment?.created_by_role === "shipper";
 
   if (isLoading) {
     return (
@@ -255,7 +261,7 @@ export default function AdminEditLoadPage({
           </div>
 
           {/* ── Main content ── */}
-          <div className="mx-auto max-w-5xl space-y-5 px-6 py-8">
+          <div className="mx-auto max-w-5xl space-y-5 px-2 py-8">
 
             {/* Origin + Destination */}
             <div className="grid gap-5 lg:grid-cols-2">
@@ -328,6 +334,55 @@ export default function AdminEditLoadPage({
                   </div>
                 </div>
               </FormSection>
+            </div>
+
+            {/* Ownership — read-only info card (always visible) */}
+            <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+              <div className="flex items-center gap-3 border-b border-card-border bg-background/50 px-6 py-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-foreground">Ownership &amp; Assignment</h3>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {isShipperOwned ? "Shipper-owned — assignment is permanently locked" : "Admin-managed — assignment can be changed"}
+                  </p>
+                </div>
+                <CreatorBadge shipment={shipment} />
+              </div>
+              <div className="grid gap-3 p-6 sm:grid-cols-3">
+                <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
+                  <User className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">Created By</p>
+                    <p className="mt-0.5 truncate text-sm font-medium text-foreground">{getCreatorName(shipment)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
+                  <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">Created At</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{formatDate(shipment.created_at)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
+                  <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">Assigned Shipper</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {shipment.accounts?.account_name ?? "Unassigned"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {isShipperOwned && (
+                <div className="flex items-start gap-3 border-t border-violet-200 bg-violet-50/60 px-6 py-3 dark:border-violet-800 dark:bg-violet-950/40">
+                  <Truck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" />
+                  <p className="text-xs text-violet-800 dark:text-violet-300">
+                    The shipper assignment cannot be changed by anyone, including administrators.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Shipment type + reference */}
