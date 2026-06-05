@@ -10,13 +10,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   Form,
   FormControl,
@@ -70,35 +65,36 @@ export function LoadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl rounded-2xl border border-card-border bg-card p-0 shadow-2xl">
-        <DialogHeader className="border-b border-card-border px-7 py-5">
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col rounded-2xl border border-card-border bg-card p-0 shadow-2xl overflow-hidden">
+        <DialogHeader className="shrink-0 border-b border-card-border px-5 py-5 sm:px-7">
           <DialogTitle className="text-xl font-semibold text-foreground">{title}</DialogTitle>
           <DialogDescription className="mt-1 text-sm text-muted">{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[75vh] overflow-y-auto px-7 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-7">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form id="load-dialog-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
               {/* Type + Shipper */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="shipmentType"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Shipment Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={`h-11 w-full ${fieldClass}`}>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="border-card-border bg-card">
-                          <SelectItem value="freight">Freight</SelectItem>
-                          <SelectItem value="last_mile">Last Mile</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        onBlur={field.onBlur}
+                        options={[
+                          { value: "freight", label: "Freight" },
+                          { value: "last_mile", label: "Last Mile" },
+                        ]}
+                        placeholder="Select type"
+                        searchPlaceholder="Search type…"
+                        className={`h-11 ${fieldClass}`}
+                      />
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
@@ -108,36 +104,36 @@ export function LoadDialog({
                   <FormField
                     control={form.control}
                     name="shipperId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Assign to Shipper</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value ?? ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger className={`h-11 w-full ${fieldClass}`}>
-                              <SelectValue placeholder="Select shipper (optional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="border-card-border bg-card">
-                            {shippers.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                <span className="font-medium">
-                                  {s.fullName ?? s.email}
-                                </span>
-                                {s.fullName && (
-                                  <span className="ml-1.5 text-xs text-muted">
-                                    · {s.email}
-                                  </span>
-                                )}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const shipperOptions = shippers.map((s) => ({
+                        value: s.id,
+                        label: s.fullName ?? s.email,
+                        description: s.fullName ? s.email : undefined,
+                        icon: (
+                          <UserAvatar
+                            name={s.fullName ?? s.email}
+                            avatarUrl={null}
+                            size="xs"
+                            rounded="full"
+                          />
+                        ),
+                      }));
+                      return (
+                        <FormItem>
+                          <FormLabel>Assign to Shipper</FormLabel>
+                          <SearchableSelect
+                            value={field.value ?? ""}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            options={shipperOptions}
+                            placeholder="Select shipper (optional)"
+                            searchPlaceholder="Search shippers…"
+                            className={`h-11 ${fieldClass}`}
+                          />
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      );
+                    }}
                   />
                 )}
               </div>
@@ -145,7 +141,7 @@ export function LoadDialog({
               {/* Origin */}
               <div>
                 <p className="mb-3 text-sm font-semibold text-foreground">Origin</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField control={form.control} name="originAddress" render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel>Address</FormLabel>
@@ -180,7 +176,7 @@ export function LoadDialog({
               {/* Destination */}
               <div>
                 <p className="mb-3 text-sm font-semibold text-foreground">Destination</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField control={form.control} name="destinationAddress" render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel>Address</FormLabel>
@@ -213,7 +209,7 @@ export function LoadDialog({
               </div>
 
               {/* Cargo + meta */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField control={form.control} name="cargoDescription" render={({ field }) => (
                   <FormItem className="col-span-2">
                     <FormLabel>Cargo Description</FormLabel>
@@ -318,26 +314,29 @@ export function LoadDialog({
                 )} />
               </div>
 
-              <div className="flex items-center justify-end gap-3 border-t border-card-border pt-5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="rounded-lg border-card-border text-foreground hover:bg-background"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-lg bg-primary px-6 text-sidebar hover:bg-primary/85"
-                >
-                  {loading ? "Saving…" : "Save Load"}
-                </Button>
-              </div>
             </form>
           </Form>
+        </div>
+
+        {/* Sticky footer — always visible regardless of scroll position */}
+        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-card-border px-5 py-4 sm:px-7">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-lg border-card-border text-foreground hover:bg-background"
+          >
+            Cancel
+          </Button>
+          <Button
+            form="load-dialog-form"
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-primary px-6 text-sidebar hover:bg-primary/85"
+          >
+            {loading ? "Saving…" : "Save Load"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

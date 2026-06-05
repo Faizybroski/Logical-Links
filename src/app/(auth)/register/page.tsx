@@ -74,7 +74,7 @@ export default function RegisterPage() {
         accessToken: string;
         refreshToken: string;
         expiresIn: number;
-        user: { id: string; email: string; role: "admin" | "shipper"; fullName: string | null; accountId: string | null };
+        user: { id: string; email: string; role: "admin" | "shipper"; companyRole: "company_admin" | "employee" | null; fullName: string | null; accountId: string | null };
       }>>('/api/v1/auth/register', {
         email: result.data.email,
         password: result.data.password,
@@ -132,10 +132,10 @@ export default function RegisterPage() {
 
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              Create Account
+              Create Shipping Company
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Register your logistics account
+              Register your company and get started as Company Admin
             </p>
           </div>
 

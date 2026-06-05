@@ -9,6 +9,7 @@ import {
   Menu,
   User,
   LogOut,
+  Building2,
 } from 'lucide-react'
 
 import {
@@ -18,8 +19,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { UserAvatar } from '@/components/ui/user-avatar'
+import { CompanyLogo } from '@/components/ui/company-logo'
 
 import { useAuthStore } from '@/store/auth.store'
+import { useMyProfile } from '@/hooks/use-accounts'
 import { api } from '@/lib/api'
 
 interface Props {
@@ -33,6 +37,8 @@ export default function ShipperHeader({
 }: Props) {
   const router = useRouter()
   const { user, refreshToken, clearAuth } = useAuthStore()
+  const { data: accountRes } = useMyProfile()
+  const account = accountRes?.data
 
   async function handleSignOut() {
     try {
@@ -42,6 +48,8 @@ export default function ShipperHeader({
     router.push('/login')
     router.refresh()
   }
+
+  const roleLabel = user?.companyRole === 'company_admin' ? 'Company Admin' : 'Employee'
 
   return (
     <header
@@ -93,16 +101,11 @@ export default function ShipperHeader({
               sm:text-lg
             "
           >
-            Shipper Dashboard
+            {account?.account_name ?? 'Dashboard'}
           </h1>
 
-          <p
-            className="
-              hidden text-xs text-muted
-              sm:block
-            "
-          >
-            Track shipments & manage bookings
+          <p className="hidden text-xs text-muted sm:block">
+            {roleLabel}
           </p>
         </div>
       </div>
@@ -155,6 +158,7 @@ export default function ShipperHeader({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
+              type="button"
               className="
                 flex items-center gap-2.5
                 rounded-xl border
@@ -168,55 +172,31 @@ export default function ShipperHeader({
                 hover:bg-primary/5
               "
             >
-              {/* Avatar */}
-              <div
-                className="
-                  flex h-9 w-9
-                  items-center justify-center
-                  rounded-xl
-
-                  bg-primary
-
-                  text-xs font-bold
-                  text-sidebar
-                "
-              >
-                {(user?.fullName ?? 'SH').slice(0, 2).toUpperCase()}
-              </div>
+              <UserAvatar
+                name={user?.fullName}
+                avatarUrl={user?.avatarUrl}
+                size="md"
+                rounded="xl"
+              />
 
               {/* User */}
               <div className="hidden text-left sm:block">
-                <p
-                  className="
-                    text-sm font-semibold
-                    text-foreground
-                  "
-                >
-                  {user?.fullName ?? 'Shipper'}
+                <p className="text-sm font-semibold text-foreground">
+                  {user?.fullName ?? 'User'}
                 </p>
-
-                <p
-                  className="
-                    text-[11px] text-muted
-                  "
-                >
-                  {user?.email ?? ''}
+                <p className="text-[11px] text-muted">
+                  {account?.account_name ?? user?.email ?? ''}
                 </p>
               </div>
 
-              <ChevronDown
-                className="
-                  hidden h-4 w-4
-                  text-muted sm:block
-                "
-              />
+              <ChevronDown className="hidden h-4 w-4 text-muted sm:block" />
             </button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
             align="end"
             className="
-              w-60 rounded-2xl
+              w-64 rounded-2xl
               border border-card-border
               bg-card p-2 shadow-lg
             "
@@ -224,45 +204,52 @@ export default function ShipperHeader({
             {/* User Info */}
             <div
               className="
-                mb-2 flex items-center
-                gap-3 rounded-xl
+                mb-2 rounded-2xl
                 bg-background p-3
+                space-y-3
               "
             >
-              <div
-                className="
-                  flex h-10 w-10
-                  items-center justify-center
-                  rounded-xl
-
-                  bg-primary
-
-                  text-xs font-bold
-                  text-sidebar
-                "
-              >
-                {(user?.fullName ?? 'SH').slice(0, 2).toUpperCase()}
+              {/* User row */}
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  name={user?.fullName}
+                  avatarUrl={user?.avatarUrl}
+                  size="lg"
+                  rounded="xl"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {user?.fullName ?? 'User'}
+                  </p>
+                  <p className="truncate text-xs text-muted">
+                    {user?.email ?? ''}
+                  </p>
+                  <span className="text-[10px] font-medium text-primary">
+                    {roleLabel}
+                  </span>
+                </div>
               </div>
 
-              <div className="min-w-0">
-                <p
-                  className="
-                    truncate text-sm
-                    font-semibold text-foreground
-                  "
-                >
-                  {user?.fullName ?? 'Shipper'}
-                </p>
-
-                <p
-                  className="
-                    truncate text-xs
-                    text-muted
-                  "
-                >
-                  {user?.email ?? ''}
-                </p>
-              </div>
+              {/* Company row */}
+              {account && (
+                <div className="flex items-center gap-2 border-t border-card-border pt-2">
+                  <CompanyLogo
+                    name={account.account_name}
+                    logoUrl={account.logo_url}
+                    size="sm"
+                    rounded="xl"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium text-foreground">
+                      {account.account_name}
+                    </p>
+                    <p className="text-[10px] text-muted flex items-center gap-0.5">
+                      <Building2 className="h-2.5 w-2.5" />
+                      Shipping Company
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Menu */}
@@ -276,9 +263,25 @@ export default function ShipperHeader({
                 "
               >
                 <User className="h-4 w-4" />
-                Profile
+                My Profile
               </Link>
             </DropdownMenuItem>
+
+            {user?.companyRole === 'company_admin' && (
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/shipper/company"
+                  className="
+                    flex cursor-pointer
+                    items-center gap-2
+                    rounded-xl
+                  "
+                >
+                  <Building2 className="h-4 w-4" />
+                  Company Profile
+                </Link>
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuSeparator />
 

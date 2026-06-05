@@ -26,17 +26,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CompanyLogo } from "@/components/ui/company-logo";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { CityProvinceCombobox } from "@/components/tracking/city-province-combobox";
 
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useCreateShipment } from "@/hooks/use-shipments";
-import { useUsers } from "@/hooks/use-users";
+import { useAccounts } from "@/hooks/use-accounts";
+import type { AccountProfile } from "@/types/api.types";
 
 /* ─── Shared sub-components ──────────────────────────────────────────────── */
 
@@ -75,15 +73,15 @@ export default function AdminCreateLoadPage() {
   const router = useRouter();
 
   const createMut = useCreateShipment();
-  const { data: shippersRes } = useUsers({ role: "shipper", limit: 100 });
-  const shippers = (shippersRes?.data ?? []).filter((s) => s.isApproved);
+  const { data: accountsRes } = useAccounts({ limit: 100, isActive: "true" });
+  const companies = accountsRes?.data ?? [];
 
   const form = useForm<LoadFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(loadSchema) as any,
     defaultValues: {
       shipmentType: "freight",
-      shipperId: undefined,
+      accountId: undefined,
       originAddress: "",
       originCity: "",
       originState: "",
@@ -105,7 +103,7 @@ export default function AdminCreateLoadPage() {
     try {
       await createMut.mutateAsync({
         shipmentType:        values.shipmentType,
-        shipperId:           values.shipperId || undefined,
+        accountId:           values.accountId || undefined,
         originAddress:       values.originAddress,
         originCity:          values.originCity,
         originState:         values.originState,
@@ -202,17 +200,16 @@ export default function AdminCreateLoadPage() {
                         <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">
                           Type
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className={`h-10`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="border-card-border bg-card">
-                            <SelectItem value="freight">Freight</SelectItem>
-                            <SelectItem value="last_mile">Last Mile</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          options={[
+                            { value: "freight", label: "Freight" },
+                            { value: "last_mile", label: "Last Mile" },
+                          ]}
+                          searchPlaceholder="Search type…"
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )}
@@ -238,44 +235,49 @@ export default function AdminCreateLoadPage() {
 
               <FormSection
                 title="Assignment"
-                description="Assign to an approved shipper (optional)"
+                description="Assign to a shipping company (optional)"
                 icon={<User className="h-4 w-4" />}
               >
                 <FormField
                   control={form.control}
-                  name="shipperId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">
-                        Shipper
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger className={`h-10`}>
-                            <SelectValue placeholder="Unassigned — select later" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="border-card-border bg-card">
-                          {shippers.length === 0 ? (
-                            <div className="px-3 py-2 text-xs text-muted">No approved shippers</div>
-                          ) : (
-                            shippers.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                <span className="font-medium">{s.fullName ?? s.email}</span>
-                                {s.fullName && (
-                                  <span className="ml-1.5 text-xs text-muted">· {s.email}</span>
-                                )}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
+                  name="accountId"
+                  render={({ field }) => {
+                    const companyOptions = companies.map((c) => {
+                      const adm = c.profiles?.find(
+                        (p: AccountProfile) => p.company_role === "company_admin",
+                      );
+                      return {
+                        value: c.account_id,
+                        label: c.account_name,
+                        description: adm?.full_name ? `Admin: ${adm.full_name}` : undefined,
+                        icon: (
+                          <CompanyLogo
+                            name={c.account_name}
+                            logoUrl={c.logo_url ?? null}
+                            size="xs"
+                            rounded="lg"
+                          />
+                        ),
+                      };
+                    });
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">
+                          Shipping Company <span className="font-normal text-muted">(optional)</span>
+                        </FormLabel>
+                        <SearchableSelect
+                          value={field.value ?? ""}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          options={companyOptions}
+                          placeholder="Unassigned — assign later"
+                          searchPlaceholder="Search companies…"
+                          emptyText="No active shipping companies"
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    );
+                  }}
                 />
               </FormSection>
             </div>
@@ -297,23 +299,24 @@ export default function AdminCreateLoadPage() {
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="originCity" render={({ field }) => (
-                      <FormItem className="col-span-1">
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel>
-                        <FormControl><Input {...field} placeholder="Sydney" className={F} /></FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="originState" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel>
-                        <FormControl><Input {...field} placeholder="NSW" className={F} /></FormControl>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("originState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="originPostcode" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel>
-                        <FormControl><Input {...field} placeholder="2000" className={F} /></FormControl>
+                        <FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
@@ -336,23 +339,24 @@ export default function AdminCreateLoadPage() {
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="destinationCity" render={({ field }) => (
-                      <FormItem className="col-span-1">
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel>
-                        <FormControl><Input {...field} placeholder="Melbourne" className={F} /></FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="destinationState" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel>
-                        <FormControl><Input {...field} placeholder="VIC" className={F} /></FormControl>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("destinationState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="destinationPostcode" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel>
-                        <FormControl><Input {...field} placeholder="3000" className={F} /></FormControl>
+                        <FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />

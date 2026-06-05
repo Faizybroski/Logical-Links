@@ -22,22 +22,32 @@ import {
   Receipt,
   Plus,
   Eye,
+  UserPlus,
+  User,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/loads/status-badge";
 import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dialog";
+import { AssignEmployeeDialog } from "@/components/loads/dialogs/assign-employee-dialog";
 
-import { useShipment, useUpdateShipmentStatus } from "@/hooks/use-shipments";
+import { useShipment, useUpdateShipmentStatus, useAssignEmployee } from "@/hooks/use-shipments";
+import { useEmployees } from "@/hooks/use-company-users";
 import { useInvoices } from "@/hooks/use-invoices";
 import { useQuotations } from "@/hooks/use-quotations";
+import { useTrackingEvents } from "@/hooks/use-tracking";
+import { TrackingTimeline } from "@/components/tracking/tracking-timeline";
+import { useAuthStore } from "@/store/auth.store";
 import { formatDate } from "@/lib/utils/format-date";
 import type {
   Shipment,
   ShipmentStatus,
   Invoice,
   Quotation,
+  AssignEmployeeDto,
+  TrackingEvent,
 } from "@/types/api.types";
 
 /* ─── Status timeline (same as admin) ───────────────────────────────────── */
@@ -149,22 +159,41 @@ export default function ShipperLoadDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [statusOpen, setStatusOpen] = useState(false);
+  const { user } = useAuthStore();
+  const isCompanyAdmin = user?.companyRole === "company_admin";
 
-  const { data, isLoading } = useShipment(id);
-  const { data: invoicesRes } = useInvoices({ loadId: id });
-  const { data: quotationsRes } = useQuotations({ loadId: id });
+  const [statusOpen, setStatusOpen]         = useState(false);
+  const [assignEmpOpen, setAssignEmpOpen]   = useState(false);
+
+  const { data, isLoading }       = useShipment(id);
+  const { data: invoicesRes }     = useInvoices({ loadId: id });
+  const { data: quotationsRes }   = useQuotations({ loadId: id });
+  const { data: employeesRes }    = useEmployees({ limit: 100 }, { enabled: isCompanyAdmin });
+  const { data: trackingRes, refetch: refetchTracking } = useTrackingEvents(id, { limit: 100 });
   const shipment: Shipment | undefined = data?.data as Shipment | undefined;
-  const loadInvoices = (invoicesRes?.data ?? []) as Invoice[];
-  const loadQuotations = (quotationsRes?.data ?? []) as Quotation[];
+  const loadInvoices    = (invoicesRes?.data   ?? []) as Invoice[];
+  const loadQuotations  = (quotationsRes?.data ?? []) as Quotation[];
+  const trackingEvents  = (trackingRes?.data   ?? []) as TrackingEvent[];
+  const employees       = employeesRes?.data ?? [];
 
-  const statusMut = useUpdateShipmentStatus(id);
+  const statusMut      = useUpdateShipmentStatus(id);
+  const assignEmpMut   = useAssignEmployee(id);
 
   async function handleStatusChange(status: ShipmentStatus, reason?: string) {
     try {
       await statusMut.mutateAsync({ status, reason });
       toast.success("Status updated");
       setStatusOpen(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  async function handleAssignEmployee(dto: AssignEmployeeDto) {
+    try {
+      await assignEmpMut.mutateAsync(dto);
+      toast.success(dto.employeeId ? "Employee assigned" : "Employee unassigned");
+      setAssignEmpOpen(false);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -242,6 +271,17 @@ export default function ShipperLoadDetailPage({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {isCompanyAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAssignEmpOpen(true)}
+                  className="h-8 rounded-lg border-card-border px-3 text-xs text-foreground"
+                >
+                  <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                  Assign Employee
+                </Button>
+              )}
               {canChangeStatus && (
                 <Button
                   type="button"
@@ -257,7 +297,6 @@ export default function ShipperLoadDetailPage({
                 <Button
                   asChild
                   type="button"
-                  // onClick={() => router.push(`/shipper/loads/${id}/edit`)}
                   className="h-8 rounded-lg bg-primary px-4 text-xs text-sidebar hover:bg-primary/85"
                 >
                   <Link href={`/shipper/loads/${id}/edit`}>
@@ -334,13 +373,36 @@ export default function ShipperLoadDetailPage({
                   }
                 />
                 <InfoTile
-                  icon={<Package className="h-4 w-4" />}
+                  icon={
+                    <UserAvatar
+                      name={getCreatorName(shipment)}
+                      avatarUrl={shipment.profiles?.avatar_url}
+                      size="sm"
+                      rounded="lg"
+                    />
+                  }
                   label="Created By"
                   value={
                     <span className="flex flex-wrap items-center gap-1.5">
                       {getCreatorName(shipment)}
                       <CreatorBadge shipment={shipment} size="sm" />
                     </span>
+                  }
+                />
+                <InfoTile
+                  icon={
+                    <UserAvatar
+                      name={shipment.employee?.full_name}
+                      avatarUrl={shipment.employee?.avatar_url}
+                      size="sm"
+                      rounded="lg"
+                    />
+                  }
+                  label="Assigned Employee"
+                  value={
+                    shipment.employee?.full_name ?? (
+                      <span className="italic text-muted-light">Unassigned</span>
+                    )
                   }
                 />
                 {shipment.weight_kg != null && (
@@ -433,13 +495,27 @@ export default function ShipperLoadDetailPage({
           </div>
         </div>
 
+        {/* Tracking Timeline */}
+        <TrackingTimeline
+          loadId={id}
+          events={trackingEvents}
+          canCreate={true}
+          canEdit={(event) =>
+            isCompanyAdmin || event.created_by === user?.id
+          }
+          canDelete={(event) =>
+            isCompanyAdmin || event.created_by === user?.id
+          }
+          onRefresh={() => refetchTracking()}
+        />
+
         {/* Financial Documents */}
         <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-          <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-border px-6 py-4">
             <h2 className="text-sm font-semibold text-foreground">
               Financial Documents
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/shipper/quotations/create?loadId=${id}`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-card-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-primary/5 hover:text-primary"
@@ -573,6 +649,17 @@ export default function ShipperLoadDetailPage({
           onClose={() => setStatusOpen(false)}
           onConfirm={handleStatusChange}
           loading={statusMut.isPending}
+        />
+      )}
+
+      {assignEmpOpen && isCompanyAdmin && (
+        <AssignEmployeeDialog
+          shipment={shipment}
+          employees={employees}
+          open={assignEmpOpen}
+          onClose={() => setAssignEmpOpen(false)}
+          onConfirm={handleAssignEmployee}
+          loading={assignEmpMut.isPending}
         />
       )}
     </div>

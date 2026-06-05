@@ -31,13 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Plus, Trash2, GripVertical, Copy, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Form,
   FormControl,
@@ -216,7 +210,7 @@ function SortableRow({
         </div>
 
         {/* ── Row 2: category · qty · unit · unit price · amount ── */}
-        <div className={cn(readOnly ? "" : "flex gap-2 mt-2 ml-6 min-w-0", "col-span-2 sm:col-span-1")}>
+        <div className={cn(readOnly ? "" : "mt-2 ml-6 grid grid-cols-2 gap-2 min-w-0 sm:flex sm:flex-wrap", "col-span-2 sm:col-span-1")}>
 
           {/* Category */}
           {readOnly ? (
@@ -229,24 +223,16 @@ function SortableRow({
               control={control}
               name={`items.${index}.category`}
               render={({ field, fieldState }) => (
-                <FormItem className="col-span-2 sm:col-span-1 space-y-0.5">
+                <FormItem className="col-span-2 space-y-0.5 sm:col-span-1">
                   <span className={labelCls}>Category</span>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger
-                        className={cn("h-9 bg-background text-xs transition-colors",
-                          fieldState.error && "border-destructive")}
-                        onBlur={field.onBlur}
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CATEGORIES.map(([val, label]) => (
-                        <SelectItem key={val} value={val} className="text-xs">{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    options={CATEGORIES.map(([val, label]) => ({ value: val, label }))}
+                    searchPlaceholder="Search category…"
+                    className={cn("h-9 text-xs", fieldState.error && "border-destructive")}
+                  />
                   <FormMessage className="text-[11px]" />
                 </FormItem>
               )}
@@ -351,7 +337,7 @@ function SortableRow({
           )}
 
           {/* Amount — always read-only */}
-          <div className={cn(readOnly ? "" : "flex flex-col gap-0.5", "col-span-2 sm:col-span-1")}>
+          <div className={cn(readOnly ? "" : "col-span-2 flex flex-col gap-0.5 sm:col-span-1")}>
             {!readOnly && <span className={labelCls}>Amount</span>}
             <div className={cn("flex items-center rounded-xl px-3", readOnly ? "mt-0.5" : "h-9 bg-primary/5")}>
               {readOnly ? (

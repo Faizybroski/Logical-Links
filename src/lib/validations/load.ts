@@ -5,7 +5,7 @@ export const SHIPMENT_TYPES = ["freight", "last_mile"] as const;
 export const loadSchema = z.object({
   shipmentType: z.enum(SHIPMENT_TYPES),
 
-  shipperId: z.string().uuid("Please select a shipper").optional(),
+  accountId: z.string().uuid("Please select a company").optional(),
 
   originCity:     z.string().min(1, "Origin city required"),
   originState:    z.string().min(1, "Origin state required"),

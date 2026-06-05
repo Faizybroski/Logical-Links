@@ -18,8 +18,12 @@ import {
   Phone,
   MapPin,
   DollarSign,
+  Truck,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { QuotationStatusBadge } from "@/components/documents/document-status-badge";
 import { LineItemsTable } from "@/components/documents/line-items-table";
 import { PricingSummary } from "@/components/documents/pricing-summary";
@@ -409,12 +413,26 @@ export default function AdminQuotationDetailPage({
                     Load Reference
                   </h3>
                 </div>
-                <div className="p-4 sm:p-5">
+                <div className="space-y-3 p-4 sm:p-5">
                   <InfoTile
                     icon={<DollarSign className="h-4 w-4" />}
                     label={quotation.shipments.load_number}
                     value={`${quotation.shipments.origin_city} → ${quotation.shipments.destination_city}`}
                   />
+                  {quotation.shipments.accounts && (
+                    <InfoTile
+                      icon={<CompanyLogo name={quotation.shipments.accounts.account_name} logoUrl={quotation.shipments.accounts.logo_url} size="sm" rounded="lg" />}
+                      label="Assigned Company"
+                      value={quotation.shipments.accounts.account_name}
+                    />
+                  )}
+                  {quotation.shipments.profiles && (
+                    <InfoTile
+                      icon={<UserAvatar name={quotation.shipments.profiles.full_name} avatarUrl={quotation.shipments.profiles.avatar_url} size="sm" rounded="lg" />}
+                      label="Assigned Employee"
+                      value={quotation.shipments.profiles.full_name ?? "—"}
+                    />
+                  )}
                 </div>
               </div>
             )}
@@ -428,7 +446,7 @@ export default function AdminQuotationDetailPage({
                 </div>
                 <div className="p-4 sm:p-5">
                   <InfoTile
-                    icon={<User className="h-4 w-4" />}
+                    icon={<UserAvatar name={quotation.profiles.full_name} avatarUrl={quotation.profiles.avatar_url} size="sm" rounded="lg" />}
                     label="Shipper"
                     value={quotation.profiles.full_name ?? "—"}
                   />

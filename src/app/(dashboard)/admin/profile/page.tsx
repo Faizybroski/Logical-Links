@@ -3,16 +3,21 @@
 import { useState, useEffect } from 'react'
 import { User, Mail, Phone, Shield, Save } from 'lucide-react'
 import { useMe, useUpdateMe } from '@/hooks/use-users'
+import { useAuthStore } from '@/store/auth.store'
+import { AvatarUpload } from '@/components/ui/avatar-upload'
+import { uploadUserAvatar, removeUserAvatar } from '@/lib/upload-images'
 import { toast } from 'sonner'
 
 export default function AdminProfilePage() {
   const { data: res, isLoading } = useMe()
   const updateMe = useUpdateMe()
+  const patchUser = useAuthStore((s) => s.patchUser)
 
   const profile = res?.data
 
   const [fullName, setFullName] = useState('')
   const [phone, setPhone]       = useState('')
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -26,13 +31,44 @@ export default function AdminProfilePage() {
     updateMe.mutate(
       { fullName: fullName || undefined, phone: phone || undefined },
       {
-        onSuccess: () => toast.success('Profile updated'),
-        onError:   () => toast.error('Failed to update profile'),
+        onSuccess: (res) => {
+          toast.success('Profile updated')
+          if (res?.data?.fullName) patchUser({ fullName: res.data.fullName })
+        },
+        onError: () => toast.error('Failed to update profile'),
       },
     )
   }
 
-  const initials = (profile?.fullName ?? 'AD').slice(0, 2).toUpperCase()
+  async function handleAvatarUpload(blob: Blob) {
+    if (!profile) return
+    setUploading(true)
+    try {
+      const url = await uploadUserAvatar(profile.id, blob)
+      await updateMe.mutateAsync({ avatarUrl: url })
+      patchUser({ avatarUrl: url })
+      toast.success('Profile picture updated')
+    } catch {
+      toast.error('Failed to upload profile picture')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleAvatarRemove() {
+    if (!profile) return
+    setUploading(true)
+    try {
+      await removeUserAvatar(profile.id)
+      await updateMe.mutateAsync({ avatarUrl: null })
+      patchUser({ avatarUrl: null })
+      toast.success('Profile picture removed')
+    } catch {
+      toast.error('Failed to remove profile picture')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-5">
@@ -49,17 +85,26 @@ export default function AdminProfilePage() {
       ) : (
         <>
           {/* Avatar + Identity */}
-          <div className="flex items-center gap-5 rounded-3xl border border-card-border bg-card p-6 shadow-sm">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-sidebar">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <p className="text-lg font-semibold text-foreground">{profile?.fullName ?? '—'}</p>
-              <p className="text-sm text-muted">{profile?.email}</p>
-              <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                <Shield className="h-3 w-3" />
-                Admin
-              </span>
+          <div className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-5">
+            <AvatarUpload
+              name={profile?.fullName}
+              avatarUrl={profile?.avatarUrl}
+              onUpload={handleAvatarUpload}
+              onRemove={profile?.avatarUrl ? handleAvatarRemove : undefined}
+              uploading={uploading}
+              size="xl"
+              label="Profile Picture"
+            />
+
+            <div className="flex items-center gap-3 border-t border-card-border pt-4">
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-foreground">{profile?.fullName ?? '—'}</p>
+                <p className="text-sm text-muted">{profile?.email}</p>
+                <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                  <Shield className="h-3 w-3" />
+                  Admin
+                </span>
+              </div>
             </div>
           </div>
 

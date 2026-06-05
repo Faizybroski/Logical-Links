@@ -13,17 +13,21 @@ import {
   User,
   LogOut,
   X,
+  MapPin,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/store/auth.store";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { api } from "@/lib/api";
 
 const navigation = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Loads", href: "/admin/loads", icon: Truck },
-  { label: "Shippers", href: "/admin/shippers", icon: Users },
+  { label: "Companies", href: "/admin/shippers", icon: Users },
   { label: "Invoices", href: "/admin/invoices", icon: FileText },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion },
+  { label: "Filters", href: "/admin/filters", icon: Shield },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
   { label: "Profile", href: "/admin/profile", icon: User },
 ];
@@ -52,8 +56,6 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
     router.push("/login");
     router.refresh();
   }
-
-  const initials = (user?.fullName ?? "AD").slice(0, 2).toUpperCase();
 
   return (
     <aside
@@ -121,16 +123,23 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3 space-y-2">
         <div className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-sidebar-secondary p-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-sidebar">
-            {initials}
-          </div>
-          <div className="min-w-0">
+          <UserAvatar
+            name={user?.fullName}
+            avatarUrl={user?.avatarUrl}
+            size="md"
+            rounded="xl"
+          />
+          <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-white">
               {user?.fullName ?? "Admin"}
             </p>
             <p className="truncate text-[11px] text-zinc-400">
               {user?.email ?? ""}
             </p>
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-primary">
+              <Shield className="h-2.5 w-2.5" />
+              System Admin
+            </span>
           </div>
         </div>
         <button

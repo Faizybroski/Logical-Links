@@ -9,9 +9,8 @@ import {
   Menu,
   User,
   LogOut,
+  Shield,
 } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
 
 import {
   DropdownMenu,
@@ -20,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { UserAvatar } from '@/components/ui/user-avatar'
 
 import { useAuthStore } from '@/store/auth.store'
 import { api } from '@/lib/api'
@@ -170,48 +170,24 @@ export default function AdminHeader({
                 hover:bg-primary/5
               "
             >
-              {/* Avatar */}
-              <div
-                className="
-                  flex h-10 w-10
-                  items-center justify-center
-                  rounded-2xl
-
-                  bg-primary
-
-                  text-sm font-bold
-                  text-sidebar
-                "
-              >
-                {(user?.fullName ?? 'AD').slice(0, 2).toUpperCase()}
-              </div>
+              <UserAvatar
+                name={user?.fullName}
+                avatarUrl={user?.avatarUrl}
+                size="lg"
+                rounded="2xl"
+              />
 
               {/* User */}
               <div className="hidden text-left sm:block">
-                <p
-                  className="
-                    text-sm font-semibold
-                    text-foreground
-                  "
-                >
+                <p className="text-sm font-semibold text-foreground">
                   {user?.fullName ?? 'Admin'}
                 </p>
-
-                <p
-                  className="
-                    text-xs text-muted
-                  "
-                >
+                <p className="text-xs text-muted">
                   {user?.email ?? 'admin'}
                 </p>
               </div>
 
-              <ChevronDown
-                className="
-                  hidden h-4 w-4
-                  text-muted sm:block
-                "
-              />
+              <ChevronDown className="hidden h-4 w-4 text-muted sm:block" />
             </button>
           </DropdownMenuTrigger>
 
@@ -231,39 +207,24 @@ export default function AdminHeader({
                 bg-background p-3
               "
             >
-              <div
-                className="
-                  flex h-11 w-11
-                  items-center justify-center
-                  rounded-2xl
-
-                  bg-primary
-
-                  text-sm font-bold
-                  text-sidebar
-                "
-              >
-                {(user?.fullName ?? 'AD').slice(0, 2).toUpperCase()}
-              </div>
+              <UserAvatar
+                name={user?.fullName}
+                avatarUrl={user?.avatarUrl}
+                size="lg"
+                rounded="2xl"
+              />
 
               <div className="min-w-0">
-                <p
-                  className="
-                    truncate text-sm
-                    font-semibold text-foreground
-                  "
-                >
+                <p className="truncate text-sm font-semibold text-foreground">
                   {user?.fullName ?? 'Admin'}
                 </p>
-
-                <p
-                  className="
-                    truncate text-xs
-                    text-muted
-                  "
-                >
+                <p className="truncate text-xs text-muted">
                   {user?.email ?? ''}
                 </p>
+                <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                  <Shield className="h-2.5 w-2.5" />
+                  System Admin
+                </span>
               </div>
             </div>
 

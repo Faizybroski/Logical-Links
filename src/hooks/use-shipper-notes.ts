@@ -17,7 +17,7 @@ export function useShipperNotes(shipperId: string, page = 1) {
     queryKey: KEYS.list(shipperId, page),
     queryFn: () =>
       api.get<PaginatedResponse<ShipperNote>>(
-        `/api/v1/notes?entityType=shipper&entityId=${shipperId}&page=${page}&limit=50`,
+        `/api/v1/notes?entityType=account&entityId=${shipperId}&page=${page}&limit=50`,
       ),
     enabled: !!shipperId,
     staleTime: 30_000,
@@ -29,7 +29,7 @@ export function useCreateShipperNote(shipperId: string) {
   return useMutation({
     mutationFn: (dto: CreateShipperNoteDto) =>
       api.post<ApiResponse<ShipperNote>>("/api/v1/notes", {
-        entityType: "shipper",
+        entityType: "account",
         entityId: shipperId,
         content: dto.content,
       }),

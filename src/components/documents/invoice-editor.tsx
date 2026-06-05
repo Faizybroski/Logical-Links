@@ -11,13 +11,7 @@ import { Save, FileDown, Copy, Loader2, X, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Form,
   FormControl,
@@ -412,18 +406,13 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel className={fieldLabelCls}>Status</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger className="h-10" onBlur={field.onBlur}>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {INVOICE_STATUSES.map((s) => (
-                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        onBlur={field.onBlur}
+                        options={INVOICE_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+                        searchPlaceholder="Search status…"
+                      />
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}

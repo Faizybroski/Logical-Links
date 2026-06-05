@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { FilterChip } from "@/hooks/use-table-filters";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,14 @@ export interface DataTableProps<TData> {
   isLoading?: boolean;
   className?: string;
   tableOptions?: Partial<TableOptions<TData>>;
+
+  // Server-side pagination (opt-in: provide totalCount + page + onPageChange)
+  totalCount?: number;
+  page?: number;           // 1-based
+  onPageChange?: (page: number) => void;
+
+  // Filter chips shown below the header bar
+  filterChips?: FilterChip[];
 }
 
 // ─── Skeleton rows ────────────────────────────────────────────────────────────
@@ -81,21 +90,68 @@ export function DataTable<TData>({
   isLoading = false,
   className,
   tableOptions,
+  totalCount,
+  page: externalPage,
+  onPageChange,
+  filterChips,
 }: DataTableProps<TData>) {
+  const isServerPaginated = totalCount !== undefined && onPageChange !== undefined;
+  const currentPage = isServerPaginated ? (externalPage ?? 1) - 1 : undefined;
+
   const table = useReactTable<TData>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: { pagination: { pageSize } },
+    ...(isServerPaginated
+      ? {
+          manualPagination: true,
+          pageCount: Math.max(1, Math.ceil(totalCount / pageSize)),
+          state: { pagination: { pageIndex: currentPage!, pageSize } },
+          onPaginationChange: () => {},
+        }
+      : {}),
     ...tableOptions,
   });
 
-  const pageIndex  = table.getState().pagination.pageIndex;
-  const pageCount  = Math.max(1, table.getPageCount());
-  const totalRows  = table.getCoreRowModel().rows.length;
+  // Pagination values
+  const pageIndex = isServerPaginated
+    ? currentPage!
+    : table.getState().pagination.pageIndex;
+  const pageCount = isServerPaginated
+    ? Math.max(1, Math.ceil(totalCount! / pageSize))
+    : Math.max(1, table.getPageCount());
+  const totalRows = isServerPaginated ? totalCount! : table.getCoreRowModel().rows.length;
   const rangeStart = isLoading ? 0 : pageIndex * pageSize + 1;
   const rangeEnd   = isLoading ? 0 : Math.min((pageIndex + 1) * pageSize, totalRows);
+
+  function goToPage(pg: number) {
+    if (isServerPaginated) {
+      onPageChange!(pg + 1);
+    } else {
+      table.setPageIndex(pg);
+    }
+  }
+
+  function prevPage() {
+    if (isServerPaginated) {
+      onPageChange!(Math.max(1, (externalPage ?? 1) - 1));
+    } else {
+      table.previousPage();
+    }
+  }
+
+  function nextPage() {
+    if (isServerPaginated) {
+      onPageChange!(Math.min(pageCount, (externalPage ?? 1) + 1));
+    } else {
+      table.nextPage();
+    }
+  }
+
+  const canPrev = isServerPaginated ? (externalPage ?? 1) > 1 : table.getCanPreviousPage();
+  const canNext = isServerPaginated ? (externalPage ?? 1) < pageCount : table.getCanNextPage();
 
   return (
     <div
@@ -106,26 +162,49 @@ export function DataTable<TData>({
     >
       {/* ── Card header ── */}
       <div className="flex flex-col gap-3 border-b border-card-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        <h3 className="min-w-0 shrink-0 text-base font-semibold text-foreground">{title}</h3>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {onSearchChange && (
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-light" />
               <Input
                 value={searchValue ?? ""}
                 onChange={(e) => {
                   onSearchChange(e.target.value);
-                  table.setPageIndex(0);
+                  if (!isServerPaginated) table.setPageIndex(0);
                 }}
                 placeholder={searchPlaceholder}
-                className="h-9 w-full min-w-[180px] rounded-xl border-card-border bg-background pl-9 text-sm sm:w-56 focus-visible:ring-primary/30"
+                className="h-9 w-full rounded-xl border-card-border bg-background pl-9 text-sm sm:w-56 focus-visible:ring-primary/30"
               />
             </div>
           )}
           {headerActions}
         </div>
       </div>
+
+      {/* ── Active filter chips ── */}
+      {filterChips && filterChips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-card-border px-5 py-2.5">
+          {filterChips.map((chip) => (
+            <span
+              key={chip.key}
+              className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-0.5 text-xs font-medium text-primary"
+            >
+              <span className="font-normal text-muted-light">{chip.label}:</span>
+              {chip.value}
+              <button
+                type="button"
+                onClick={chip.onRemove}
+                className="ml-0.5 rounded-full p-px hover:bg-primary/20"
+                aria-label={`Remove ${chip.label} filter`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* ── Table ── */}
       <div className="overflow-x-auto">
@@ -202,8 +281,8 @@ export function DataTable<TData>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage() || isLoading}
+            onClick={prevPage}
+            disabled={!canPrev || isLoading}
             className="h-8 gap-1 rounded-xl border-card-border px-3 text-xs text-foreground hover:bg-primary/5 disabled:opacity-40"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
@@ -212,25 +291,25 @@ export function DataTable<TData>({
 
           <div className="flex items-center gap-1 px-1">
             {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
-              let page = i;
+              let pg = i;
               if (pageCount > 5) {
                 const mid = Math.min(Math.max(pageIndex, 2), pageCount - 3);
-                page = mid - 2 + i;
+                pg = mid - 2 + i;
               }
               return (
                 <button
-                  key={page}
+                  key={pg}
                   type="button"
-                  onClick={() => table.setPageIndex(page)}
+                  onClick={() => goToPage(pg)}
                   disabled={isLoading}
                   className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors",
-                    page === pageIndex
+                    pg === pageIndex
                       ? "bg-primary text-sidebar"
                       : "text-muted hover:bg-card-border",
                   )}
                 >
-                  {page + 1}
+                  {pg + 1}
                 </button>
               );
             })}
@@ -238,8 +317,8 @@ export function DataTable<TData>({
 
           <Button
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage() || isLoading}
+            onClick={nextPage}
+            disabled={!canNext || isLoading}
             className="h-8 gap-1 rounded-xl bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 disabled:opacity-40"
           >
             Next

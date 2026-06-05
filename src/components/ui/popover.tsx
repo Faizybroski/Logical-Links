@@ -16,6 +16,8 @@ function PopoverContent({
   className,
   align = "center",
   sideOffset = 4,
+  collisionPadding = 12,
+  avoidCollisions = true,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
@@ -24,8 +26,10 @@ function PopoverContent({
         data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
+        avoidCollisions={avoidCollisions}
+        collisionPadding={collisionPadding}
         className={cn(
-          "z-50 w-auto rounded-2xl border border-card-border bg-card p-0 shadow-xl outline-none",
+          "z-150 w-auto rounded-2xl border border-card-border bg-card p-0 shadow-xl outline-none",
           "data-[state=open]:bg-card data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",

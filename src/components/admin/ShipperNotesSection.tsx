@@ -14,6 +14,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   Dialog,
   DialogContent,
@@ -70,9 +71,12 @@ function NoteCard({
       {/* Author + actions row */}
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-            {(note.profiles?.full_name ?? "A").charAt(0).toUpperCase()}
-          </div>
+          <UserAvatar
+            name={note.profiles?.full_name ?? null}
+            avatarUrl={note.profiles?.avatar_url ?? null}
+            size="xs"
+            rounded="full"
+          />
           <div>
             <span className="text-sm font-semibold text-foreground">
               {note.profiles?.full_name ?? "Administrator"}
@@ -222,7 +226,7 @@ function AddNoteForm({
       <Textarea
         value={content}
         onChange={(e) => { setContent(e.target.value); setError(""); }}
-        placeholder="Add an internal note about this shipper…"
+        placeholder="Add an internal note about this company…"
         rows={4}
         className="resize-none rounded-lg border-card-border bg-card text-sm focus-visible:ring-primary/30"
         autoFocus
@@ -449,7 +453,7 @@ export function ShipperNotesSection({ shipperId }: { shipperId: string }) {
             </div>
             <p className="text-sm font-medium text-foreground">No notes yet</p>
             <p className="mt-1 text-xs text-muted">
-              No notes have been added for this shipper.
+              No notes have been added for this company.
             </p>
             <Button
               type="button"

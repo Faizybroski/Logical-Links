@@ -4,11 +4,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type AuthUser = {
-  id: string;
-  email: string;
-  role: "admin" | "shipper";
-  fullName: string | null;
-  accountId: string | null;
+  id:          string;
+  email:       string;
+  role:        "admin" | "shipper";
+  companyRole: "company_admin" | "employee" | null;
+  fullName:    string | null;
+  accountId:   string | null;
+  avatarUrl:   string | null;
 };
 
 type AuthState = {
@@ -29,6 +31,10 @@ type AuthState = {
     expiresIn: number;
     user: AuthUser;
   }) => void;
+
+  // Patch individual fields of the stored user without a full re-login.
+  // Used after profile updates (avatar, name) to keep the sidebar/header in sync.
+  patchUser: (patch: Partial<AuthUser>) => void;
 
   setAccessToken: (accessToken: string, expiresIn: number) => void;
 
@@ -74,6 +80,11 @@ export const useAuthStore = create<AuthState>()(
         setSessionCookie(user.role);
         set({ accessToken, refreshToken, expiresIn, user, isAuthenticated: true });
       },
+
+      patchUser: (patch) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...patch } : state.user,
+        })),
 
       setAccessToken: (accessToken, expiresIn) =>
         set({ accessToken, expiresIn }),

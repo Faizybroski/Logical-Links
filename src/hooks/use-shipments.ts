@@ -6,6 +6,7 @@ import type {
   UpdateShipmentDto,
   UpdateShipmentStatusDto,
   AssignShipmentDto,
+  AssignEmployeeDto,
   ListShipmentsQuery,
 } from "@/types/api.types";
 
@@ -17,12 +18,19 @@ const KEYS = {
 
 function buildQuery(params: ListShipmentsQuery): string {
   const q = new URLSearchParams();
-  if (params.page)         q.set("page",         String(params.page));
-  if (params.limit)        q.set("limit",        String(params.limit));
-  if (params.status)       q.set("status",       params.status);
-  if (params.shipmentType) q.set("shipmentType", params.shipmentType);
-  if (params.accountId)    q.set("accountId",    params.accountId);
-  if (params.search)       q.set("search",       params.search);
+  if (params.page)          q.set("page",          String(params.page));
+  if (params.limit)         q.set("limit",         String(params.limit));
+  if (params.status)        q.set("status",        params.status);
+  if (params.shipmentType)  q.set("shipmentType",  params.shipmentType);
+  if (params.accountId)     q.set("accountId",     params.accountId);
+  if (params.search)        q.set("search",        params.search);
+  if (params.createdByRole) q.set("createdByRole", params.createdByRole);
+  if (params.dateFrom)      q.set("dateFrom",      params.dateFrom);
+  if (params.dateTo)        q.set("dateTo",        params.dateTo);
+  if (params.updatedFrom)   q.set("updatedFrom",   params.updatedFrom);
+  if (params.updatedTo)     q.set("updatedTo",     params.updatedTo);
+  if (params.sortBy)        q.set("sortBy",        params.sortBy);
+  if (params.sortDir)       q.set("sortDir",       params.sortDir);
   const s = q.toString();
   return s ? `?${s}` : "";
 }
@@ -92,6 +100,18 @@ export function useAssignShipment(id: string) {
   return useMutation({
     mutationFn: (dto: AssignShipmentDto) =>
       api.post<ApiResponse<Shipment>>(`/api/v1/shipments/${id}/assign`, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+    },
+  });
+}
+
+export function useAssignEmployee(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: AssignEmployeeDto) =>
+      api.post<ApiResponse<Shipment>>(`/api/v1/shipments/${id}/assign-employee`, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all });
       qc.invalidateQueries({ queryKey: KEYS.detail(id) });

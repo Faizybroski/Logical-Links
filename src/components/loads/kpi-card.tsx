@@ -78,7 +78,7 @@ export function KpiCard({
       <div
         className={cn(
           "group relative overflow-hidden rounded-[22px] border border-[#EAE7E1] bg-white",
-          "px-6 pt-6 pb-5",
+          "px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-5",
           "shadow-[0_2px_8px_rgba(0,0,0,0.05)]",
           className,
         )}
@@ -98,8 +98,8 @@ export function KpiCard({
       className={cn(
         // Base
         "group relative overflow-hidden rounded-[22px] border border-[#EAE7E1] bg-white",
-        // Spacing
-        "px-6 pt-6 pb-5",
+        // Spacing — compact on xs, full on sm+
+        "px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-5",
         // Shadow + lift transition
         "shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-300",
         "hover:-translate-y-0.75 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]",
@@ -113,16 +113,16 @@ export function KpiCard({
       />
 
       {/* ── Header row ── */}
-      <div className="relative flex items-start justify-between">
+      <div className="relative flex items-start justify-between gap-2">
         {/* Left: label + value + trend */}
-        <div className="flex flex-col">
-          <p className="text-[13px] font-medium tracking-wide text-neutral-400">
+        <div className="flex min-w-0 flex-col">
+          <p className="truncate text-[12px] font-medium tracking-wide text-neutral-400 sm:text-[13px]">
             {title}
           </p>
 
-          <div className="mt-3 flex items-end gap-2.5">
+          <div className="mt-2 flex flex-wrap items-end gap-1.5 sm:mt-3 sm:gap-2.5">
             <span
-              className="text-[2.25rem] font-semibold leading-none tracking-tight text-neutral-900"
+              className="text-3xl font-semibold leading-none tracking-tight text-neutral-900 sm:text-[2.25rem]"
               style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
             >
               {typeof value === "number" ? value.toLocaleString() : value}
@@ -140,12 +140,12 @@ export function KpiCard({
             )}
           </div>
 
-          <p className="mt-1.5 text-[11px] text-neutral-400">{subtitle}</p>
+          <p className="mt-1 text-[11px] text-neutral-400 sm:mt-1.5">{subtitle}</p>
         </div>
 
-        {/* Right: icon badge */}
+        {/* Right: icon badge — smaller on xs */}
         <div
-          className="flex size-13 shrink-0 items-center justify-center rounded-2xl"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-13 sm:rounded-2xl"
           style={{
             background: `${chartColor}0d`,
             border: `1px solid ${chartColor}22`,
@@ -153,7 +153,7 @@ export function KpiCard({
             boxShadow: `0 2px 8px ${chartColor}18`,
           }}
         >
-          <Icon className="h-6 w-6" size={22} />
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" size={20} />
         </div>
       </div>
 

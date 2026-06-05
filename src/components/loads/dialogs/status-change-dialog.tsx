@@ -9,48 +9,27 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Shipment,
-  ShipmentStatus,
-  SHIPMENT_STATUS_LABELS,
-} from "@/types/api.types";
+import { StatusCombobox } from "@/components/loads/status-combobox";
+import { Shipment, SHIPMENT_STATUS_LABELS } from "@/types/api.types";
+import type { Status } from "@/types/api.types";
 
-const STATUS_TRANSITIONS_MAP: Record<ShipmentStatus, ShipmentStatus[]> = {
-  pending:          ["confirmed",        "cancelled"],
-  confirmed:        ["assigned",         "cancelled"],
-  assigned:         ["picked_up",        "cancelled"],
-  picked_up:        ["in_transit",       "cancelled"],
-  in_transit:       ["out_for_delivery", "cancelled"],
-  out_for_delivery: ["delivered",        "cancelled"],
-  delivered:        [],
-  cancelled:        [],
-};
+// Terminal states from which no transition is allowed
+const TERMINAL_STATUSES = new Set(["delivered", "cancelled"]);
 
 interface Props {
   shipment: Shipment;
-  open: boolean;
-  onClose: () => void;
-  onConfirm: (status: ShipmentStatus, reason?: string) => void;
+  open:     boolean;
+  onClose:  () => void;
+  onConfirm: (status: string, reason?: string) => void;
   loading?: boolean;
 }
 
 export function StatusChangeDialog({ shipment, open, onClose, onConfirm, loading }: Props) {
-  const allowed = STATUS_TRANSITIONS_MAP[shipment.status] ?? [];
+  const isTerminal = TERMINAL_STATUSES.has(shipment.status);
 
-  // All valid transitions are available to any authorised user.
-  // Access is enforced at the API layer (account_id / created_by ownership check).
-  const options = allowed;
-
-  const [selected, setSelected] = useState<ShipmentStatus | "">("");
-  const [reason, setReason] = useState("");
+  const [selected, setSelected] = useState<string>("");
+  const [reason, setReason]     = useState("");
 
   function handleConfirm() {
     if (!selected) return;
@@ -63,6 +42,10 @@ export function StatusChangeDialog({ shipment, open, onClose, onConfirm, loading
     onClose();
   }
 
+  const currentLabel =
+    SHIPMENT_STATUS_LABELS[shipment.status as keyof typeof SHIPMENT_STATUS_LABELS] ??
+    shipment.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
@@ -73,14 +56,12 @@ export function StatusChangeDialog({ shipment, open, onClose, onConfirm, loading
           <DialogTitle className="text-lg font-semibold text-foreground">Change Status</DialogTitle>
           <DialogDescription className="mt-1 text-sm text-muted">
             Load {shipment.load_number} — current status:{" "}
-            <span className="font-medium text-foreground">
-              {SHIPMENT_STATUS_LABELS[shipment.status]}
-            </span>
+            <span className="font-medium text-foreground">{currentLabel}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 px-7 py-6">
-          {options.length === 0 ? (
+          {isTerminal ? (
             <p className="text-sm text-muted">
               This shipment is in a terminal state and cannot be updated further.
             </p>
@@ -90,18 +71,10 @@ export function StatusChangeDialog({ shipment, open, onClose, onConfirm, loading
                 <label className="mb-2 block text-sm font-medium text-foreground">
                   New Status
                 </label>
-                <Select value={selected} onValueChange={(v) => setSelected(v as ShipmentStatus)}>
-                  <SelectTrigger className="h-11 w-full rounded-[10px] border-card-border bg-background text-sm focus:ring-primary/40">
-                    <SelectValue placeholder="Select new status" />
-                  </SelectTrigger>
-                  <SelectContent className="border-card-border bg-card">
-                    {options.map((s) => (
-                      <SelectItem key={s} value={s} className="text-sm">
-                        {SHIPMENT_STATUS_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <StatusCombobox
+                  value={selected || null}
+                  onChange={(slug: string, _status: Status) => setSelected(slug)}
+                />
               </div>
 
               {selected === "cancelled" && (
@@ -131,7 +104,7 @@ export function StatusChangeDialog({ shipment, open, onClose, onConfirm, loading
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={!selected || loading || options.length === 0}
+              disabled={!selected || loading || isTerminal}
               className="rounded-[10px] bg-primary px-6 text-sidebar hover:bg-primary/85"
             >
               {loading ? "Saving..." : "Update Status"}

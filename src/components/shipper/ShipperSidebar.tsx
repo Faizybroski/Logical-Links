@@ -10,20 +10,25 @@ import {
   FileQuestion,
   Bell,
   User,
+  Users,
+  Building2,
   LogOut,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/store/auth.store";
+import { useMyProfile } from "@/hooks/use-accounts";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { api } from "@/lib/api";
 
-const navigation = [
-  { label: "Dashboard", href: "/shipper/dashboard", icon: LayoutDashboard },
-  { label: "My Loads", href: "/shipper/loads", icon: Truck },
-  { label: "Invoices", href: "/shipper/invoices", icon: FileText },
-  { label: "Quotations", href: "/shipper/quotations", icon: FileQuestion },
-  { label: "Notifications", href: "/shipper/notifications", icon: Bell },
-  { label: "My Profile", href: "/shipper/profile", icon: User },
+const BASE_NAVIGATION = [
+  { label: "Dashboard",    href: "/shipper/dashboard",    icon: LayoutDashboard },
+  { label: "My Loads",     href: "/shipper/loads",        icon: Truck },
+  { label: "Invoices",     href: "/shipper/invoices",     icon: FileText },
+  { label: "Quotations",   href: "/shipper/quotations",   icon: FileQuestion },
+  { label: "Notifications",href: "/shipper/notifications",icon: Bell },
+  { label: "My Profile",   href: "/shipper/profile",      icon: User },
 ];
 
 interface Props {
@@ -35,6 +40,18 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, refreshToken, clearAuth } = useAuthStore();
+  const { data: accountRes } = useMyProfile();
+  const account = accountRes?.data;
+
+  const navigation = [
+    ...BASE_NAVIGATION,
+    ...(user?.companyRole === "company_admin"
+      ? [
+          { label: "Employees", href: "/shipper/employees", icon: Users },
+          { label: "Company",   href: "/shipper/company",   icon: Building2 },
+        ]
+      : []),
+  ];
 
   async function signOut() {
     console.info("[Auth][ShipperSidebar] User initiated logout — user=" + (user?.email ?? "unknown"));
@@ -51,7 +68,7 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
     router.refresh();
   }
 
-  const initials = (user?.fullName ?? "SH").slice(0, 2).toUpperCase();
+  const roleLabel = user?.companyRole === "company_admin" ? "Company Admin" : "Employee";
 
   return (
     <aside
@@ -118,19 +135,43 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3 space-y-2">
-        <div className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-sidebar-secondary p-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-sidebar">
-            {initials}
+        {/* Company card */}
+        {account && (
+          <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-sidebar-secondary px-2.5 py-2 mb-1">
+            <CompanyLogo
+              name={account.account_name}
+              logoUrl={account.logo_url}
+              size="sm"
+              rounded="xl"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-[12px] font-semibold text-white">
+                {account.account_name}
+              </p>
+              <p className="text-[10px] text-zinc-500">Shipping Company</p>
+            </div>
           </div>
-          <div className="min-w-0">
+        )}
+
+        {/* User card */}
+        <div className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-sidebar-secondary p-2.5">
+          <UserAvatar
+            name={user?.fullName}
+            avatarUrl={user?.avatarUrl}
+            size="md"
+            rounded="xl"
+          />
+          <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-white">
-              {user?.fullName ?? "Shipper"}
+              {user?.fullName ?? (user?.companyRole === "employee" ? "Employee" : "Company Admin")}
             </p>
             <p className="truncate text-[11px] text-zinc-400">
               {user?.email ?? ""}
             </p>
+            <span className="text-[10px] text-primary">{roleLabel}</span>
           </div>
         </div>
+
         <button
           type="button"
           onClick={signOut}

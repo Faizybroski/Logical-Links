@@ -1,6 +1,7 @@
 // ── Shared ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "admin" | "shipper";
+export type UserRole    = "admin" | "shipper";
+export type CompanyRole = "company_admin" | "employee" | null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -9,20 +10,35 @@ export type AuthTokens = {
   refreshToken: string;
   expiresIn: number;
   user: {
-    id: string;
-    email: string;
-    role: UserRole;
-    fullName: string | null;
-    accountId: string | null;
+    id:          string;
+    email:       string;
+    role:        UserRole;
+    companyRole: CompanyRole;
+    fullName:    string | null;
+    avatarUrl:   string | null;
+    accountId:   string | null;
   };
 };
 
 // ── Accounts (Shippers) ───────────────────────────────────────────────────────
 
+export type AccountProfile = {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  role?: "admin" | "shipper";
+  company_role: "company_admin" | "employee" | null;
+  is_active?: boolean;
+  is_approved: boolean;
+  avatar_url?: string | null;
+  created_at: string;
+};
+
 export type Account = {
   account_id: string;
   account_name: string;
   abn: string | null;
+  logo_url: string | null;
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
@@ -36,6 +52,7 @@ export type Account = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  profiles?: AccountProfile[];
 };
 
 export type CreateAccountDto = {
@@ -57,18 +74,44 @@ export type UpdateAccountDto = Partial<CreateAccountDto> & {
   isActive?: boolean;
 };
 
+export type ListAccountsQuery = {
+  page?:     number;
+  limit?:    number;
+  search?:   string;
+  isActive?: "true" | "false";
+  dateFrom?: string;
+  dateTo?:   string;
+  sortBy?:   "account_name" | "is_active" | "created_at";
+  sortDir?:  "asc" | "desc";
+};
+
 // ── User / Profile ────────────────────────────────────────────────────────────
 
 export type UserProfile = {
-  id: string;
-  email: string;
-  role: UserRole;
-  fullName: string | null;
-  phone: string | null;
-  avatarUrl: string | null;
-  accountId: string | null;
-  isApproved: boolean;
-  createdAt: string;
+  id:          string;
+  email:       string;
+  role:        UserRole;
+  companyRole: CompanyRole;
+  fullName:    string | null;
+  phone:       string | null;
+  avatarUrl:   string | null;
+  accountId:   string | null;
+  isApproved:  boolean;
+  createdAt:   string;
+};
+
+// ── Company Users (Employees) ─────────────────────────────────────────────────
+
+export type CompanyUser = {
+  id:          string;
+  email:       string;
+  full_name:   string | null;
+  phone:       string | null;
+  avatar_url:  string | null;
+  company_role: "employee";
+  is_active:   boolean;
+  account_id:  string;
+  created_at:  string;
 };
 
 // ── Shipments (Loads) ─────────────────────────────────────────────────────────
@@ -108,11 +151,12 @@ export const SHIPMENT_STATUS_COLORS: Record<ShipmentStatus, string> = {
 };
 
 export type Shipment = {
-  shipment_id: string;
-  load_number: string;
-  shipment_type: ShipmentType;
-  account_id: string | null;
-  status: ShipmentStatus;
+  shipment_id:          string;
+  load_number:          string;
+  shipment_type:        ShipmentType;
+  account_id:           string | null;
+  assigned_employee_id: string | null;
+  status:               ShipmentStatus;
 
   origin_address: string;
   origin_city: string;
@@ -152,15 +196,17 @@ export type Shipment = {
   updated_at: string;
 
   // Joined (Supabase uses the table name as the relation key)
-  accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null };
+  accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null; logo_url?: string | null };
   /** Profile of the user who created this load (joined via profiles!created_by). */
-  profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper' } | null;
+  profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper'; avatar_url?: string | null } | null;
+  /** Profile of the assigned employee (joined via profiles!assigned_employee_id). */
+  employee?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
 };
 
 export type CreateShipmentDto = {
   shipmentType?: ShipmentType;
-  /** UUID of the shipper's user profile. Backend resolves account_id internally. */
-  shipperId?: string;
+  /** UUID of the shipping company (accounts.account_id) to pre-assign. */
+  accountId?: string;
   originAddress: string;
   originCity: string;
   originState: string;
@@ -192,26 +238,37 @@ export type UpdateShipmentStatusDto = {
   reason?: string;
 };
 
-// Admin assigns a load to a specific shipper user (by their user ID).
-// The backend resolves the user's account_id from their profile.
+// Admin assigns a load to a Shipping Company by accountId.
 export type AssignShipmentDto = {
-  userId: string;
+  accountId: string;
+};
+
+// Company admin assigns (or unassigns) a load to an employee.
+export type AssignEmployeeDto = {
+  employeeId: string | null;
 };
 
 export type ListShipmentsQuery = {
-  page?: number;
-  limit?: number;
-  status?: ShipmentStatus;
-  shipmentType?: ShipmentType;
-  accountId?: string;
-  search?: string;
+  page?:          number;
+  limit?:         number;
+  status?:        string;
+  shipmentType?:  ShipmentType;
+  accountId?:     string;
+  search?:        string;
+  createdByRole?: "admin" | "shipper";
+  dateFrom?:      string;
+  dateTo?:        string;
+  updatedFrom?:   string;
+  updatedTo?:     string;
+  sortBy?:        "load_number" | "status" | "shipment_type" | "created_at" | "updated_at";
+  sortDir?:       "asc" | "desc";
 };
 
 // ── Shipper Notes (internal / admin-only) ─────────────────────────────────────
 
 export type ShipperNote = {
   note_id: string;
-  entity_type: "shipper";
+  entity_type: "shipper" | "account";
   entity_id: string;
   content: string;
   is_internal: boolean;
@@ -220,7 +277,7 @@ export type ShipperNote = {
   created_at: string;
   updated_at: string;
   deleted_at: null;
-  profiles: { id: string; full_name: string | null } | null;
+  profiles: { id: string; full_name: string | null; avatar_url?: string | null } | null;
 };
 
 export type CreateShipperNoteDto = {
@@ -330,8 +387,17 @@ export type Quotation = {
   created_at:       string;
   updated_at:       string;
   deleted_at:       string | null;
-  profiles?:        { id: string; full_name: string | null; email: string } | null;
-  shipments?:       { shipment_id: string; load_number: string; origin_city: string; destination_city: string } | null;
+  profiles?:        { id: string; full_name: string | null; email: string; avatar_url?: string | null } | null;
+  shipments?: {
+    shipment_id: string;
+    load_number: string;
+    origin_city: string;
+    destination_city: string;
+    account_id: string | null;
+    assigned_employee_id: string | null;
+    accounts?: { account_id: string; account_name: string; logo_url?: string | null } | null;
+    profiles?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
+  } | null;
   quotation_items?: LineItem[];
 };
 
@@ -360,12 +426,21 @@ export type CreateQuotationDto = {
 export type UpdateQuotationDto = Partial<Omit<CreateQuotationDto, "profileId">>;
 
 export type ListQuotationsQuery = {
-  page?:      number;
-  limit?:     number;
-  profileId?: string;
-  loadId?:    string;
-  status?:    QuotationStatus;
-  search?:    string;
+  page?:           number;
+  limit?:          number;
+  profileId?:      string;
+  loadId?:         string;
+  status?:         QuotationStatus;
+  search?:         string;
+  issueDateFrom?:  string;
+  issueDateTo?:    string;
+  expiryDateFrom?: string;
+  expiryDateTo?:   string;
+  totalMin?:       number;
+  totalMax?:       number;
+  hasPdf?:         "true" | "false";
+  sortBy?:         "quotation_number" | "status" | "issue_date" | "expiry_date" | "total" | "created_at";
+  sortDir?:        "asc" | "desc";
 };
 
 // ── Invoices ──────────────────────────────────────────────────────────────────
@@ -420,8 +495,17 @@ export type Invoice = {
   created_at:            string;
   updated_at:            string;
   deleted_at:            string | null;
-  profiles?:             { id: string; full_name: string | null; email: string } | null;
-  shipments?:            { shipment_id: string; load_number: string; origin_city: string; destination_city: string } | null;
+  profiles?:             { id: string; full_name: string | null; email: string; avatar_url?: string | null } | null;
+  shipments?: {
+    shipment_id: string;
+    load_number: string;
+    origin_city: string;
+    destination_city: string;
+    account_id: string | null;
+    assigned_employee_id: string | null;
+    accounts?: { account_id: string; account_name: string; logo_url?: string | null } | null;
+    profiles?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
+  } | null;
   quotations?:           { id: string; quotation_number: string } | null;
   invoice_items?:        LineItem[];
 };
@@ -454,10 +538,190 @@ export type CreateInvoiceDto = {
 export type UpdateInvoiceDto = Partial<Omit<CreateInvoiceDto, "profileId">>;
 
 export type ListInvoicesQuery = {
-  page?:      number;
-  limit?:     number;
-  profileId?: string;
-  loadId?:    string;
-  status?:    InvoiceStatus;
-  search?:    string;
+  page?:        number;
+  limit?:       number;
+  profileId?:   string;
+  loadId?:      string;
+  status?:      InvoiceStatus;
+  search?:      string;
+  dueDateFrom?: string;
+  dueDateTo?:   string;
+  totalMin?:    number;
+  totalMax?:    number;
+  hasPdf?:      "true" | "false";
+  sortBy?:      "invoice_number" | "status" | "due_date" | "total" | "balance_due" | "created_at";
+  sortDir?:     "asc" | "desc";
+};
+
+// ── Locations ─────────────────────────────────────────────────────────────────
+
+export type Location = {
+  id:         string;
+  city:       string;
+  province:   string;
+  is_active:  boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateLocationDto = {
+  city:     string;
+  province: string;
+};
+
+export type UpdateLocationDto = Partial<CreateLocationDto>;
+
+export type ListLocationsQuery = {
+  page?:     number;
+  limit?:    number;
+  search?:   string;
+  province?: string;
+  sortBy?:   "city" | "province" | "created_at";
+  sortDir?:  "asc" | "desc";
+};
+
+export const CANADIAN_PROVINCES = [
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Nova Scotia",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+  "Northwest Territories",
+  "Nunavut",
+  "Yukon",
+] as const;
+
+export type CanadianProvince = (typeof CANADIAN_PROVINCES)[number];
+
+// ── Statuses ──────────────────────────────────────────────────────────────────
+
+export type StatusType = "system" | "custom";
+
+export type Status = {
+  id:          string;
+  name:        string;
+  slug:        string;
+  description: string | null;
+  type:        StatusType;
+  color:       string | null;
+  is_system:   boolean;
+  is_active:   boolean;
+  created_at:  string;
+  updated_at:  string;
+};
+
+export type CreateStatusDto = {
+  name:        string;
+  description?: string;
+  color?:      string;
+};
+
+export type UpdateStatusDto = {
+  name?:        string;
+  description?: string | null;
+  color?:       string | null;
+  is_active?:   boolean;
+};
+
+export type ListStatusesQuery = {
+  page?:     number;
+  limit?:    number;
+  search?:   string;
+  type?:     StatusType;
+  isActive?: "true" | "false";
+  sortBy?:   "name" | "type" | "is_active" | "created_at";
+  sortDir?:  "asc" | "desc";
+};
+
+// ── Load Tracking Events ──────────────────────────────────────────────────────
+
+export type TrackingStatus =
+  | "created"
+  | "assigned"
+  | "confirmed"
+  | "picked_up"
+  | "arrived_at_facility"
+  | "departed_facility"
+  | "in_transit"
+  | "customs_clearance"
+  | "customs_hold"
+  | "out_for_delivery"
+  | "delivered"
+  | "delivery_failed"
+  | "returned"
+  | "exception";
+
+export const TRACKING_STATUS_LABELS: Record<TrackingStatus, string> = {
+  created:             "Created",
+  assigned:            "Assigned",
+  confirmed:           "Confirmed",
+  picked_up:           "Picked Up",
+  arrived_at_facility: "Arrived At Facility",
+  departed_facility:   "Departed Facility",
+  in_transit:          "In Transit",
+  customs_clearance:   "Customs Clearance",
+  customs_hold:        "Customs Hold",
+  out_for_delivery:    "Out For Delivery",
+  delivered:           "Delivered",
+  delivery_failed:     "Delivery Failed",
+  returned:            "Returned",
+  exception:           "Exception",
+};
+
+export const TRACKING_STATUS_COLORS: Record<TrackingStatus, string> = {
+  created:             "bg-slate-50 text-slate-700 border-slate-200",
+  assigned:            "bg-violet-50 text-violet-700 border-violet-200",
+  confirmed:           "bg-blue-50 text-blue-700 border-blue-200",
+  picked_up:           "bg-sky-50 text-sky-700 border-sky-200",
+  arrived_at_facility: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  departed_facility:   "bg-purple-50 text-purple-700 border-purple-200",
+  in_transit:          "bg-orange-50 text-orange-700 border-orange-200",
+  customs_clearance:   "bg-yellow-50 text-yellow-700 border-yellow-200",
+  customs_hold:        "bg-red-50 text-red-700 border-red-200",
+  out_for_delivery:    "bg-amber-50 text-amber-700 border-amber-200",
+  delivered:           "bg-green-50 text-green-700 border-green-200",
+  delivery_failed:     "bg-red-50 text-red-800 border-red-300",
+  returned:            "bg-rose-50 text-rose-700 border-rose-200",
+  exception:           "bg-red-100 text-red-900 border-red-400",
+};
+
+export type TrackingEvent = {
+  id:               string;
+  load_id:          string;
+  location_id:      string | null;
+  tracking_status:  TrackingStatus;
+  notes:            string | null;
+  created_by:       string;
+  created_by_role:  string;
+  event_timestamp:  string;
+  created_at:       string;
+  updated_at:       string;
+  locations?:       Pick<Location, "id" | "city" | "province"> | null;
+  profiles?:        { id: string; full_name: string | null; avatar_url?: string | null } | null;
+};
+
+export type CreateTrackingEventDto = {
+  loadId:          string;
+  locationId?:     string;
+  trackingStatus:  TrackingStatus;
+  notes?:          string;
+  eventTimestamp?: string;
+};
+
+export type UpdateTrackingEventDto = {
+  locationId?:     string | null;
+  trackingStatus?: TrackingStatus;
+  notes?:          string | null;
+  eventTimestamp?: string;
+};
+
+export type ListTrackingEventsQuery = {
+  page?:   number;
+  limit?:  number;
+  loadId?: string;
 };

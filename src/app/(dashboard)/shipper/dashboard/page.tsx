@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, AlertTriangle } from 'lucide-react'
+import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, AlertTriangle, FileText, Send, DollarSign, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useShipments } from '@/hooks/use-shipments'
+import { useQuotations } from '@/hooks/use-quotations'
+import { useInvoices } from '@/hooks/use-invoices'
 import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/loads/status-badge'
 import { KpiCard } from '@/components/loads/kpi-card'
@@ -16,9 +18,13 @@ export default function ShipperDashboard() {
     accountId: user?.accountId ?? undefined,
     limit: 5,
   })
+  const { data: quotationsRes, isLoading: quotationsLoading } = useQuotations({ limit: 200 })
+  const { data: invoicesRes,   isLoading: invoicesLoading   } = useInvoices({ limit: 200 })
 
   const stats   = statsRes?.data
   const recent  = recentRes?.data ?? []
+  const quotations = quotationsRes?.data ?? []
+  const invoices   = invoicesRes?.data   ?? []
 
   const byStatus    = stats?.byStatus
   const totalLoads  = stats?.total      ?? 0
@@ -28,6 +34,21 @@ export default function ShipperDashboard() {
   const trend       = stats?.trend ?? []
   const sparkline   = trendToSparkline(trend)
   const growth      = periodGrowth(stats?.total ?? 0, stats?.prevPeriodTotal ?? 0)
+
+  const qStats = {
+    total:    quotations.length,
+    draft:    quotations.filter((q) => q.status === 'draft').length,
+    sent:     quotations.filter((q) => q.status === 'sent').length,
+    accepted: quotations.filter((q) => q.status === 'accepted').length,
+  }
+
+  const iStats = {
+    total:   invoices.length,
+    draft:   invoices.filter((i) => i.status === 'draft').length,
+    sent:    invoices.filter((i) => i.status === 'unpaid').length,
+    paid:    invoices.filter((i) => i.status === 'paid').length,
+    overdue: invoices.filter((i) => i.status === 'overdue').length,
+  }
 
   const kpis = [
     {
@@ -68,7 +89,7 @@ export default function ShipperDashboard() {
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
-              Welcome back, {user?.fullName ?? 'Shipper'}
+              Welcome back, {user?.fullName ?? (user?.companyRole === 'employee' ? 'Employee' : 'Company Admin')}
             </h1>
             <p className="mt-1 text-sm text-muted">
               Your shipments at a glance.
@@ -76,7 +97,7 @@ export default function ShipperDashboard() {
           </div>
         </div>
 
-        {/* KPI cards */}
+        {/* Load KPI cards */}
         <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
           {kpis.map((kpi) => (
             <KpiCard
@@ -92,6 +113,53 @@ export default function ShipperDashboard() {
               subtitle={kpi.subtitle}
             />
           ))}
+        </div>
+
+        {/* Quotations summary */}
+        <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-card-border px-5 py-4">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Quotations</h3>
+              <p className="mt-0.5 text-xs text-muted">All quotations for your company</p>
+            </div>
+            <Link
+              href="/shipper/quotations"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
+            >
+              View All
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4 sm:p-5">
+            <KpiCard title="Total"    value={qStats.total}    icon={FileText}     chartColor="#C89B3C" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Draft"    value={qStats.draft}    icon={Clock3}       chartColor="#6B7280" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Sent"     value={qStats.sent}     icon={Send}         chartColor="#3B82F6" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Accepted" value={qStats.accepted} icon={CheckCircle2} chartColor="#22C55E" isLoading={quotationsLoading} subtitle="" />
+          </div>
+        </div>
+
+        {/* Invoices summary */}
+        <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-card-border px-5 py-4">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Invoices</h3>
+              <p className="mt-0.5 text-xs text-muted">All invoices for your company</p>
+            </div>
+            <Link
+              href="/shipper/invoices"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
+            >
+              View All
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-5 sm:p-5">
+            <KpiCard title="Total"   value={iStats.total}   icon={FileText}     chartColor="#C89B3C" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Draft"   value={iStats.draft}   icon={Clock3}       chartColor="#6B7280" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Sent"    value={iStats.sent}    icon={Send}         chartColor="#3B82F6" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Paid"    value={iStats.paid}    icon={DollarSign}   chartColor="#22C55E" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Overdue" value={iStats.overdue} icon={AlertCircle}  chartColor="#EF4444" isLoading={invoicesLoading} subtitle="" />
+          </div>
         </div>
 
         {/* Recent Shipments */}

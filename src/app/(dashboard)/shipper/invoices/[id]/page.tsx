@@ -17,8 +17,12 @@ import {
   Phone,
   MapPin,
   DollarSign,
+  Truck,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { InvoiceStatusBadge } from "@/components/documents/document-status-badge";
 import { LineItemsTable } from "@/components/documents/line-items-table";
 import { PricingSummary } from "@/components/documents/pricing-summary";
@@ -391,12 +395,26 @@ export default function ShipperInvoiceDetailPage({
                     Load Reference
                   </h3>
                 </div>
-                <div className="p-4 sm:p-5">
+                <div className="space-y-3 p-4 sm:p-5">
                   <InfoTile
                     icon={<DollarSign className="h-4 w-4" />}
                     label={invoice.shipments.load_number}
                     value={`${invoice.shipments.origin_city} → ${invoice.shipments.destination_city}`}
                   />
+                  {invoice.shipments.accounts && (
+                    <InfoTile
+                      icon={<CompanyLogo name={invoice.shipments.accounts.account_name} logoUrl={invoice.shipments.accounts.logo_url} size="sm" rounded="lg" />}
+                      label="Assigned Company"
+                      value={invoice.shipments.accounts.account_name}
+                    />
+                  )}
+                  {invoice.shipments.profiles && (
+                    <InfoTile
+                      icon={<UserAvatar name={invoice.shipments.profiles.full_name} avatarUrl={invoice.shipments.profiles.avatar_url} size="sm" rounded="lg" />}
+                      label="Assigned Employee"
+                      value={invoice.shipments.profiles.full_name ?? "—"}
+                    />
+                  )}
                 </div>
               </div>
             )}

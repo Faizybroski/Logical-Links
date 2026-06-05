@@ -29,13 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CityProvinceCombobox } from "@/components/tracking/city-province-combobox";
 
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useShipment, useUpdateShipment, useDeleteShipment } from "@/hooks/use-shipments";
@@ -114,6 +108,11 @@ export default function AdminEditLoadPage({
       specialInstructions: "",
     },
   });
+
+  const originCity    = form.watch("originCity");
+  const originState   = form.watch("originState");
+  const destCity      = form.watch("destinationCity");
+  const destState     = form.watch("destinationState");
 
   useEffect(() => {
     if (shipment) {
@@ -276,23 +275,25 @@ export default function AdminEditLoadPage({
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="originCity" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel>
-                        <FormControl><Input {...field} placeholder="Sydney" className={F} /></FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="originState" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel>
-                        <FormControl><Input {...field} placeholder="NSW" className={F} /></FormControl>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("originState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                          fallbackDisplay={originCity && originState ? `${originCity}, ${originState}` : undefined}
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="originPostcode" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel>
-                        <FormControl><Input {...field} placeholder="2000" className={F} /></FormControl>
+                        <FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
@@ -311,23 +312,25 @@ export default function AdminEditLoadPage({
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="destinationCity" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel>
-                        <FormControl><Input {...field} placeholder="Melbourne" className={F} /></FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="destinationState" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel>
-                        <FormControl><Input {...field} placeholder="VIC" className={F} /></FormControl>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("destinationState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                          fallbackDisplay={destCity && destState ? `${destCity}, ${destState}` : undefined}
+                        />
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="destinationPostcode" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel>
-                        <FormControl><Input {...field} placeholder="3000" className={F} /></FormControl>
+                        <FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )} />
@@ -345,7 +348,7 @@ export default function AdminEditLoadPage({
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-foreground">Ownership &amp; Assignment</h3>
                   <p className="mt-0.5 text-xs text-muted">
-                    {isShipperOwned ? "Shipper-owned — assignment is permanently locked" : "Admin-managed — assignment can be changed"}
+                    {isShipperOwned ? "Company-owned — assignment is permanently locked" : "Admin-managed — can be reassigned while pending"}
                   </p>
                 </div>
                 <CreatorBadge shipment={shipment} />
@@ -368,7 +371,7 @@ export default function AdminEditLoadPage({
                 <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
                   <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">Assigned Shipper</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">Assigned Company</p>
                     <p className="mt-0.5 text-sm font-medium text-foreground">
                       {shipment.accounts?.account_name ?? "Unassigned"}
                     </p>
@@ -379,7 +382,7 @@ export default function AdminEditLoadPage({
                 <div className="flex items-start gap-3 border-t border-violet-200 bg-violet-50/60 px-6 py-3 dark:border-violet-800 dark:bg-violet-950/40">
                   <Truck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" />
                   <p className="text-xs text-violet-800 dark:text-violet-300">
-                    The shipper assignment cannot be changed by anyone, including administrators.
+                    This load was created by the shipping company. Its assignment cannot be changed by anyone, including administrators.
                   </p>
                 </div>
               )}

@@ -1,14 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Mail, Phone, Building2, CheckCircle2, Clock, Save } from 'lucide-react'
+import { User, Mail, Phone, Building2, CheckCircle2, Clock, Save, Calendar } from 'lucide-react'
 import { useMe, useUpdateMe } from '@/hooks/use-users'
 import { useMyProfile } from '@/hooks/use-accounts'
+import { useAuthStore } from '@/store/auth.store'
+import { AvatarUpload } from '@/components/ui/avatar-upload'
+import { CompanyLogo } from '@/components/ui/company-logo'
+import { uploadUserAvatar, removeUserAvatar } from '@/lib/upload-images'
 import { toast } from 'sonner'
 
 export default function ShipperProfilePage() {
   const { data: res, isLoading } = useMe()
   const updateMe = useUpdateMe()
+  const patchUser = useAuthStore((s) => s.patchUser)
 
   const profile = res?.data
 
@@ -17,6 +22,7 @@ export default function ShipperProfilePage() {
 
   const [fullName, setFullName] = useState('')
   const [phone, setPhone]       = useState('')
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -30,21 +36,54 @@ export default function ShipperProfilePage() {
     updateMe.mutate(
       { fullName: fullName || undefined, phone: phone || undefined },
       {
-        onSuccess: () => toast.success('Profile updated'),
-        onError:   () => toast.error('Failed to update profile'),
+        onSuccess: (res) => {
+          toast.success('Profile updated')
+          if (res?.data?.fullName) patchUser({ fullName: res.data.fullName })
+        },
+        onError: () => toast.error('Failed to update profile'),
       },
     )
   }
 
-  const initials = (profile?.fullName ?? 'SH').slice(0, 2).toUpperCase()
+  async function handleAvatarUpload(blob: Blob) {
+    if (!profile) return
+    setUploading(true)
+    try {
+      const url = await uploadUserAvatar(profile.id, blob)
+      await updateMe.mutateAsync({ avatarUrl: url })
+      patchUser({ avatarUrl: url })
+      toast.success('Profile picture updated')
+    } catch {
+      toast.error('Failed to upload profile picture')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleAvatarRemove() {
+    if (!profile) return
+    setUploading(true)
+    try {
+      await removeUserAvatar(profile.id)
+      await updateMe.mutateAsync({ avatarUrl: null })
+      patchUser({ avatarUrl: null })
+      toast.success('Profile picture removed')
+    } catch {
+      toast.error('Failed to remove profile picture')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const approved = profile?.isApproved ?? false
+  const roleLabel = profile?.companyRole === 'company_admin' ? 'Company Admin' : 'Employee'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-5">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">My Profile</h1>
-        <p className="mt-1 text-sm text-muted">Manage your account information</p>
+        <p className="mt-1 text-sm text-muted">Manage your personal information</p>
       </div>
 
       {isLoading ? (
@@ -54,23 +93,57 @@ export default function ShipperProfilePage() {
       ) : (
         <>
           {/* Avatar + Identity */}
-          <div className="flex items-center gap-5 rounded-3xl border border-card-border bg-card p-6 shadow-sm">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-sidebar">
-              {initials}
-            </div>
-            <div className="min-w-0 space-y-1">
+          <div className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-5">
+            <AvatarUpload
+              name={profile?.fullName}
+              avatarUrl={profile?.avatarUrl}
+              onUpload={handleAvatarUpload}
+              onRemove={profile?.avatarUrl ? handleAvatarRemove : undefined}
+              uploading={uploading}
+              size="xl"
+              label="Profile Picture"
+            />
+
+            <div className="border-t border-card-border pt-4 space-y-2">
               <p className="text-lg font-semibold text-foreground">{profile?.fullName ?? '—'}</p>
               <p className="text-sm text-muted">{profile?.email}</p>
-              {approved ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Account Approved
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                  {roleLabel}
                 </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-yellow-700">
-                  <Clock className="h-3 w-3" />
-                  Pending Approval
-                </span>
+                {approved ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Account Approved
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-yellow-700">
+                    <Clock className="h-3 w-3" />
+                    Pending Approval
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Personal info tiles */}
+            <div className="grid gap-3 sm:grid-cols-2 border-t border-card-border pt-4">
+              {profile?.phone && (
+                <div>
+                  <p className="text-xs text-muted flex items-center gap-1">
+                    <Phone className="h-3 w-3" /> Phone
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{profile.phone}</p>
+                </div>
+              )}
+              {profile?.createdAt && (
+                <div>
+                  <p className="text-xs text-muted flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> Member Since
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(profile.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -82,17 +155,23 @@ export default function ShipperProfilePage() {
                 <Building2 className="h-4 w-4 text-muted" />
                 <h2 className="text-base font-semibold text-foreground">Company</h2>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+
+              <div className="flex items-center gap-3">
+                <CompanyLogo
+                  name={account.account_name}
+                  logoUrl={account.logo_url}
+                  size="lg"
+                  rounded="xl"
+                />
                 <div>
-                  <p className="text-xs text-muted">Company Name</p>
-                  <p className="text-sm font-medium text-foreground">{account.account_name}</p>
+                  <p className="text-base font-semibold text-foreground">{account.account_name}</p>
+                  {account.abn && (
+                    <p className="text-xs text-muted">ABN: {account.abn}</p>
+                  )}
                 </div>
-                {account.abn && (
-                  <div>
-                    <p className="text-xs text-muted">ABN</p>
-                    <p className="text-sm font-medium text-foreground">{account.abn}</p>
-                  </div>
-                )}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
                 {account.contact_email && (
                   <div>
                     <p className="text-xs text-muted">Contact Email</p>
@@ -105,13 +184,31 @@ export default function ShipperProfilePage() {
                     <p className="text-sm font-medium text-foreground">{account.contact_phone}</p>
                   </div>
                 )}
+                {account.billing_city && (
+                  <div>
+                    <p className="text-xs text-muted">Location</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {[account.billing_city, account.billing_state].filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                )}
               </div>
+
+              {profile?.companyRole === 'company_admin' && (
+                <a
+                  href="/shipper/company"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <Building2 className="h-3.5 w-3.5" />
+                  Manage Company Profile →
+                </a>
+              )}
             </div>
           )}
 
           {/* Edit Form */}
           <form onSubmit={handleSave} className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-5">
-            <h2 className="text-base font-semibold text-foreground">Edit Profile</h2>
+            <h2 className="text-base font-semibold text-foreground">Edit Personal Info</h2>
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground" htmlFor="fullName">

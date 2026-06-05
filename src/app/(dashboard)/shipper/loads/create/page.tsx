@@ -18,13 +18,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CityProvinceCombobox } from "@/components/tracking/city-province-combobox";
 
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useCreateShipment } from "@/hooks/use-shipments";
@@ -152,13 +147,16 @@ export default function ShipperCreateLoadPage() {
                 <FormField control={form.control} name="shipmentType" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger className={`${F} h-10`}><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent className="border-card-border bg-card">
-                        <SelectItem value="freight">Freight</SelectItem>
-                        <SelectItem value="last_mile">Last Mile</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      options={[
+                        { value: "freight", label: "Freight" },
+                        { value: "last_mile", label: "Last Mile" },
+                      ]}
+                      searchPlaceholder="Search type…"
+                    />
                     <FormMessage className="text-xs" />
                   </FormItem>
                 )} />
@@ -185,13 +183,22 @@ export default function ShipperCreateLoadPage() {
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="originCity" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel><FormControl><Input {...field} placeholder="Sydney" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="originState" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel><FormControl><Input {...field} placeholder="NSW" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("originState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )} />
                     <FormField control={form.control} name="originPostcode" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="2000" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
                     )} />
                   </div>
                 </div>
@@ -207,13 +214,22 @@ export default function ShipperCreateLoadPage() {
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="destinationCity" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel><FormControl><Input {...field} placeholder="Melbourne" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="destinationState" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel><FormControl><Input {...field} placeholder="VIC" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("destinationState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )} />
                     <FormField control={form.control} name="destinationPostcode" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="3000" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
                     )} />
                   </div>
                 </div>

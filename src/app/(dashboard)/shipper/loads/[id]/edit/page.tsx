@@ -20,6 +20,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+import { CityProvinceCombobox } from "@/components/tracking/city-province-combobox";
+
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useShipment, useUpdateShipment } from "@/hooks/use-shipments";
 
@@ -72,6 +74,11 @@ export default function ShipperEditLoadPage({ params }: { params: Promise<{ id: 
       referenceNumber: "", specialInstructions: "",
     },
   });
+
+  const originCity  = form.watch("originCity");
+  const originState = form.watch("originState");
+  const destCity    = form.watch("destinationCity");
+  const destState   = form.watch("destinationState");
 
   useEffect(() => {
     if (shipment) {
@@ -180,13 +187,23 @@ export default function ShipperEditLoadPage({ params }: { params: Promise<{ id: 
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="originCity" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel><FormControl><Input {...field} placeholder="Sydney" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="originState" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel><FormControl><Input {...field} placeholder="NSW" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("originState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                          fallbackDisplay={originCity && originState ? `${originCity}, ${originState}` : undefined}
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )} />
                     <FormField control={form.control} name="originPostcode" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="2000" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
                     )} />
                   </div>
                 </div>
@@ -199,13 +216,23 @@ export default function ShipperEditLoadPage({ params }: { params: Promise<{ id: 
                   )} />
                   <div className="grid grid-cols-3 gap-3">
                     <FormField control={form.control} name="destinationCity" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City</FormLabel><FormControl><Input {...field} placeholder="Melbourne" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="destinationState" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">State</FormLabel><FormControl><Input {...field} placeholder="VIC" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">City &amp; Province</FormLabel>
+                        <CityProvinceCombobox
+                          value={null}
+                          onChange={(_, loc) => {
+                            if (loc) {
+                              field.onChange(loc.city);
+                              form.setValue("destinationState", loc.province, { shouldValidate: true });
+                            }
+                          }}
+                          fallbackDisplay={destCity && destState ? `${destCity}, ${destState}` : undefined}
+                        />
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )} />
                     <FormField control={form.control} name="destinationPostcode" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="3000" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
+                      <FormItem><FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Postcode</FormLabel><FormControl><Input {...field} placeholder="A1A 1A1" className={F} /></FormControl><FormMessage className="text-xs" /></FormItem>
                     )} />
                   </div>
                 </div>

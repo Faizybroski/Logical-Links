@@ -11,6 +11,8 @@ import {
 } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/loads/status-badge'
 import { KpiCard } from '@/components/loads/kpi-card'
+import { CompanyLogo } from '@/components/ui/company-logo'
+import { UserAvatar } from '@/components/ui/user-avatar'
 
 export default function AdminDashboard() {
   const user = useAuthStore((s) => s.user)
@@ -30,7 +32,6 @@ export default function AdminDashboard() {
   const sparkline       = trendToSparkline(trend)
   const growth          = periodGrowth(stats?.total ?? 0, stats?.prevPeriodTotal ?? 0)
 
-  const inTransit = (byStatus?.in_transit ?? 0) + (byStatus?.picked_up ?? 0) + (byStatus?.out_for_delivery ?? 0)
   const delivered = byStatus?.delivered ?? 0
   const pending   = byStatus?.pending   ?? 0
 
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
       chartColor: '#10B981',
     },
     {
-      title:      'Shippers',
+      title:      'Companies',
       value:      totalShippers,
       icon:       Users,
       chartColor: '#8B5CF6',
@@ -121,7 +122,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-3">
               <ShieldAlert className="h-5 w-5 shrink-0 text-orange-600" />
               <p className="text-sm text-orange-700">
-                <strong>{pendingApprovals}</strong> shipper{pendingApprovals !== 1 ? 's' : ''} pending approval.{' '}
+                <strong>{pendingApprovals}</strong> shipping compan{pendingApprovals !== 1 ? 'ies' : 'y'} pending approval.{' '}
                 <Link href="/admin/shippers" className="underline font-medium">
                   Review now
                 </Link>
@@ -150,7 +151,7 @@ export default function AdminDashboard() {
             <table className="w-full">
               <thead className="bg-primary">
                 <tr>
-                  {['Load #', 'Shipper', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
+                  {['Load #', 'Company', 'Created By', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
                     <th
                       key={h}
                       className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
@@ -163,13 +164,13 @@ export default function AdminDashboard() {
               <tbody>
                 {recentLoading ? (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-sm text-muted">
+                    <td colSpan={7} className="py-10 text-center text-sm text-muted">
                       Loading...
                     </td>
                   </tr>
                 ) : recent.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-sm text-muted">
+                    <td colSpan={7} className="py-10 text-center text-sm text-muted">
                       No shipments yet.
                     </td>
                   </tr>
@@ -177,10 +178,43 @@ export default function AdminDashboard() {
                   recent.map((s) => (
                     <tr key={s.shipment_id} className="border-t border-card-border transition-colors hover:bg-primary/5">
                       <td className="px-5 py-4 text-sm font-semibold text-primary">
-                        {s.load_number}
+                        <Link href={`/admin/loads/${s.shipment_id}`} className="hover:underline">
+                          {s.load_number}
+                        </Link>
                       </td>
-                      <td className="px-5 py-4 text-sm text-foreground">
-                        {s.accounts?.account_name ?? '—'}
+                      <td className="px-5 py-4">
+                        {s.accounts?.account_name ? (
+                          <div className="flex items-center gap-2">
+                            <CompanyLogo
+                              name={s.accounts.account_name}
+                              logoUrl={s.accounts.logo_url ?? null}
+                              size="xs"
+                              rounded="lg"
+                            />
+                            <span className="text-sm text-foreground truncate max-w-[120px]">
+                              {s.accounts.account_name}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        {s.profiles ? (
+                          <div className="flex items-center gap-2">
+                            <UserAvatar
+                              name={s.profiles.full_name}
+                              avatarUrl={s.profiles.avatar_url ?? null}
+                              size="xs"
+                              rounded="full"
+                            />
+                            <span className="text-sm text-foreground truncate max-w-[100px]">
+                              {s.profiles.full_name ?? '—'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted">—</span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-sm text-foreground">
                         {s.origin_city}, {s.origin_state}
@@ -198,7 +232,7 @@ export default function AdminDashboard() {
                               day: 'numeric',
                             })
                           : '—'}
-                        </td>
+                      </td>
                     </tr>
                   ))
                 )}
