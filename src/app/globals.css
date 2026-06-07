@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/Playfair_Display/PlayfairDisplay-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/Playfair_Display/PlayfairDisplay-Italic-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+}
+
 :root {
   /* Base */
   --background: #f7f6f3;
@@ -95,9 +111,13 @@ body {
 }
 
 h1,
+h2,
 h3,
+h4,
+h5,
+h6,
 .display-font {
-  font-family: var(--font-cormorant);
+  font-family: "Playfair Display", serif;
 }
 
 /* Ensure images and media never overflow their containers */
@@ -114,4 +134,3 @@ textarea,
 select {
   max-width: 100%;
 }
-

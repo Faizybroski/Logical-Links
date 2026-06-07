@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 300">
+  <rect width="100%" height="100%" fill="white"/>
+  <text
+    x="50%"
+    y="85%"
+    text-anchor="middle"
+    font-size="260"
+    font-family="Playfair Display"
+    fill="black">
+    LOGICAL LINKS
+  </text>
+</svg>
