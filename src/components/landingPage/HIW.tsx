@@ -53,7 +53,7 @@ export default function HowItWorks() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="text-center mb-20"
         >
-          <h2 className="text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
+          <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
             How It Works
           </h2>
           <p className="text-lg text-muted">

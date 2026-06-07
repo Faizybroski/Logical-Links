@@ -56,10 +56,10 @@ export default function Techonologies() {
             transition={{ duration: 0.7, ease: "easeOut" }}
             className="font-display leading-[0.9]"
           >
-            <span className="block text-primary font-bold text-4xl sm:text-6xl">
+            <span className="block display-font text-primary font-bold text-4xl sm:text-6xl">
               Technology That
             </span>
-            <span className="block text-foreground font-bold text-4xl sm:text-6xl">
+            <span className="block display-font text-foreground font-bold text-4xl sm:text-6xl">
               Transforms
             </span>
           </motion.h2>

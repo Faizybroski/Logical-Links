@@ -15,7 +15,7 @@ export default function Hero() {
           className="text-3xl sm:text-5xl font-bold text-gray-900 leading-tight mb-6 uppercase"
         >
           Smart
-          <br className="hidden sm:block" /> Logistis
+          <br className="hidden sm:block" /> <span className="text-primary">Logistis</span>
           <br className="hidden sm:block" /> built for
           <br className="hidden sm:block" /> performance
         </motion.h1>

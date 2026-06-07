@@ -7,15 +7,17 @@ export default function About() {
   return (
     <section id="about" className="py-20 bg-[url('/about.svg')] bg-cover bg-center">
       <div className="max-w-4xl mx-auto px-6 text-center">
-        <motion.h1
+        <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6"
+          
         >
-          About Us
-        </motion.h1>
+          <h1 className="text-4xl sm:text-6xl font-bold text-primary mb-6">
+              About Us
+          </h1>
+        </motion.div>
 
         <motion.p
           initial={{ opacity: 0, y: 30 }}

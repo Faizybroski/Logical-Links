@@ -52,10 +52,10 @@ export default function Offerings() {
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
             <h2 className="font-serif font-semibold leading-[0.9]">
-              <span className="block text-primary text-4xl sm:text-6xl">WHAT WE</span>
+              <span className="block display-font text-primary text-4xl sm:text-6xl">WHAT WE</span>
               <span className="flex items-center gap-6">
                 <span className="h-2 w-12 rounded-full bg-primary" />
-                <span className="text-foreground text-4xl sm:text-6xl">CAN OFFER</span>
+                <span className="text-foreground display-font text-4xl sm:text-6xl">CAN OFFER</span>
               </span>
             </h2>
 

@@ -43,7 +43,7 @@ export default function MilestonesSection() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="mb-20 text-center"
         >
-          <h2 className="font-serif text-4xl font-bold sm:text-5xl md:text-6xl">
+          <h2 className="display-font text-4xl font-bold sm:text-5xl md:text-6xl">
             <span className="text-primary">Our Milestones</span>
             <br />
             <span className="text-neutral-900">
