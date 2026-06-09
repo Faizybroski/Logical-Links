@@ -15,6 +15,7 @@ import {
   X,
   MapPin,
   Shield,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/store/auth.store";
@@ -27,7 +28,7 @@ const navigation = [
   { label: "Companies", href: "/admin/shippers", icon: Users },
   { label: "Invoices", href: "/admin/invoices", icon: FileText },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion },
-  { label: "Filters", href: "/admin/filters", icon: Shield },
+  { label: "Customization", href: "/admin/customization", icon: Settings },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
   { label: "Profile", href: "/admin/profile", icon: User },
 ];
