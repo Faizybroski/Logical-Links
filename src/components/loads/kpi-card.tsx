@@ -17,28 +17,17 @@ export interface KpiDataPoint {
 }
 
 export interface KpiCardProps {
-  /** Card label shown above the value */
   title: string;
-  /** Primary metric — number or pre-formatted string (e.g. "98.6%") */
   value: number | string;
-  /** Lucide icon component */
   icon: LucideIcon;
-  /** Growth percentage string, e.g. "12.5%" — omit to hide growth badge */
   growth?: string;
-  /** "up" renders green ↑, "down" renders red ↓ */
   trend?: "up" | "down";
-  /** Supporting label below the value, e.g. "vs last 30 days" */
   subtitle?: string;
-  /** Tailwind arbitrary hex or a CSS color string for the chart & icon accent */
   chartColor?: string;
-  /** Sparkline data — array of { value: number } objects; omit to hide chart */
   data?: KpiDataPoint[];
-  /** Show loading skeleton instead of content */
   isLoading?: boolean;
-  /** Extra classes on the root card element */
   className?: string;
 }
-
 
 // ─── Custom recharts tooltip ──────────────────────────────────────────────────
 
@@ -50,7 +39,7 @@ function SparkTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-[#EAE7E1] bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 shadow-md">
+    <div className="rounded-xl border border-card-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-md">
       {payload[0].value}
     </div>
   );
@@ -77,17 +66,17 @@ export function KpiCard({
     return (
       <div
         className={cn(
-          "group relative overflow-hidden rounded-[22px] border border-[#EAE7E1] bg-white",
+          "group relative overflow-hidden rounded-[22px] border border-card-border bg-card",
           "px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-5",
-          "shadow-[0_2px_8px_rgba(0,0,0,0.05)]",
+          "shadow-sm",
           className,
         )}
       >
         <div className="animate-pulse space-y-3">
-          <div className="h-3 w-24 rounded-full bg-neutral-100" />
-          <div className="h-9 w-16 rounded-lg bg-neutral-100" />
-          <div className="h-2 w-20 rounded-full bg-neutral-100" />
-          <div className="mt-5 h-14 w-full rounded-lg bg-neutral-100" />
+          <div className="h-3 w-24 rounded-full bg-foreground/8" />
+          <div className="h-9 w-16 rounded-lg bg-foreground/8" />
+          <div className="h-2 w-20 rounded-full bg-foreground/8" />
+          <div className="mt-5 h-14 w-full rounded-lg bg-foreground/8" />
         </div>
       </div>
     );
@@ -96,33 +85,29 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        // Base
-        "group relative overflow-hidden rounded-[22px] border border-[#EAE7E1] bg-white",
-        // Spacing — compact on xs, full on sm+
+        "group relative overflow-hidden rounded-[22px] border border-card-border bg-card",
         "px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-5",
-        // Shadow + lift transition
-        "shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-300",
-        "hover:-translate-y-0.75 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]",
+        "shadow-sm transition-all duration-300",
+        "hover:-translate-y-0.75 hover:shadow-md",
         className,
       )}
     >
-      {/* ── Ambient glow blob ── */}
+      {/* Ambient glow blob */}
       <div
         className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full opacity-60 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
         style={{ background: `${chartColor}1a` }}
       />
 
-      {/* ── Header row ── */}
+      {/* Header row */}
       <div className="relative flex items-start justify-between gap-2">
-        {/* Left: label + value + trend */}
         <div className="flex min-w-0 flex-col">
-          <p className="truncate text-[12px] font-medium tracking-wide text-neutral-400 sm:text-[13px]">
+          <p className="truncate text-[12px] font-medium tracking-wide text-muted sm:text-[13px]">
             {title}
           </p>
 
           <div className="mt-2 flex flex-wrap items-end gap-1.5 sm:mt-3 sm:gap-2.5">
             <span
-              className="text-3xl font-semibold leading-none tracking-tight text-neutral-900 sm:text-[2.25rem]"
+              className="text-3xl font-semibold leading-none tracking-tight text-foreground sm:text-[2.25rem]"
               style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
             >
               {typeof value === "number" ? value.toLocaleString() : value}
@@ -132,7 +117,7 @@ export function KpiCard({
               <span
                 className={cn(
                   "mb-0.5 text-xs font-bold tracking-wide",
-                  isUp ? "text-emerald-500" : "text-red-500",
+                  isUp ? "text-success" : "text-danger",
                 )}
               >
                 {isUp ? "↑" : "↓"} {growth}
@@ -140,10 +125,10 @@ export function KpiCard({
             )}
           </div>
 
-          <p className="mt-1 text-[11px] text-neutral-400 sm:mt-1.5">{subtitle}</p>
+          <p className="mt-1 text-[11px] text-muted sm:mt-1.5">{subtitle}</p>
         </div>
 
-        {/* Right: icon badge — smaller on xs */}
+        {/* Icon badge */}
         <div
           className="flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-13 sm:rounded-2xl"
           style={{
@@ -157,7 +142,7 @@ export function KpiCard({
         </div>
       </div>
 
-      {/* ── Sparkline ── */}
+      {/* Sparkline */}
       {data && data.length > 0 && (
         <div className="relative mt-5 h-14 w-full min-w-0">
           <ResponsiveContainer width="100%" height={56}>
@@ -184,7 +169,7 @@ export function KpiCard({
                 activeDot={{
                   r: 4,
                   fill: chartColor,
-                  stroke: "#fff",
+                  stroke: "var(--card)",
                   strokeWidth: 2,
                 }}
               />

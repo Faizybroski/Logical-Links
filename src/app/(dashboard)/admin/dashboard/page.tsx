@@ -108,22 +108,22 @@ export default function AdminDashboard() {
         {/* Alerts */}
         <div className="space-y-3">
           {!statsLoading && pending > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-warning/20 bg-warning/5 px-5 py-3">
-              <Clock3 className="h-5 w-5 shrink-0 text-yellow-600" />
-              <p className="text-sm text-yellow-700">
+            <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-5 py-3">
+              <Clock3 className="h-5 w-5 shrink-0 text-warning" />
+              <p className="text-sm text-foreground">
                 <strong>{pending}</strong> shipment{pending !== 1 ? 's' : ''} awaiting action.{' '}
-                <Link href="/admin/loads" className="underline font-medium">
+                <Link href="/admin/loads" className="underline font-medium text-warning">
                   Review now
                 </Link>
               </p>
             </div>
           )}
           {!statsLoading && pendingApprovals > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-3">
-              <ShieldAlert className="h-5 w-5 shrink-0 text-orange-600" />
-              <p className="text-sm text-orange-700">
+            <div className="flex items-center gap-3 rounded-2xl border border-danger/25 bg-danger/8 px-5 py-3">
+              <ShieldAlert className="h-5 w-5 shrink-0 text-danger" />
+              <p className="text-sm text-foreground">
                 <strong>{pendingApprovals}</strong> shipping compan{pendingApprovals !== 1 ? 'ies' : 'y'} pending approval.{' '}
-                <Link href="/admin/shippers" className="underline font-medium">
+                <Link href="/admin/shippers" className="underline font-medium text-danger">
                   Review now
                 </Link>
               </p>

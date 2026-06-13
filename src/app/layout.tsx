@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from "@/lib/utils"
 import NavigationProgress from '@/components/NavigationProgress'
 import QueryProvider from '@/components/providers/query-provider'
+import { ThemeProvider } from '@/components/providers/theme-provider'
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,10 +31,20 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={cn("font-sans", inter.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
+      <head>
+        {/* Anti-flash script: runs before React hydration to apply saved/system theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} antialiased`}>
-        <NavigationProgress />
-        <QueryProvider>{children}</QueryProvider>
+        <ThemeProvider>
+          <NavigationProgress />
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

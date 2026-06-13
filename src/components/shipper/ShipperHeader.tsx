@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { CompanyLogo } from '@/components/ui/company-logo'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 import { useAuthStore } from '@/store/auth.store'
 import { useMyProfile } from '@/hooks/use-accounts'
@@ -153,6 +154,9 @@ export default function ShipperHeader({
             </span>
           )}
         </Link>
+
+        {/* Theme Toggle */}
+        <ThemeToggle className="h-10 w-10 rounded-xl" />
 
         {/* Profile */}
         <DropdownMenu>

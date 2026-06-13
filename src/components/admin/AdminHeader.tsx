@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { UserAvatar } from '@/components/ui/user-avatar'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 import { useAuthStore } from '@/store/auth.store'
 import { api } from '@/lib/api'
@@ -152,6 +153,9 @@ export default function AdminHeader({
             </span>
           )}
         </Link>
+
+        {/* Theme Toggle */}
+        <ThemeToggle className="h-11 w-11 rounded-2xl" />
 
         {/* Profile */}
         <DropdownMenu>
