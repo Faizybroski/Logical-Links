@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode: adds .dark class to <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/Playfair_Display/PlayfairDisplay-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/Playfair_Display/PlayfairDisplay-Italic-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Base */
+  --background: #f7f6f3;
+  --foreground: #111827;
+
+  /* Sidebar — stays dark in both modes */
+  --sidebar: #060b16;
+  --sidebar-secondary: #0c1424;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  /* Brand */
+  --primary: oklch(70.509% 0.11237 80.678);
+  --primary-light: oklch(79.808% 0.11829 85.006);
+  --primary-dark: oklch(56.051% 0.11986 72.186);
+  --primary-foreground: #060b16;
+
+  /* Cards */
+  --card: #ffffff;
+  --card-border: #ebe8e1;
+
+  /* Text */
+  --muted: #6b7280;
+  --muted-light: #9ca3af;
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Charts */
+  --chart-gold: #c89b3c;
+  --chart-green: #22c55e;
+  --chart-blue: #3b82f6;
+  --chart-red: #ef4444;
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 45px rgba(0, 0, 0, 0.08);
+
+  /* Shadcn/UI compatibility aliases */
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --accent: oklch(70.509% 0.11237 80.678 / 10%);
+  --accent-foreground: var(--foreground);
+  --border: var(--card-border);
+  --muted-foreground: var(--muted);
+  --destructive: var(--danger);
+  --input: var(--card-border);
+  --ring: var(--primary);
+  --secondary: #eeece6;
+  --secondary-foreground: var(--foreground);
+}
+
+/* ── Dark Mode ─────────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+
+  --background: #111219;
+  --foreground: #edeae4;
+
+  /* Cards — slightly elevated from background */
+  --card: #1a1c27;
+  --card-border: rgba(255, 255, 255, 0.08);
+
+  /* Text */
+  --muted: #8c8fa8;
+  --muted-light: #5c5e72;
+
+  /* Shadows — more visible on dark */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 45px rgba(0, 0, 0, 0.55);
+
+  /* Shadcn aliases — dark overrides */
+  --accent: oklch(70.509% 0.11237 80.678 / 15%);
+  --secondary: #1e2030;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-secondary: var(--sidebar-secondary);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-chart-gold: var(--chart-gold);
+  --color-chart-green: var(--chart-green);
+  --color-chart-blue: var(--chart-blue);
+  --color-chart-red: var(--chart-red);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-inter);
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* ── Smooth theme transitions ───────────────────────────────────────────────── */
+body,
+header,
+aside,
+main,
+nav,
+footer,
+section,
+article {
+  transition: background-color 250ms ease, border-color 250ms ease, color 150ms ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.display-font {
+  font-family: "Playfair Display", serif;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+input,
+textarea,
+select {
+  max-width: 100%;
+}
