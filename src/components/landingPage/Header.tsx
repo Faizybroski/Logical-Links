@@ -65,6 +65,18 @@ export default function Header() {
 
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
+          <a
+            href="/login"
+            className="text-sm font-medium text-black hover:text-primary transition-colors"
+          >
+            Log In
+          </a>
+          <a
+            href="/register"
+            className="px-5 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-xs transition-colors"
+          >
+            Sign Up
+          </a>
           <button
             type="button"
             onClick={() => scrollTo("quote")}
@@ -108,6 +120,24 @@ export default function Header() {
                 {n.label}
               </button>
             ))}
+
+            <div className="flex items-center gap-3 pt-2 border-t border-gray-200">
+              <a
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="flex-1 text-center text-sm font-medium text-gray-700 hover:text-primary transition-colors py-2"
+              >
+                Log In
+              </a>
+              <a
+                href="/register"
+                onClick={() => setOpen(false)}
+                className="flex-1 text-center px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-xs transition-colors"
+              >
+                Sign Up
+              </a>
+            </div>
+
             <button
               type="button"
               onClick={() => {

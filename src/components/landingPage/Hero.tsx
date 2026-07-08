@@ -16,7 +16,7 @@ export default function Hero() {
         >
           Smart
           <br className="hidden sm:block" />{" "}
-          <span className="text-primary">Logistis</span>
+          <span className="text-primary">Logistics</span>
           <br className="hidden sm:block" /> built for
           <br className="hidden sm:block" /> performance
         </motion.h1>

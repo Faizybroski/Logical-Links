@@ -141,14 +141,13 @@ function LoginForm() {
                   placeholder="••••••••"
                   className="h-12 pl-12 pr-12"
                 />
-                <Button
+                <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-                  variant="ghost"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </Button>
+                </button>
               </div>
               {errors.password && <p className="mt-2 text-xs text-danger">{errors.password}</p>}
             </div>
