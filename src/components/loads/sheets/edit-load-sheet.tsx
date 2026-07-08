@@ -27,13 +27,13 @@ import {
 import { DeleteConfirmDialog } from "@/components/loads/dialogs/delete-confirmation-dialog";
 import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
 import { StatusBadge } from "@/components/loads/status-badge";
-import { formatDate } from "@/lib/utils/format-date";
+import { formatDate, isoToDateInputValue, dateInputValueToIso } from "@/lib/utils/format-date";
 
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useShipment, useUpdateShipment, useDeleteShipment } from "@/hooks/use-shipments";
 import { useAuthStore } from "@/store/auth.store";
 
-import { FormSection, LoadLocationFields, LoadCargoFields, F } from "./load-form-fields";
+import { FormSection, LoadLocationFields, LoadCargoFields, LoadScheduleFields, F } from "./load-form-fields";
 
 interface EditLoadSheetProps {
   open: boolean;
@@ -67,6 +67,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
       cargoDescription:    "",
       weightKg:            undefined,
       pieces:              undefined,
+      estimatedPickupDate:   "",
+      estimatedDeliveryDate: "",
       quotedPrice:         undefined,
       referenceNumber:     "",
       specialInstructions: "",
@@ -88,6 +90,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
         cargoDescription:    shipment.cargo_description    ?? "",
         weightKg:            shipment.weight_kg            ?? undefined,
         pieces:              shipment.pieces               ?? undefined,
+        estimatedPickupDate:   isoToDateInputValue(shipment.estimated_pickup_date),
+        estimatedDeliveryDate: isoToDateInputValue(shipment.estimated_delivery_date),
         quotedPrice:         shipment.quoted_price         ?? undefined,
         referenceNumber:     shipment.reference_number     ?? "",
         specialInstructions: shipment.special_instructions ?? "",
@@ -109,6 +113,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
         cargoDescription:    values.cargoDescription,
         weightKg:            values.weightKg,
         pieces:              values.pieces,
+        estimatedPickupDate:   dateInputValueToIso(values.estimatedPickupDate),
+        estimatedDeliveryDate: dateInputValueToIso(values.estimatedDeliveryDate),
         ...(isAdmin && { quotedPrice: values.quotedPrice }),
         referenceNumber:     values.referenceNumber,
         specialInstructions: values.specialInstructions,
@@ -251,6 +257,9 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
 
                 {/* Cargo */}
                 <LoadCargoFields form={form} showQuotedPrice={isAdmin} />
+
+                {/* Schedule */}
+                <LoadScheduleFields form={form} />
               </div>
             )}
           </div>

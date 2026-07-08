@@ -26,19 +26,22 @@ export type NotificationsResponse = {
   };
 };
 
+export type NotificationCategory = "deliveries" | "invoices" | "quotes" | "account";
+
 const KEYS = {
   all:  ["notifications"] as const,
-  list: (q: { page?: number; limit?: number; unreadOnly?: boolean }) =>
+  list: (q: { page?: number; limit?: number; unreadOnly?: boolean; category?: NotificationCategory }) =>
     ["notifications", "list", q] as const,
 };
 
 export function useNotifications(
-  query: { page?: number; limit?: number; unreadOnly?: boolean } = {},
+  query: { page?: number; limit?: number; unreadOnly?: boolean; category?: NotificationCategory } = {},
 ) {
   const params = new URLSearchParams();
   if (query.page)       params.set("page", String(query.page));
   if (query.limit)      params.set("limit", String(query.limit));
   if (query.unreadOnly) params.set("unreadOnly", "true");
+  if (query.category)   params.set("category", query.category);
   const qs = params.toString() ? `?${params.toString()}` : "";
 
   return useQuery({

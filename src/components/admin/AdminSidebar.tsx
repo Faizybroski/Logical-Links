@@ -19,6 +19,7 @@ import {
   MapPin,
   Shield,
   Settings,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/store/auth.store";
@@ -32,7 +33,8 @@ const navigation = [
   { label: "Invoices", href: "/admin/invoices", icon: FileText },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion },
   { label: "Customization", href: "/admin/customization", icon: Settings },
-  { label: "Notifications", href: "/admin/notifications", icon: Bell },
+  { label: "Alerts", href: "/admin/notifications", icon: Bell },
+  { label: "Support", href: "/admin/support", icon: LifeBuoy },
   { label: "Profile", href: "/admin/profile", icon: User },
 ];
 

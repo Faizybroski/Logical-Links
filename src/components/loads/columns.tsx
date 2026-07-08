@@ -8,6 +8,7 @@ import {
   ArrowLeftRight,
   FileText,
   Receipt,
+  Clock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +30,54 @@ import {
 } from "@/types/api.types";
 import { formatDate } from "@/lib/utils/format-date";
 import type { SortDir } from "@/hooks/use-table-filters";
+
+const OPEN_STATUSES = new Set<ShipmentStatus>([
+  "pending", "confirmed", "assigned", "picked_up", "in_transit", "out_for_delivery",
+]);
+
+export type EtaInfo =
+  | { kind: "delivered"; date: string }
+  | { kind: "overdue"; date: string }
+  | { kind: "eta"; date: string }
+  | { kind: "none" };
+
+// Shared logic so the loads table and the detail sheet render ETA identically.
+export function getEtaInfo(shipment: Shipment): EtaInfo {
+  if (shipment.status === "delivered" && shipment.actual_delivery_date) {
+    return { kind: "delivered", date: shipment.actual_delivery_date };
+  }
+  if (!shipment.estimated_delivery_date) return { kind: "none" };
+  const isOverdue =
+    OPEN_STATUSES.has(shipment.status) &&
+    new Date(shipment.estimated_delivery_date) < new Date();
+  return {
+    kind: isOverdue ? "overdue" : "eta",
+    date: shipment.estimated_delivery_date,
+  };
+}
+
+export function EtaCell({ shipment }: { shipment: Shipment }) {
+  const info = getEtaInfo(shipment);
+  if (info.kind === "none") return <span className="text-sm text-muted">—</span>;
+
+  const styles: Record<Exclude<EtaInfo["kind"], "none">, string> = {
+    delivered: "text-green-700",
+    overdue: "text-red-600 font-medium",
+    eta: "text-foreground",
+  };
+
+  const label =
+    info.kind === "delivered" ? "Delivered" : info.kind === "overdue" ? "Overdue" : "ETA";
+
+  return (
+    <div className={`flex items-center gap-1.5 text-sm ${styles[info.kind]}`}>
+      <Clock className="h-3.5 w-3.5 shrink-0" />
+      <span>
+        {label} {formatDate(info.date)}
+      </span>
+    </div>
+  );
+}
 
 // Status transitions mirrored from backend — used to determine when
 // "Change Status" should appear in the row action menu.
@@ -94,7 +143,7 @@ export function getLoadColumns({
   return [
     {
       accessorKey: "load_number",
-      header: () => sortHeader("Load #", "load_number"),
+      header: () => sortHeader("Delivery #", "load_number"),
       cell: ({ row }) => (
         <span className="font-semibold text-primary">
           {row.original.load_number}
@@ -102,72 +151,72 @@ export function getLoadColumns({
       ),
     },
 
-    {
-      id: "created_by_col",
-      header: "Created By",
-      cell: ({ row }) => {
-        const s = row.original;
-        const name = getCreatorName(s);
-        return (
-          <div className="flex items-center gap-2">
-            <UserAvatar
-              name={name}
-              avatarUrl={s.profiles?.avatar_url}
-              size="sm"
-              rounded="xl"
-            />
-            <div className="flex flex-col gap-0.5">
-              <CreatorBadge shipment={s} size="sm" />
-              <span className="text-xs text-muted truncate max-w-28" title={name}>
-                {name}
-              </span>
-            </div>
-          </div>
-        );
-      },
-    },
+    // {
+    //   id: "created_by_col",
+    //   header: "Created By",
+    //   cell: ({ row }) => {
+    //     const s = row.original;
+    //     const name = getCreatorName(s);
+    //     return (
+    //       <div className="flex items-center gap-2">
+    //         <UserAvatar
+    //           name={name}
+    //           avatarUrl={s.profiles?.avatar_url}
+    //           size="sm"
+    //           rounded="xl"
+    //         />
+    //         <div className="flex flex-col gap-0.5">
+    //           <CreatorBadge shipment={s} size="sm" />
+    //           <span className="text-xs text-muted truncate max-w-28" title={name}>
+    //             {name}
+    //           </span>
+    //         </div>
+    //       </div>
+    //     );
+    //   },
+    // },
 
-    {
-      id: "company",
-      header: "Company / Employee",
-      cell: ({ row }) => {
-        const s = row.original;
-        const companyName  = s.accounts?.account_name;
-        const employeeName = s.employee?.full_name;
-        return (
-          <div className="flex flex-col gap-1.5">
-            {companyName ? (
-              <div className="flex items-center gap-1.5">
-                <CompanyLogo
-                  name={companyName}
-                  logoUrl={s.accounts?.logo_url}
-                  size="xs"
-                  rounded="lg"
-                />
-                <span className="text-sm font-medium text-foreground truncate max-w-28">
-                  {companyName}
-                </span>
-              </div>
-            ) : (
-              <span className="text-muted italic text-sm">No Company</span>
-            )}
-            {companyName && (
-              <div className="flex items-center gap-1.5">
-                <UserAvatar
-                  name={employeeName}
-                  avatarUrl={s.employee?.avatar_url}
-                  size="xs"
-                  rounded="lg"
-                />
-                <span className="text-xs text-muted truncate max-w-28">
-                  {employeeName ?? <span className="italic">Unassigned</span>}
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
+    // {
+    //   id: "company",
+    //   header: "Company / Employee",
+    //   cell: ({ row }) => {
+    //     const s = row.original;
+    //     const companyName  = s.accounts?.account_name;
+    //     const employeeName = s.employee?.full_name;
+    //     return (
+    //       <div className="flex flex-col gap-1.5">
+    //         {companyName ? (
+    //           <div className="flex items-center gap-1.5">
+    //             <CompanyLogo
+    //               name={companyName}
+    //               logoUrl={s.accounts?.logo_url}
+    //               size="xs"
+    //               rounded="lg"
+    //             />
+    //             <span className="text-sm font-medium text-foreground truncate max-w-28">
+    //               {companyName}
+    //             </span>
+    //           </div>
+    //         ) : (
+    //           <span className="text-muted italic text-sm">No Company</span>
+    //         )}
+    //         {companyName && (
+    //           <div className="flex items-center gap-1.5">
+    //             <UserAvatar
+    //               name={employeeName}
+    //               avatarUrl={s.employee?.avatar_url}
+    //               size="xs"
+    //               rounded="lg"
+    //             />
+    //             <span className="text-xs text-muted truncate max-w-28">
+    //               {employeeName ?? <span className="italic">Unassigned</span>}
+    //             </span>
+    //           </div>
+    //         )}
+    //       </div>
+    //     );
+    //   },
+    // },
 
     {
       accessorKey: "status",
@@ -175,15 +224,15 @@ export function getLoadColumns({
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
 
-    {
-      accessorKey: "shipment_type",
-      header: () => sortHeader("Type", "shipment_type"),
-      cell: ({ row }) => (
-        <span className="capitalize">
-          {row.original.shipment_type.replace("_", " ")}
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "shipment_type",
+    //   header: () => sortHeader("Type", "shipment_type"),
+    //   cell: ({ row }) => (
+    //     <span className="capitalize">
+    //       {row.original.shipment_type.replace("_", " ")}
+    //     </span>
+    //   ),
+    // },
 
     {
       id: "route",
@@ -198,14 +247,20 @@ export function getLoadColumns({
     },
 
     {
-      accessorKey: "created_at",
-      header: () => sortHeader("Created", "created_at"),
-      cell: ({ row }) => (
-        <span className="text-xs text-muted">
-          {formatDate(row.original.created_at)}
-        </span>
-      ),
+      id: "eta",
+      header: () => sortHeader("ETA", "estimated_delivery_date"),
+      cell: ({ row }) => <EtaCell shipment={row.original} />,
     },
+
+    // {
+    //   accessorKey: "created_at",
+    //   header: () => sortHeader("Created", "created_at"),
+    //   cell: ({ row }) => (
+    //     <span className="text-xs text-muted">
+    //       {formatDate(row.original.created_at)}
+    //     </span>
+    //   ),
+    // },
 
     {
       id: "actions",

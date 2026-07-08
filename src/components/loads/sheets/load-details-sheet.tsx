@@ -24,12 +24,15 @@ import {
   Receipt,
   Plus,
   Eye,
+  Clock,
+  PackageCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { StatusBadge } from "@/components/loads/status-badge";
 import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
+import { getEtaInfo } from "@/components/loads/columns";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dialog";
@@ -616,6 +619,49 @@ export function LoadDetailsSheet({
                           icon={<Tag className="h-4 w-4" />}
                           label="Reference"
                           value={shipment.reference_number}
+                        />
+                      )}
+                      {shipment.estimated_pickup_date && (
+                        <InfoTile
+                          icon={<Calendar className="h-4 w-4" />}
+                          label="Estimated Pickup"
+                          value={formatDate(shipment.estimated_pickup_date)}
+                        />
+                      )}
+                      {(() => {
+                        const eta = getEtaInfo(shipment);
+                        if (eta.kind === "none") return null;
+                        const tone =
+                          eta.kind === "overdue"
+                            ? "text-red-600"
+                            : eta.kind === "delivered"
+                              ? "text-green-700"
+                              : "text-foreground";
+                        return (
+                          <InfoTile
+                            icon={
+                              eta.kind === "delivered" ? (
+                                <PackageCheck className="h-4 w-4" />
+                              ) : (
+                                <Clock className="h-4 w-4" />
+                              )
+                            }
+                            label={
+                              eta.kind === "delivered"
+                                ? "Delivered"
+                                : eta.kind === "overdue"
+                                  ? "ETA (Overdue)"
+                                  : "Estimated Delivery"
+                            }
+                            value={<span className={tone}>{formatDate(eta.date)}</span>}
+                          />
+                        );
+                      })()}
+                      {shipment.actual_pickup_date && (
+                        <InfoTile
+                          icon={<Calendar className="h-4 w-4" />}
+                          label="Actual Pickup"
+                          value={formatDate(shipment.actual_pickup_date)}
                         />
                       )}
                       <InfoTile

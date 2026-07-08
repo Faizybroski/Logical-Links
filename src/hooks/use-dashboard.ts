@@ -16,6 +16,7 @@ export interface DashboardStats {
   // Admin-only (undefined for shippers)
   totalShippers?:    number
   pendingApprovals?: number
+  invoicesDue?:      number
 }
 
 export function useDashboardStats() {

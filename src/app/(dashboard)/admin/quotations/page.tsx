@@ -3,14 +3,14 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { FileText, CheckCircle2, Send, Clock } from "lucide-react";
+import { FileText, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { KpiCard } from "@/components/loads/kpi-card";
 import { QuotationsList } from "@/components/documents/documents-list";
 import { TableFilters } from "@/components/ui/table-filters";
 import type { FilterDef } from "@/components/ui/table-filters";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import type { SortDir } from "@/hooks/use-table-filters";
-import { useQuotations, useDuplicateQuotation, useDeleteQuotation } from "@/hooks/use-quotations";
+import { useQuotations, useQuotationStats, useDuplicateQuotation, useDeleteQuotation } from "@/hooks/use-quotations";
 import { QUOTATION_STATUS_LABELS } from "@/types/api.types";
 import type { QuotationStatus } from "@/types/api.types";
 import { CreateQuotationSheet } from "@/components/documents/sheets/create-quotation-sheet";
@@ -116,15 +116,11 @@ export default function AdminQuotationsPage() {
   const quotations = res?.data ?? [];
   const totalCount = (res as any)?.meta?.total ?? 0;
 
+  const { data: statsRes, isLoading: statsLoading } = useQuotationStats();
+  const stats = statsRes?.data ?? { total: 0, pendingReview: 0, accepted: 0, expired: 0 };
+
   const duplicateMut = useDuplicateQuotation();
   const deleteMut    = useDeleteQuotation();
-
-  const stats = {
-    total:    totalCount,
-    draft:    quotations.filter((q) => q.status === "draft").length,
-    sent:     quotations.filter((q) => q.status === "sent").length,
-    accepted: quotations.filter((q) => q.status === "accepted").length,
-  };
 
   function handleSort(key: string, dir: SortDir) {
     setFilters({ sortBy: key && dir ? key : "", sortDir: dir ?? "", page: "1" });
@@ -164,10 +160,10 @@ export default function AdminQuotationsPage() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard title="Total"    value={stats.total}    icon={FileText}     chartColor="#C89B3C" isLoading={isLoading} />
-          <KpiCard title="Draft"    value={stats.draft}    icon={Clock}        chartColor="#6B7280" isLoading={isLoading} />
-          <KpiCard title="Sent"     value={stats.sent}     icon={Send}         chartColor="#3B82F6" isLoading={isLoading} />
-          <KpiCard title="Accepted" value={stats.accepted} icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
+          <KpiCard title="Total Quotations" value={stats.total}         icon={FileText}      chartColor="#C89B3C" isLoading={statsLoading} />
+          <KpiCard title="Pending Review"   value={stats.pendingReview} icon={Clock}         chartColor="#3B82F6" isLoading={statsLoading} />
+          <KpiCard title="Accepted"         value={stats.accepted}      icon={CheckCircle2}  chartColor="#22C55E" isLoading={statsLoading} />
+          <KpiCard title="Expired"          value={stats.expired}       icon={AlertTriangle} chartColor="#F59E0B" isLoading={statsLoading} />
         </div>
 
         <QuotationsList

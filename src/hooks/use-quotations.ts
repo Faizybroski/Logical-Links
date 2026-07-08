@@ -5,13 +5,24 @@ import type {
   CreateQuotationDto,
   UpdateQuotationDto,
   ListQuotationsQuery,
+  QuotationStats,
+  AcceptQuotationDto,
 } from "@/types/api.types";
 
 const KEYS = {
   all:    ["quotations"] as const,
   list:   (q: ListQuotationsQuery) => ["quotations", "list", q] as const,
   detail: (id: string)             => ["quotations", "detail", id] as const,
+  stats:  ["quotations", "stats"] as const,
 };
+
+export function useQuotationStats() {
+  return useQuery({
+    queryKey: KEYS.stats,
+    queryFn:  () => api.get<ApiResponse<QuotationStats>>("/api/v1/quotations/stats"),
+    staleTime: 30_000,
+  });
+}
 
 // ── Queries ────────────────────────────────────────────────────────────────────
 
@@ -84,5 +95,31 @@ export function useGenerateQuotationPdf(id: string) {
     mutationFn: () =>
       api.post<ApiResponse<{ pdfUrl: string }>>(`/api/v1/quotations/${id}/pdf`, {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.detail(id) }),
+  });
+}
+
+export function useAcceptQuotation(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: AcceptQuotationDto) =>
+      api.post<ApiResponse<Quotation>>(`/api/v1/quotations/${id}/accept`, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+      qc.invalidateQueries({ queryKey: KEYS.stats });
+    },
+  });
+}
+
+export function useDeclineQuotation(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api.post<ApiResponse<Quotation>>(`/api/v1/quotations/${id}/decline`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+      qc.invalidateQueries({ queryKey: KEYS.stats });
+    },
   });
 }

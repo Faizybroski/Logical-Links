@@ -5,20 +5,30 @@ export type CompanyRole = "company_admin" | "employee" | null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
+export type AuthUserPayload = {
+  id:          string;
+  email:       string;
+  role:        UserRole;
+  companyRole: CompanyRole;
+  fullName:    string | null;
+  avatarUrl:   string | null;
+  accountId:   string | null;
+};
+
 export type AuthTokens = {
+  mfaRequired: false;
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  user: {
-    id:          string;
-    email:       string;
-    role:        UserRole;
-    companyRole: CompanyRole;
-    fullName:    string | null;
-    avatarUrl:   string | null;
-    accountId:   string | null;
-  };
+  user: AuthUserPayload;
 };
+
+export type MfaChallengeRequired = {
+  mfaRequired: true;
+  challengeToken: string;
+};
+
+export type LoginResult = AuthTokens | MfaChallengeRequired;
 
 // ── Accounts (Shippers) ───────────────────────────────────────────────────────
 
@@ -38,10 +48,18 @@ export type Account = {
   account_id: string;
   account_name: string;
   abn: string | null;
+  website: string | null;
   logo_url: string | null;
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  address_line1: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  address_postcode: string | null;
+  address_country: string | null;
+  billing_email: string | null;
+  accounts_payable_email: string | null;
   billing_address: string | null;
   billing_city: string | null;
   billing_state: string | null;
@@ -58,9 +76,17 @@ export type Account = {
 export type CreateAccountDto = {
   accountName: string;
   abn?: string;
+  website?: string;
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  addressLine1?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressPostcode?: string;
+  addressCountry?: string;
+  billingEmail?: string;
+  accountsPayableEmail?: string;
   billingAddress?: string;
   billingCity?: string;
   billingState?: string;
@@ -72,6 +98,22 @@ export type CreateAccountDto = {
 
 export type UpdateAccountDto = Partial<CreateAccountDto> & {
   isActive?: boolean;
+};
+
+export type UpdateOwnCompanyDto = {
+  accountName?: string;
+  abn?: string;
+  website?: string;
+  addressLine1?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressPostcode?: string;
+  addressCountry?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  billingEmail?: string;
+  accountsPayableEmail?: string;
 };
 
 export type ListAccountsQuery = {
@@ -362,6 +404,15 @@ export const QUOTATION_STATUS_COLORS: Record<QuotationStatus, string> = {
   expired:  "bg-amber-50 text-amber-700 border-amber-200",
 };
 
+export type QuotationAcceptance = {
+  acceptance_id: string;
+  user_id:       string;
+  full_name:     string | null;
+  company_name:  string | null;
+  terms_version: string;
+  accepted_at:   string;
+};
+
 export type Quotation = {
   id:               string;
   quotation_number: string;
@@ -384,6 +435,8 @@ export type Quotation = {
   total:            number;
   currency:         string;
   pdf_url:          string | null;
+  accepted_at:      string | null;
+  declined_at:      string | null;
   created_by:       string;
   created_at:       string;
   updated_at:       string;
@@ -400,6 +453,19 @@ export type Quotation = {
     profiles?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
   } | null;
   quotation_items?: LineItem[];
+  quotation_acceptances?: QuotationAcceptance[];
+};
+
+export type QuotationStats = {
+  total:         number;
+  pendingReview: number;
+  accepted:      number;
+  expired:       number;
+};
+
+export type AcceptQuotationDto = {
+  termsVersion: string;
+  acknowledged: true;
 };
 
 export type CreateQuotationDto = {
@@ -725,4 +791,101 @@ export type ListTrackingEventsQuery = {
   page?:   number;
   limit?:  number;
   loadId?: string;
+};
+
+// ── Support (assistance & ticketing) ─────────────────────────────────────────
+
+export type SupportCaseStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export const SUPPORT_CASE_STATUS_LABELS: Record<SupportCaseStatus, string> = {
+  open:        "Open",
+  in_progress: "In Progress",
+  resolved:    "Resolved",
+  closed:      "Closed",
+};
+
+export const SUPPORT_CASE_STATUS_COLORS: Record<SupportCaseStatus, string> = {
+  open:        "bg-blue-50 text-blue-700 border-blue-200",
+  in_progress: "bg-amber-50 text-amber-700 border-amber-200",
+  resolved:    "bg-green-50 text-green-700 border-green-200",
+  closed:      "bg-slate-50 text-slate-700 border-slate-200",
+};
+
+export type SupportCaseAuthor = {
+  id:        string;
+  fullName:  string | null;
+  avatarUrl: string | null;
+} | null;
+
+export type SupportCase = {
+  case_id:     string;
+  case_number: string;
+  account_id:  string | null;
+  created_by:  string;
+  subject:     string;
+  description: string;
+  status:      SupportCaseStatus;
+  created_at:  string;
+  updated_at:  string;
+  accounts?:   { account_id: string; account_name: string; logo_url: string | null } | null;
+  author?:     SupportCaseAuthor; // requester — populated for admin on the list endpoint only
+};
+
+export type SupportCaseComment = {
+  comment_id: string;
+  case_id:    string;
+  author_id:  string;
+  content:    string;
+  created_at: string;
+  author:     SupportCaseAuthor;
+};
+
+export type SupportCaseAttachment = {
+  attachment_id: string;
+  case_id:       string;
+  uploaded_by:   string;
+  file_name:     string;
+  file_path:     string;
+  file_size:     number | null;
+  created_at:    string;
+  url:           string | null;
+};
+
+export type SupportCaseEvent = {
+  event_id:    string;
+  case_id:     string;
+  event_type:  "created" | "status_changed" | "attachment_added";
+  from_status: SupportCaseStatus | null;
+  to_status:   SupportCaseStatus | null;
+  note:        string | null;
+  created_by:  string | null;
+  created_at:  string;
+  author:      SupportCaseAuthor;
+};
+
+export type SupportCaseDetail = SupportCase & {
+  comments:    SupportCaseComment[];
+  attachments: SupportCaseAttachment[];
+  events:      SupportCaseEvent[];
+};
+
+export type CreateSupportCaseDto = {
+  subject:     string;
+  description: string;
+};
+
+export type UpdateCaseStatusDto = {
+  status: SupportCaseStatus;
+};
+
+export type UpdateSupportCaseDto = {
+  subject?:     string;
+  description?: string;
+};
+
+export type ListSupportCasesQuery = {
+  page?:   number;
+  limit?:  number;
+  status?: SupportCaseStatus;
+  search?: string;
 };

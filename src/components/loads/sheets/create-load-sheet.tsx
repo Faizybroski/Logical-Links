@@ -25,9 +25,10 @@ import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useCreateShipment } from "@/hooks/use-shipments";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAuthStore } from "@/store/auth.store";
+import { dateInputValueToIso } from "@/lib/utils/format-date";
 import type { AccountProfile } from "@/types/api.types";
 
-import { FormSection, LoadLocationFields, LoadCargoFields, F } from "./load-form-fields";
+import { FormSection, LoadLocationFields, LoadCargoFields, LoadScheduleFields, F } from "./load-form-fields";
 
 interface CreateLoadSheetProps {
   open: boolean;
@@ -62,6 +63,8 @@ export function CreateLoadSheet({ open, onClose }: CreateLoadSheetProps) {
       cargoDescription:    "",
       weightKg:            undefined,
       pieces:              undefined,
+      estimatedPickupDate:   "",
+      estimatedDeliveryDate: "",
       quotedPrice:         undefined,
       referenceNumber:     "",
       specialInstructions: "",
@@ -92,6 +95,8 @@ export function CreateLoadSheet({ open, onClose }: CreateLoadSheetProps) {
         cargoDescription:    values.cargoDescription,
         weightKg:            values.weightKg,
         pieces:              values.pieces,
+        estimatedPickupDate:   dateInputValueToIso(values.estimatedPickupDate),
+        estimatedDeliveryDate: dateInputValueToIso(values.estimatedDeliveryDate),
         ...(isAdmin && { quotedPrice: values.quotedPrice }),
         referenceNumber:     values.referenceNumber,
         specialInstructions: values.specialInstructions,
@@ -234,6 +239,9 @@ export function CreateLoadSheet({ open, onClose }: CreateLoadSheetProps) {
 
               {/* Cargo fields */}
               <LoadCargoFields form={form} showQuotedPrice={isAdmin} />
+
+              {/* Schedule */}
+              <LoadScheduleFields form={form} />
             </div>
           </div>
 

@@ -3,14 +3,14 @@
 import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { api, type ApiResponse } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
-import type { AuthTokens } from '@/types/api.types'
+import type { LoginResult } from '@/types/api.types'
 
 function LoginForm() {
   const router = useRouter()
@@ -35,6 +35,22 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // MFA challenge step — set once the password step reports mfaRequired.
+  const [challengeToken, setChallengeToken] = useState<string | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
+
+  function completeLogin(res: { data: Extract<LoginResult, { mfaRequired: false }> }) {
+    const { accessToken, refreshToken, expiresIn, user } = res.data
+    setAuth({ accessToken, refreshToken, expiresIn, user })
+
+    if (user.role === 'admin') {
+      router.push('/admin/dashboard')
+    } else {
+      router.push('/shipper/dashboard')
+    }
+    router.refresh()
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -54,27 +70,100 @@ function LoginForm() {
     setLoading(true)
 
     try {
-      const res = await api.post<ApiResponse<AuthTokens>>(
+      const res = await api.post<ApiResponse<LoginResult>>(
         '/api/v1/auth/login',
         { email: result.data.email, password: result.data.password },
       )
 
-      const { accessToken, refreshToken, expiresIn, user } = res.data
-
-      setAuth({ accessToken, refreshToken, expiresIn, user })
-
-      if (user.role === 'admin') {
-        router.push('/admin/dashboard')
-      } else {
-        router.push('/shipper/dashboard')
+      if (res.data.mfaRequired) {
+        setChallengeToken(res.data.challengeToken)
+        return
       }
 
-      router.refresh()
+      completeLogin(res as { data: Extract<LoginResult, { mfaRequired: false }> })
     } catch (err) {
       setError((err as Error).message ?? 'Login failed. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleMfaSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!challengeToken) return
+
+    setLoading(true)
+    try {
+      const res = await api.post<ApiResponse<Extract<LoginResult, { mfaRequired: false }>>>(
+        '/api/v1/auth/mfa/challenge',
+        { challengeToken, code: mfaCode },
+      )
+      completeLogin(res)
+    } catch (err) {
+      setError((err as Error).message ?? 'Invalid code. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (challengeToken) {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10">
+        <div className="absolute -left-30 -top-30 h-80 w-[320px] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-30 -right-30 h-80 w-[320px] rounded-full bg-primary/10 blur-3xl" />
+
+        <div className="relative z-10 w-full max-w-md overflow-hidden rounded-4xl border border-card-border bg-card shadow-lg">
+          <div className="h-1.5 w-full bg-linear-to-r from-primary-dark via-primary to-primary-light" />
+
+          <div className="p-8 sm:p-10">
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Two-Factor Verification
+              </h1>
+              <p className="mt-2 text-sm text-muted">
+                Enter the 6-digit code from your authenticator app
+              </p>
+            </div>
+
+            <form onSubmit={handleMfaSubmit} className="space-y-5">
+              <Input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                className="h-12 text-center text-lg tracking-[0.5em]"
+                autoFocus
+              />
+
+              {error && (
+                <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" disabled={loading || mfaCode.length !== 6} className="w-full">
+                {loading ? 'Verifying...' : 'Verify'}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => { setChallengeToken(null); setMfaCode(''); setError(null) }}
+                className="w-full text-center text-sm font-medium text-muted hover:text-foreground"
+              >
+                Back to sign in
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -17,6 +17,10 @@ import {
   Users,
   UserCircle2,
   BadgeCheck,
+  Globe,
+  Hash,
+  MapPin,
+  Receipt,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +57,17 @@ function getAdmin(profiles?: AccountProfile[]): AccountProfile | undefined {
 
 function getEmployees(profiles?: AccountProfile[]): AccountProfile[] {
   return profiles?.filter((p) => p.company_role === "employee") ?? [];
+}
+
+function formatAddress(account: Account): string | null {
+  const parts = [
+    account.address_line1,
+    account.address_city,
+    account.address_state,
+    account.address_postcode,
+    account.address_country,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
 }
 
 function InfoRow({
@@ -195,6 +210,17 @@ export default function AdminCompanyDetailPage({
                 {account.abn && (
                   <p className="mt-0.5 text-sm text-muted">ABN: {account.abn}</p>
                 )}
+                {account.website && (
+                  <a
+                    href={account.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-0.5 flex items-center justify-center gap-1 text-sm text-primary hover:underline sm:justify-start"
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    {account.website}
+                  </a>
+                )}
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info/10 px-3 py-1 text-xs font-semibold text-blue-700">
                     <Building2 className="h-3 w-3" />
@@ -212,12 +238,54 @@ export default function AdminCompanyDetailPage({
             </div>
           </div>
 
-          {/* ── Contact info ── */}
+          {/* ── Company Information ── */}
           <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
             <div className="border-b border-card-border px-6 py-4">
               <h3 className="text-sm font-semibold text-foreground">Company Information</h3>
             </div>
             <div className="space-y-3 p-6">
+              {account.abn && (
+                <InfoRow
+                  icon={<Hash className="h-4 w-4" />}
+                  label="Business Number"
+                  value={account.abn}
+                />
+              )}
+              {account.website && (
+                <InfoRow
+                  icon={<Globe className="h-4 w-4" />}
+                  label="Website"
+                  value={account.website}
+                />
+              )}
+              {formatAddress(account) && (
+                <InfoRow
+                  icon={<MapPin className="h-4 w-4" />}
+                  label="Address"
+                  value={formatAddress(account)!}
+                />
+              )}
+              <InfoRow
+                icon={<Calendar className="h-4 w-4" />}
+                label="Registered"
+                value={formatDate(account.created_at, true)}
+              />
+            </div>
+          </div>
+
+          {/* ── Primary Contact ── */}
+          <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+            <div className="border-b border-card-border px-6 py-4">
+              <h3 className="text-sm font-semibold text-foreground">Primary Contact</h3>
+            </div>
+            <div className="space-y-3 p-6">
+              {account.contact_name && (
+                <InfoRow
+                  icon={<UserCircle2 className="h-4 w-4" />}
+                  label="Contact Name"
+                  value={account.contact_name}
+                />
+              )}
               {account.contact_email && (
                 <InfoRow
                   icon={<Mail className="h-4 w-4" />}
@@ -232,20 +300,36 @@ export default function AdminCompanyDetailPage({
                   value={account.contact_phone}
                 />
               )}
-              {account.contact_name && (
-                <InfoRow
-                  icon={<UserCircle2 className="h-4 w-4" />}
-                  label="Contact Name"
-                  value={account.contact_name}
-                />
+              {!account.contact_name && !account.contact_email && !account.contact_phone && (
+                <p className="py-2 text-sm italic text-muted">No primary contact on file</p>
               )}
-              <InfoRow
-                icon={<Calendar className="h-4 w-4" />}
-                label="Registered"
-                value={formatDate(account.created_at, true)}
-              />
             </div>
           </div>
+
+          {/* ── Billing Contact ── */}
+          {(account.billing_email || account.accounts_payable_email) && (
+            <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+              <div className="border-b border-card-border px-6 py-4">
+                <h3 className="text-sm font-semibold text-foreground">Billing Contact</h3>
+              </div>
+              <div className="space-y-3 p-6">
+                {account.billing_email && (
+                  <InfoRow
+                    icon={<Mail className="h-4 w-4" />}
+                    label="Billing Email"
+                    value={account.billing_email}
+                  />
+                )}
+                {account.accounts_payable_email && (
+                  <InfoRow
+                    icon={<Receipt className="h-4 w-4" />}
+                    label="Accounts Payable Email"
+                    value={account.accounts_payable_email}
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── Company Admin card ── */}
           <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">

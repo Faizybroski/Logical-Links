@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Package, Truck, Users, CheckCircle2, Clock3, ShieldAlert } from 'lucide-react'
+import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, ShieldAlert, Receipt } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useShipments } from '@/hooks/use-shipments'
 import {
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const byStatus        = stats?.byStatus
   const totalLoads      = stats?.total           ?? 0
   const activeLoads     = stats?.activeLoads     ?? 0
-  const totalShippers   = stats?.totalShippers   ?? 0
+  const invoicesDue     = stats?.invoicesDue     ?? 0
   const pendingApprovals = stats?.pendingApprovals ?? 0
   const trend           = stats?.trend           ?? []
   const sparkline       = trendToSparkline(trend)
@@ -59,9 +59,9 @@ export default function AdminDashboard() {
       chartColor: '#10B981',
     },
     {
-      title:      'Companies',
-      value:      totalShippers,
-      icon:       Users,
+      title:      'Invoices Due',
+      value:      invoicesDue,
+      icon:       Receipt,
       chartColor: '#8B5CF6',
     },
   ]

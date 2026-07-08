@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse, type PaginatedResponse } from "@/lib/api";
-import type { Account, CreateAccountDto, UpdateAccountDto, ListAccountsQuery } from "@/types/api.types";
+import type { Account, CreateAccountDto, UpdateAccountDto, UpdateOwnCompanyDto, ListAccountsQuery } from "@/types/api.types";
 
 const KEYS = {
   all:       ["accounts"] as const,
@@ -84,6 +84,15 @@ export function useUpdateMyProfile() {
   return useMutation({
     mutationFn: (dto: { fullName?: string; phone?: string }) =>
       api.patch<ApiResponse<{ id: string; full_name: string; phone: string }>>("/api/v1/accounts/me", dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.myProfile }),
+  });
+}
+
+export function useUpdateMyCompany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: UpdateOwnCompanyDto) =>
+      api.patch<ApiResponse<Account>>("/api/v1/accounts/me/company", dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.myProfile }),
   });
 }

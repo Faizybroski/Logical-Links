@@ -1,7 +1,7 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
-import { MapPin, Package } from "lucide-react";
+import { MapPin, Package, Clock } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,6 +128,48 @@ export function LoadLocationFields({ form }: { form: UseFormReturn<LoadFormValue
         </div>
       </FormSection>
     </div>
+  );
+}
+
+export function LoadScheduleFields({ form }: { form: UseFormReturn<LoadFormValues> }) {
+  return (
+    <FormSection
+      title="Schedule"
+      description="Estimated pickup and delivery dates"
+      icon={<Clock className="h-4 w-4" />}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <FormField control={form.control} name="estimatedPickupDate" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Estimated Pickup</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                type="date"
+                value={field.value ?? ""}
+                className={F}
+              />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )} />
+
+        <FormField control={form.control} name="estimatedDeliveryDate" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Estimated Delivery (ETA)</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                type="date"
+                value={field.value ?? ""}
+                className={F}
+              />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )} />
+      </div>
+    </FormSection>
   );
 }
 

@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
   X, Pencil, Copy, Send, FileDown, Loader2,
   User, Building2, Mail, Phone, MapPin, DollarSign, Truck,
+  CheckCircle2, XCircle, ShieldCheck, Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -14,12 +16,16 @@ import { QuotationStatusBadge } from "@/components/documents/document-status-bad
 import { LineItemsTable } from "@/components/documents/line-items-table";
 import { PricingSummary } from "@/components/documents/pricing-summary";
 import { PdfActionsCard } from "@/components/documents/pdf-actions-card";
+import { TermsAcceptanceModal, TERMS_VERSION } from "@/components/documents/terms-acceptance-modal";
 import {
   useQuotation,
   useDuplicateQuotation,
   useGenerateQuotationPdf,
+  useAcceptQuotation,
+  useDeclineQuotation,
 } from "@/hooks/use-quotations";
 import { useConvertQuotationToInvoice } from "@/hooks/use-invoices";
+import { useAuthStore } from "@/store/auth.store";
 import type { LineItem } from "@/types/api.types";
 
 function fmtDate(d?: string | null) {
@@ -55,6 +61,8 @@ interface QuotationDetailsSheetProps {
 export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick }: QuotationDetailsSheetProps) {
   const router   = useRouter();
   const pathname = usePathname();
+  const { user } = useAuthStore();
+  const isShipper = user?.role === "shipper";
 
   const { data: res, isLoading } = useQuotation(quotationId);
   const quotation = res?.data;
@@ -62,6 +70,10 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
   const duplicateMut = useDuplicateQuotation();
   const pdfMut       = useGenerateQuotationPdf(quotationId);
   const convertMut   = useConvertQuotationToInvoice();
+  const acceptMut    = useAcceptQuotation(quotationId);
+  const declineMut   = useDeclineQuotation(quotationId);
+
+  const [termsOpen, setTermsOpen] = useState(false);
 
   const invoiceBasePath = pathname.startsWith("/admin") ? "/admin/invoices" : "/shipper/invoices";
 
@@ -88,6 +100,25 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
       if (newId) router.push(`${invoiceBasePath}?details=${newId}`);
     } catch (e) { toast.error((e as Error).message); }
   }
+
+  async function handleConfirmAccept() {
+    try {
+      await acceptMut.mutateAsync({ termsVersion: TERMS_VERSION, acknowledged: true });
+      toast.success("Quotation accepted");
+      setTermsOpen(false);
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  async function handleDecline() {
+    if (!window.confirm("Decline this quotation? This cannot be undone.")) return;
+    try {
+      await declineMut.mutateAsync();
+      toast.success("Quotation declined");
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  const acceptance = quotation?.quotation_acceptances?.[0];
+  const canActOnQuotation = isShipper && quotation?.status === "sent";
 
   const items: Omit<LineItem, "id" | "created_at" | "updated_at">[] =
     (quotation?.quotation_items ?? []).map((i) => ({
@@ -295,10 +326,68 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                   </div>
                 </div>
               )}
+
+              {/* Acceptance / decline record — read-only once the decision is made */}
+              {quotation.status === "accepted" && acceptance && (
+                <div className="overflow-hidden rounded-2xl border border-green-200 bg-green-50/60 shadow-sm dark:border-green-800 dark:bg-green-950/40">
+                  <div className="flex items-center gap-2 border-b border-green-200 px-5 py-4 dark:border-green-800">
+                    <CheckCircle2 className="h-4 w-4 text-green-700 dark:text-green-400" />
+                    <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">Quotation Accepted</h3>
+                  </div>
+                  <div className="grid gap-3 p-4 sm:grid-cols-2">
+                    <InfoTile icon={<User className="h-4 w-4" />} label="Accepted By" value={acceptance.full_name ?? "—"} />
+                    <InfoTile icon={<Building2 className="h-4 w-4" />} label="Company" value={acceptance.company_name ?? "—"} />
+                    <InfoTile icon={<Calendar className="h-4 w-4" />} label="Accepted At" value={fmtDate(acceptance.accepted_at)} />
+                    <InfoTile icon={<ShieldCheck className="h-4 w-4" />} label="Terms Version" value={acceptance.terms_version} />
+                  </div>
+                </div>
+              )}
+
+              {quotation.status === "rejected" && (
+                <div className="overflow-hidden rounded-2xl border border-red-200 bg-red-50/60 shadow-sm dark:border-red-800 dark:bg-red-950/40">
+                  <div className="flex items-center gap-2 px-5 py-4">
+                    <XCircle className="h-4 w-4 text-red-700 dark:text-red-400" />
+                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">
+                      Quotation Declined{quotation.declined_at ? ` — ${fmtDate(quotation.declined_at)}` : ""}
+                    </h3>
+                  </div>
+                </div>
+              )}
+
+              {/* Accept / Decline — customer action, only while awaiting review */}
+              {canActOnQuotation && (
+                <div className="flex flex-col gap-3 rounded-2xl border border-card-border bg-card p-4 shadow-sm sm:flex-row">
+                  <Button
+                    type="button"
+                    onClick={() => setTermsOpen(true)}
+                    className="h-10 flex-1 rounded-lg bg-primary text-sm text-sidebar hover:bg-primary/85"
+                  >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDecline}
+                    disabled={declineMut.isPending}
+                    className="h-10 flex-1 rounded-lg border-red-200 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="mr-1.5 h-4 w-4" />
+                    Decline
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      <TermsAcceptanceModal
+        open={termsOpen}
+        onClose={() => setTermsOpen(false)}
+        onAccept={handleConfirmAccept}
+        loading={acceptMut.isPending}
+      />
     </Sheet>
   );
 }

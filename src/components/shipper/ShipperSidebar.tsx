@@ -17,6 +17,7 @@ import {
   Building2,
   LogOut,
   X,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/store/auth.store";
@@ -30,7 +31,8 @@ const BASE_NAVIGATION = [
   { label: "My Deliveries", href: "/shipper/loads", icon: Truck },
   { label: "Invoices", href: "/shipper/invoices", icon: FileText },
   { label: "Quotations", href: "/shipper/quotations", icon: FileQuestion },
-  { label: "Notifications", href: "/shipper/notifications", icon: Bell },
+  { label: "Alerts", href: "/shipper/notifications", icon: Bell },
+  { label: "Support", href: "/shipper/support", icon: LifeBuoy },
   { label: "My Profile", href: "/shipper/profile", icon: User },
 ];
 
