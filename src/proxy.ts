@@ -5,7 +5,6 @@ const SESSION_COOKIE = "ll-session";
 
 const PROTECTED_PREFIXES = ["/admin", "/shipper", "/driver"];
 
-
 const AUTH_ONLY_PATHS = new Set([
   "/",
   "/login",
