@@ -626,6 +626,8 @@ export type Location = {
   id:         string;
   city:       string;
   province:   string;
+  latitude:   number | null;
+  longitude:  number | null;
   is_active:  boolean;
   created_at: string;
   updated_at: string;
@@ -768,7 +770,7 @@ export type TrackingEvent = {
   event_timestamp:  string;
   created_at:       string;
   updated_at:       string;
-  locations?:       Pick<Location, "id" | "city" | "province"> | null;
+  locations?:       Pick<Location, "id" | "city" | "province" | "latitude" | "longitude"> | null;
   profiles?:        { id: string; full_name: string | null; avatar_url?: string | null } | null;
 };
 

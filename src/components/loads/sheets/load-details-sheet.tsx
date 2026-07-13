@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -40,6 +41,11 @@ import { AssignDialog } from "@/components/loads/dialogs/assign-dialog";
 import { AssignEmployeeDialog } from "@/components/loads/dialogs/assign-employee-dialog";
 import { TrackingTimeline } from "@/components/tracking/tracking-timeline";
 import { formatDate } from "@/lib/utils/format-date";
+
+const DeliveryMap = dynamic(
+  () => import("@/components/tracking/delivery-map").then((m) => m.DeliveryMap),
+  { ssr: false },
+);
 
 import {
   useShipment,
@@ -727,6 +733,9 @@ export function LoadDetailsSheet({
                   </div>
                 </div>
               </div>
+
+              {/* Live Location (Mapbox) */}
+              <DeliveryMap event={trackingEvents[0] ?? null} />
 
               {/* Tracking Timeline */}
               <TrackingTimeline
