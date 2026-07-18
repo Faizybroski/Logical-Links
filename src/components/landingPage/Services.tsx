@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const services = [
   {
+    slug: "ftl-ltl-transportation",
     title: "FTL & LTL Transportation",
     items: ["Full Truckload (FTL)", "Less Than Truckload (LTL)"],
     description:
@@ -14,6 +15,7 @@ const services = [
     image: "/service1.svg",
   },
   {
+    slug: "dedicated-specialized-transport",
     title: "Dedicated & Specialized Transport",
     items: ["Dedicated Trucking Services", "Specialized & Heavy Transport"],
     description:
@@ -21,6 +23,7 @@ const services = [
     image: "/service2.svg",
   },
   {
+    slug: "rush-delivery-solutions",
     title: "RUSH Delivery Solutions",
     items: ["Last-Mile Delivery", "E-Commerce Delivery", "Courier Services"],
     description:
@@ -91,18 +94,23 @@ export default function Services() {
 }
 
 function ServiceCard({
+  slug,
   title,
   items,
   description,
   image,
 }: {
+  slug: string;
   title: string;
   items: string[];
   description: string;
   image: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-xs">
+    <Link
+      href={`/services#${slug}`}
+      className="group relative block overflow-hidden rounded-xs"
+    >
       <div className="relative aspect-[1.2]">
         <Image
           src={image}
@@ -131,16 +139,12 @@ function ServiceCard({
             </p>
           </div>
           <div className="flex justify-end -mr-3 -mb-3">
-            <Button
-              size="icon"
-              variant="secondary"
-              className="rounded-full bg-white hover:bg-white size-11"
-            >
+            <span className="flex size-11 items-center justify-center rounded-full bg-white">
               <ArrowUpRight className="size-7 text-black" />
-            </Button>
+            </span>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

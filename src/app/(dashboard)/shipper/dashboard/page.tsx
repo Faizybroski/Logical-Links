@@ -60,24 +60,29 @@ export default function ShipperDashboard() {
       growth:     growth.pct,
       trend:      growth.direction,
       subtitle:   'vs last 30 days',
+      isLoading:  statsLoading,
     },
     {
       title:      'Active',
       value:      activeLoads,
       icon:       Truck,
       chartColor: '#3B82F6',
+      isLoading:  statsLoading,
     },
     {
       title:      'Delivered',
       value:      delivered,
       icon:       CheckCircle2,
       chartColor: '#10B981',
+      isLoading:  statsLoading,
     },
     {
-      title:      'Pending',
-      value:      byStatus?.pending ?? 0,
-      icon:       Clock3,
+      title:      'Invoices Due',
+      value:      iStats.sent + iStats.overdue,
+      icon:       DollarSign,
       chartColor: '#F59E0B',
+      valueColor: '#7B1E3A',
+      isLoading:  invoicesLoading,
     },
   ]
 
@@ -106,7 +111,8 @@ export default function ShipperDashboard() {
               value={kpi.value}
               icon={kpi.icon}
               chartColor={kpi.chartColor}
-              isLoading={statsLoading}
+              valueColor={kpi.valueColor}
+              isLoading={kpi.isLoading}
               data={kpi.data}
               growth={kpi.growth}
               trend={kpi.trend}

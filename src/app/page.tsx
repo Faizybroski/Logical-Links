@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import LandingAuthRedirect from "@/components/layout/LandingAuthRedirect";
+import ScrollToHash from "@/components/layout/ScrollToHash";
 import Header from "@/components/landingPage/Header";
 import Hero from "@/components/landingPage/Hero";
 import About from "@/components/landingPage/About";
@@ -20,6 +21,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <LandingAuthRedirect />
+      <ScrollToHash />
       <div className="text-center bg-primary text-white py-2 text-xs">
         <span className="underline">Important Note:</span>{" "}
         <span>if you completely feel secure then transfer your shipment.</span>

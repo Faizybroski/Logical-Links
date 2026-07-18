@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Globe, ArrowLeft, ArrowRight, Star } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
 const services = [
-  { id: "01", title: "LLC", image: "/offer1.png" },
-  { id: "02", title: "SERVICES", image: "/offer2.svg" },
-  { id: "03", title: "Access Hub", image: "/offer3.png" },
+  { id: "01", title: "LLC", image: "/offer1.png", href: "/llc" },
+  { id: "02", title: "SERVICES", image: "/offer2.svg", href: "/services" },
+  { id: "03", title: "Access Hub", image: "/offer3.png", href: "/access-hub" },
 ];
 
 const offerStatements = [
@@ -177,13 +177,18 @@ function ServiceCard({
   image,
   title,
   id,
+  href,
 }: {
   image: string;
   title: string;
   id: string;
+  href: string;
 }) {
   return (
-    <Card className="group relative overflow-hidden rounded-xs border-0 p-0">
+    <Link
+      href={href}
+      className="group relative block overflow-hidden rounded-xs"
+    >
       <div className="relative aspect-[1.45/1]">
         <Image
           src={image}
@@ -204,6 +209,6 @@ function ServiceCard({
           <span className="self-start text-lg font-light text-white">{id}</span>
         </div>
       </div>
-    </Card>
+    </Link>
   );
 }

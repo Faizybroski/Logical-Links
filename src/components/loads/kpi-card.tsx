@@ -24,6 +24,7 @@ export interface KpiCardProps {
   trend?: "up" | "down";
   subtitle?: string;
   chartColor?: string;
+  valueColor?: string;
   data?: KpiDataPoint[];
   isLoading?: boolean;
   className?: string;
@@ -55,6 +56,7 @@ export function KpiCard({
   trend,
   subtitle = "vs last 30 days",
   chartColor = "#C89B3C",
+  valueColor,
   data,
   isLoading = false,
   className,
@@ -107,8 +109,14 @@ export function KpiCard({
 
           <div className="mt-2 flex flex-wrap items-end gap-1.5 sm:mt-3 sm:gap-2.5">
             <span
-              className="text-3xl font-semibold leading-none tracking-tight text-foreground sm:text-[2.25rem]"
-              style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+              className={cn(
+                "text-3xl font-semibold leading-none tracking-tight sm:text-[2.25rem]",
+                !valueColor && "text-foreground",
+              )}
+              style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                ...(valueColor ? { color: valueColor } : {}),
+              }}
             >
               {typeof value === "number" ? value.toLocaleString() : value}
             </span>

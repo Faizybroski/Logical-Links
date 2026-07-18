@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -13,14 +14,19 @@ const nav = [
   { label: "Contact", section: "quote" },
 ];
 
-function scrollTo(section: string) {
-  const el = document.getElementById(section);
-  if (el) el.scrollIntoView({ behavior: "smooth" });
-}
-
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const goToSection = (section: string) => {
+    if (pathname === "/") {
+      document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push(`/#${section}`);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -42,7 +48,7 @@ export default function Header() {
       >
         <button
           type="button"
-          onClick={() => scrollTo("hero")}
+          onClick={() => goToSection("hero")}
           aria-label="Go to top"
           className="focus:outline-none"
         >
@@ -55,7 +61,7 @@ export default function Header() {
             <button
               key={n.label}
               type="button"
-              onClick={() => scrollTo(n.section)}
+              onClick={() => goToSection(n.section)}
               className="text-sm font-medium text-black hover:text-primary transition-colors"
             >
               {n.label}
@@ -73,16 +79,16 @@ export default function Header() {
           </a>
           <a
             href="/register"
-            className="px-5 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-xs transition-colors"
+            className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-xs transition-colors"
           >
             Sign Up
           </a>
           <button
             type="button"
-            onClick={() => scrollTo("quote")}
+            onClick={() => goToSection("quote")}
             className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
-           Request a Quote
+            Request a Quote
           </button>
         </div>
 
@@ -112,7 +118,7 @@ export default function Header() {
                 key={n.label}
                 type="button"
                 onClick={() => {
-                  scrollTo(n.section);
+                  goToSection(n.section);
                   setOpen(false);
                 }}
                 className="text-sm font-medium text-gray-700 hover:text-primary transition-colors text-left"
@@ -141,7 +147,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => {
-                scrollTo("quote");
+                goToSection("quote");
                 setOpen(false);
               }}
               className="mt-2 px-6 py-2 text-sm font-medium text-center outline outline-primary outline-offset-2 text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"

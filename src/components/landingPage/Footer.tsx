@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { MapPin, Phone, Mail } from "lucide-react";
 import {
   FaFacebookF,
@@ -11,16 +12,22 @@ import {
 } from "react-icons/fa6";
 import { motion } from "framer-motion";
 
-function scrollTo(section: string) {
-  const el = document.getElementById(section);
-  if (el) el.scrollIntoView({ behavior: "smooth" });
-}
-
 export default function Footer() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const goToSection = (section: string) => {
+    if (pathname === "/") {
+      document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push(`/#${section}`);
+    }
+  };
+
   return (
     <footer
       id="footer"
-      className="relative overflow-hidden rounded-t-[80px] bg-primary text-white"
+      className="relative overflow-hidden bg-primary text-white"
     >
       <div className="absolute inset-0">
         <Image src="/f.svg" alt="Warehouse" fill className="object-cover" />
@@ -69,7 +76,7 @@ export default function Footer() {
             <div className="flex flex-col gap-5 text-sm">
               <button
                 type="button"
-                onClick={() => scrollTo("about")}
+                onClick={() => goToSection("about")}
                 className="text-left hover:underline"
               >
                 About Us
@@ -79,7 +86,7 @@ export default function Footer() {
               <Link href="#">Case Studies</Link>
               <button
                 type="button"
-                onClick={() => scrollTo("quote")}
+                onClick={() => goToSection("quote")}
                 className="text-left hover:underline"
               >
                 Contact
