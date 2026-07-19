@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   LayoutDashboard,
   Truck,
@@ -20,6 +20,7 @@ import {
   LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { getSidebarTheme } from "@/lib/utils/sidebar-theme";
 import { useAuthStore } from "@/store/auth.store";
 import { useMyProfile } from "@/hooks/use-accounts";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -106,6 +107,8 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
   const roleLabel =
     user?.companyRole === "company_admin" ? "Company Admin" : "Employee";
 
+  const sidebarTheme = getSidebarTheme(user?.id);
+
   return (
     <aside
       onMouseEnter={() => setIsHovered(true)}
@@ -113,6 +116,13 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
         setIsHovered(false);
         setControlOpen(false);
       }}
+      style={
+        {
+          "--sidebar": sidebarTheme.bg,
+          "--sidebar-secondary": sidebarTheme.secondary,
+          "--sidebar-border": sidebarTheme.border,
+        } as CSSProperties
+      }
       className={cn(
         "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-out lg:relative lg:translate-x-0",
         isExpanded ? "w-62" : "w-[72px]",

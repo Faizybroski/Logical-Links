@@ -32,7 +32,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { StatusBadge } from "@/components/loads/status-badge";
-import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
 import { getEtaInfo } from "@/components/loads/columns";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
@@ -282,10 +281,11 @@ export function LoadDetailsSheet({
     }
   }
 
-  const isShipperOwned = shipment?.created_by_role === "shipper";
-  const transferLocked = isShipperOwned || shipment?.status !== "pending";
+  const transferLocked = shipment?.status !== "pending";
+  // Shipping companies never edit the whole delivery — only status, location,
+  // and employee assignment (handled by the buttons/dialogs below).
   const canEdit =
-    shipment && !["delivered", "cancelled"].includes(shipment.status);
+    isAdmin && shipment && !["delivered", "cancelled"].includes(shipment.status);
   const canAssign = isAdmin && !transferLocked;
   const canChangeStatus =
     shipment && (STATUS_TRANSITIONS[shipment.status] ?? []).length > 0;
@@ -306,7 +306,6 @@ export function LoadDetailsSheet({
                   </h2>
 
                   <StatusBadge status={shipment.status} />
-                  <CreatorBadge shipment={shipment} size="sm" />
 
                   <span className="text-xs capitalize text-muted">
                     {shipment.shipment_type.replace("_", " ")}
@@ -443,34 +442,15 @@ export function LoadDetailsSheet({
                 </div>
               </div>
 
-              {/* Admin: Ownership & Assignment */}
+              {/* Admin: Assignment */}
               {isAdmin && (
                 <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
                   <div className="border-b border-card-border px-6 py-4">
                     <h2 className="text-sm font-semibold text-foreground">
-                      Ownership &amp; Assignment
+                      Assignment
                     </h2>
                   </div>
                   <div className="sm:grid flex flex-col gap-3 p-5 sm:grid-cols-2">
-                    <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
-                      <UserAvatar
-                        name={getCreatorName(shipment)}
-                        avatarUrl={shipment.profiles?.avatar_url}
-                        size="lg"
-                        rounded="xl"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-                          Created By
-                        </p>
-                        <p className="mt-0.5 text-sm font-medium text-foreground">
-                          {getCreatorName(shipment)}
-                        </p>
-                        <div className="mt-1">
-                          <CreatorBadge shipment={shipment} size="sm" />
-                        </div>
-                      </div>
-                    </div>
                     <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
                       <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Calendar className="h-4 w-4" />
@@ -485,7 +465,7 @@ export function LoadDetailsSheet({
                       </div>
                     </div>
                     <div
-                      className={`flex items-start gap-3 rounded-xl border p-3 sm:col-span-2 ${
+                      className={`flex items-start gap-3 rounded-xl border p-3 ${
                         transferLocked
                           ? "border-red-200 bg-red-50/60"
                           : "border-green-200 bg-green-50/60"
@@ -514,27 +494,13 @@ export function LoadDetailsSheet({
                           {transferLocked ? "Locked" : "Allowed"}
                         </p>
                         <p className="mt-0.5 text-xs text-muted">
-                          {isShipperOwned
-                            ? "Company-owned — permanent"
-                            : transferLocked
-                              ? "Operational phase started"
-                              : "Can be reassigned"}
+                          {transferLocked
+                            ? "Operational phase started"
+                            : "Can be reassigned"}
                         </p>
                       </div>
                     </div>
                   </div>
-                  {isShipperOwned && (
-                    <div className="flex items-start gap-3 border-t border-violet-200 bg-violet-50/60 px-5 py-3 dark:border-violet-800 dark:bg-violet-950/40">
-                      <Truck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
-                      <p className="text-sm text-violet-800 dark:text-violet-300">
-                        <span className="font-semibold">
-                          Company-Owned Load.
-                        </span>{" "}
-                        Created by a shipping company and permanently assigned
-                        to them.
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -558,22 +524,8 @@ export function LoadDetailsSheet({
                               rounded="lg"
                             />
                           }
-                          label={
-                            isShipperOwned
-                              ? "Shipping Co. (Locked)"
-                              : "Shipping Company"
-                          }
-                          value={
-                            isShipperOwned ? (
-                              <span className="flex items-center gap-1.5">
-                                {shipment.accounts?.account_name ??
-                                  "Unassigned"}
-                                <Lock className="h-3 w-3 text-violet-500" />
-                              </span>
-                            ) : (
-                              (shipment.accounts?.account_name ?? "Unassigned")
-                            )
-                          }
+                          label="Shipping Company"
+                          value={shipment.accounts?.account_name ?? "Unassigned"}
                         />
                       ) : null}
                       {shipment.employee?.full_name && (
@@ -758,18 +710,22 @@ export function LoadDetailsSheet({
                     Financial Documents
                   </h2>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`${docBasePath}/quotations?create=true&loadId=${loadId}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-card-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-primary/5 hover:text-primary"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> New Quotation
-                    </Link>
-                    <Link
-                      href={`${docBasePath}/invoices?create=true&loadId=${loadId}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-sidebar transition-colors hover:bg-primary/85"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> New Invoice
-                    </Link>
+                    {isAdmin && (
+                      <>
+                        <Link
+                          href={`${docBasePath}/quotations?create=true&loadId=${loadId}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-card-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-primary/5 hover:text-primary"
+                        >
+                          <Plus className="h-3.5 w-3.5" /> New Quotation
+                        </Link>
+                        <Link
+                          href={`${docBasePath}/invoices?create=true&loadId=${loadId}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-sidebar transition-colors hover:bg-primary/85"
+                        >
+                          <Plus className="h-3.5 w-3.5" /> New Invoice
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
 

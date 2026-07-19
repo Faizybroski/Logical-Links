@@ -34,6 +34,36 @@ const values = [
   },
 ];
 
+const pillars = [
+  {
+    id: "mission",
+    title: "Our Mission",
+    image: "/mission.jpg",
+    paragraphs: [
+      "Our mission is to redefine logistics and transport by delivering solutions that go beyond movement—building trust through reliability, innovation, and precision. We serve businesses and individuals with services that span freight, courier, medical deliveries, personal shopping, and premium transport.",
+      "With every shipment, every mile, and every client interaction, we are committed to setting new standards of excellence, ensuring safety, speed, and peace of mind always.",
+    ],
+  },
+  {
+    id: "vision",
+    title: "Our Vision",
+    image: "/vission.png",
+    paragraphs: [
+      "Our vision is to set the benchmark for logistics and transport excellence—integrating innovation, precision, and sustainability to move businesses and communities forward. We aspire to be the partner of choice across freight, courier, and specialized services, recognized for redefining reliability and creating smarter, safer, and more connected supply chains.",
+      "By constantly evolving and leading with purpose, we aim to transform the future of logistics into one that empowers progress, delivers certainty, and builds enduring trust worldwide.",
+    ],
+  },
+  {
+    id: "values",
+    title: "Our Values",
+    image: "/values.png",
+    paragraphs: [
+      "Our business is built on a foundation of integrity, reliability, and a customer-first approach. We believe in doing what we promise, delivering every service—whether logistics, courier, or personal transport—with consistency and care.",
+      "Innovation drives us forward, as we continuously embrace new technologies and smarter processes to create safer, faster, and more efficient solutions. We place excellence at the center of everything we do, and we remain committed to sustainability and responsibility, ensuring our services positively impact both our clients and the communities we serve.",
+    ],
+  },
+];
+
 export default function LLCPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -68,38 +98,91 @@ export default function LLCPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="grid gap-10 lg:grid-cols-2 lg:items-center"
         >
-          <div className="relative aspect-[1.2] overflow-hidden rounded-xs">
-            <Image src="/offer1.png" alt="Logical Links LLC" fill className="object-cover" />
-          </div>
+          <h2 className="text-2xl sm:text-4xl font-bold text-black mb-4">
+            About Us
+          </h2>
+          <p className="text-gray-600 leading-relaxed mb-4">
+            At LLC, we don&apos;t just deliver services—we deliver certainty.
+            In an industry where reliability defines success, we set the
+            standard by combining unmatched expertise, advanced technology,
+            and a relentless commitment to excellence.
+          </p>
+          <p className="text-gray-600 leading-relaxed mb-4">
+            From managing complex logistics and time-sensitive courier
+            shipments to transporting passengers in luxury, delivering
+            life-saving medical supplies, or providing seamless shopping and
+            delivery solutions, our promise is simple: we get it
+            done—safely, efficiently, and without compromise.
+          </p>
+          <p className="text-gray-600 leading-relaxed mb-4">
+            What makes us different is not only the breadth of our services
+            but the depth of our dedication. Every shipment, every ride, and
+            every delivery is managed with precision and care, supported by
+            real-time visibility, customized solutions, and a team that
+            operates around the clock to meet your needs without excuses.
+          </p>
+          <p className="text-gray-600 leading-relaxed mb-4">
+            When others say &ldquo;good enough,&rdquo; we go
+            further—optimizing costs, accelerating timelines, and
+            guaranteeing peace of mind at every step. With LLC, you gain more
+            than a provider; you gain a strategic partner who ensures your
+            business, your goods, and your lifestyle move forward without
+            interruption.
+          </p>
+          <p className="text-gray-600 leading-relaxed font-semibold">
+            Choose confidence. Choose innovation. Choose LLC—where
+            reliability is not promised, it&apos;s proven.
+          </p>
 
-          <div>
-            <h2 className="text-2xl sm:text-4xl font-bold text-black mb-4">
-              Who We Are
-            </h2>
-            <p className="text-gray-600 leading-relaxed mb-4">
-              At the core of Logical Links is a commitment to delivering
-              reliable logistics and transportation solutions tailored to the
-              needs of every client. By combining advanced technology,
-              industry expertise, and responsive service, we ensure every
-              operation is managed with precision, transparency, and care.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              Through continuous improvement and operational discipline, we
-              help businesses move forward with confidence. At Logical Links,
-              you&apos;re more than a customer - you&apos;re a valued partner,
-              and your success drives everything we do.
-            </p>
-
-            <Link
-              href="/register"
-              className="mt-8 inline-block px-6 py-3 text-sm font-semibold text-white bg-primary hover:bg-primary-dark rounded-xs shadow-sm transition-colors"
-            >
-              Get Started
-            </Link>
-          </div>
+          <Link
+            href="/register"
+            className="mt-8 inline-block px-6 py-3 text-sm font-semibold text-white bg-primary hover:bg-primary-dark rounded-xs shadow-sm transition-colors"
+          >
+            Get Started
+          </Link>
         </motion.div>
+
+        <div className="mt-24 space-y-24">
+          {pillars.map((pillar, i) => (
+            <motion.section
+              key={pillar.id}
+              id={pillar.id}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="scroll-mt-28 grid gap-10 lg:grid-cols-2 lg:items-center"
+            >
+              <div
+                className={`relative aspect-[1.2] overflow-hidden rounded-xs ${
+                  i % 2 === 1 ? "lg:order-2" : ""
+                }`}
+              >
+                <Image
+                  src={pillar.image}
+                  alt={pillar.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+                <h2 className="text-2xl sm:text-4xl font-bold text-black mb-4">
+                  {pillar.title}
+                </h2>
+                {pillar.paragraphs.map((paragraph, j) => (
+                  <p
+                    key={j}
+                    className="text-gray-600 leading-relaxed mb-4 last:mb-0"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </motion.section>
+          ))}
+        </div>
 
         <div className="mt-24">
           <motion.h2

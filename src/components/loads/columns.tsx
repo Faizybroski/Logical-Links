@@ -19,9 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/loads/status-badge";
-import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
-import { UserAvatar } from "@/components/ui/user-avatar";
-import { CompanyLogo } from "@/components/ui/company-logo";
 import { TableSortHeader } from "@/components/ui/table-sort-header";
 import {
   Shipment,
@@ -150,73 +147,6 @@ export function getLoadColumns({
         </span>
       ),
     },
-
-    // {
-    //   id: "created_by_col",
-    //   header: "Created By",
-    //   cell: ({ row }) => {
-    //     const s = row.original;
-    //     const name = getCreatorName(s);
-    //     return (
-    //       <div className="flex items-center gap-2">
-    //         <UserAvatar
-    //           name={name}
-    //           avatarUrl={s.profiles?.avatar_url}
-    //           size="sm"
-    //           rounded="xl"
-    //         />
-    //         <div className="flex flex-col gap-0.5">
-    //           <CreatorBadge shipment={s} size="sm" />
-    //           <span className="text-xs text-muted truncate max-w-28" title={name}>
-    //             {name}
-    //           </span>
-    //         </div>
-    //       </div>
-    //     );
-    //   },
-    // },
-
-    // {
-    //   id: "company",
-    //   header: "Company / Employee",
-    //   cell: ({ row }) => {
-    //     const s = row.original;
-    //     const companyName  = s.accounts?.account_name;
-    //     const employeeName = s.employee?.full_name;
-    //     return (
-    //       <div className="flex flex-col gap-1.5">
-    //         {companyName ? (
-    //           <div className="flex items-center gap-1.5">
-    //             <CompanyLogo
-    //               name={companyName}
-    //               logoUrl={s.accounts?.logo_url}
-    //               size="xs"
-    //               rounded="lg"
-    //             />
-    //             <span className="text-sm font-medium text-foreground truncate max-w-28">
-    //               {companyName}
-    //             </span>
-    //           </div>
-    //         ) : (
-    //           <span className="text-muted italic text-sm">No Company</span>
-    //         )}
-    //         {companyName && (
-    //           <div className="flex items-center gap-1.5">
-    //             <UserAvatar
-    //               name={employeeName}
-    //               avatarUrl={s.employee?.avatar_url}
-    //               size="xs"
-    //               rounded="lg"
-    //             />
-    //             <span className="text-xs text-muted truncate max-w-28">
-    //               {employeeName ?? <span className="italic">Unassigned</span>}
-    //             </span>
-    //           </div>
-    //         )}
-    //       </div>
-    //     );
-    //   },
-    // },
 
     {
       accessorKey: "status",

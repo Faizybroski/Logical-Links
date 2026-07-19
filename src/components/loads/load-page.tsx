@@ -58,7 +58,6 @@ const FILTER_DEFAULTS = {
   search:        "",
   status:        "",
   shipmentType:  "",
-  createdByRole: "",
   accountId:     "",
   dateFrom:      "",
   dateTo:        "",
@@ -79,11 +78,6 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
 const TYPE_OPTIONS = [
   { value: "freight",   label: "Freight" },
   { value: "last_mile", label: "Last Mile" },
-];
-
-const CREATOR_OPTIONS = [
-  { value: "admin",   label: "Super Admin" },
-  { value: "shipper", label: "Shipping Company" },
 ];
 
 export default function LoadsPage() {
@@ -187,7 +181,6 @@ export default function LoadsPage() {
       ? { statuses: viewStatuses }
       : filters.status && { status: filters.status }),
     ...(filters.shipmentType  && { shipmentType: filters.shipmentType as "freight" | "last_mile" }),
-    ...(filters.createdByRole && isAdmin && { createdByRole: filters.createdByRole as "admin" | "shipper" }),
     ...(filters.accountId     && isAdmin && { accountId: filters.accountId }),
     ...(filters.dateFrom      && { dateFrom: filters.dateFrom }),
     ...(filters.dateTo        && { dateTo:   filters.dateTo }),
@@ -247,10 +240,11 @@ export default function LoadsPage() {
   );
 
   // ── Permissions ────────────────────────────────────────────────────────────
-  const canEdit   = (s: Shipment) => !["delivered", "cancelled"].includes(s.status);
+  // Shipping companies never edit/delete the whole delivery — only status,
+  // location, and employee assignment (handled elsewhere).
+  const canEdit   = (s: Shipment) => isAdmin && !["delivered", "cancelled"].includes(s.status);
   const canDelete = (s: Shipment) => isAdmin && ["pending", "confirmed"].includes(s.status);
-  const canAssign = (s: Shipment) =>
-    isAdmin && s.status === "confirmed" && s.created_by_role !== "shipper";
+  const canAssign = (s: Shipment) => isAdmin && s.status === "confirmed";
 
   // ── Sort handler ───────────────────────────────────────────────────────────
   function handleSort(key: string, dir: SortDir) {
@@ -274,8 +268,8 @@ export default function LoadsPage() {
         onDelete:          (s) => setDeletingLoad(s),
         onAssign:          (s) => setAssigningLoad(s),
         onStatusChange:    (s) => setStatusLoad(s),
-        onCreateQuotation: (s) => router.push(`${docBasePath}/quotations/create?loadId=${s.shipment_id}`),
-        onCreateInvoice:   (s) => router.push(`${docBasePath}/invoices/create?loadId=${s.shipment_id}`),
+        onCreateQuotation: isAdmin ? (s) => router.push(`${docBasePath}/quotations/create?loadId=${s.shipment_id}`) : undefined,
+        onCreateInvoice:   isAdmin ? (s) => router.push(`${docBasePath}/invoices/create?loadId=${s.shipment_id}`) : undefined,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [isAdmin, basePath, docBasePath, sortBy, sortDir],
@@ -294,8 +288,6 @@ export default function LoadsPage() {
       chips.push({ key: "status", label: "Status", value: STATUS_LABELS[filters.status as keyof typeof STATUS_LABELS] ?? filters.status, onRemove: () => setFilter("status", "") });
     if (filters.shipmentType)
       chips.push({ key: "shipmentType", label: "Type", value: filters.shipmentType === "freight" ? "Freight" : "Last Mile", onRemove: () => setFilter("shipmentType", "") });
-    if (filters.createdByRole && isAdmin)
-      chips.push({ key: "createdByRole", label: "Created By", value: filters.createdByRole === "admin" ? "Super Admin" : "Shipping Company", onRemove: () => setFilter("createdByRole", "") });
     if (filters.accountId && isAdmin)
       chips.push({ key: "accountId", label: "Company", value: companyName(filters.accountId), onRemove: () => setFilter("accountId", "") });
     if (filters.dateFrom || filters.dateTo)
@@ -316,8 +308,7 @@ export default function LoadsPage() {
     ...(!viewStatuses ? [{ type: "select" as const, key: "status", label: "Status", options: STATUS_OPTIONS }] : []),
     { type: "select",    key: "shipmentType", label: "Type",         options: TYPE_OPTIONS },
     ...(isAdmin ? [
-      { type: "select" as const, key: "createdByRole", label: "Created By",   options: CREATOR_OPTIONS },
-      { type: "select" as const, key: "accountId",     label: "Company",      options: companyOptions },
+      { type: "select" as const, key: "accountId", label: "Company", options: companyOptions },
     ] : []),
     { type: "dateRange", label: "Created Date", fromKey: "dateFrom",    toKey: "dateTo" },
     { type: "dateRange", label: "Updated Date", fromKey: "updatedFrom", toKey: "updatedTo" },
@@ -374,13 +365,15 @@ export default function LoadsPage() {
               Manage delivery operations and shipment workflows.
             </p>
           </div>
-          <Button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"
-          >
-            <Plus className="h-4 w-4" />
-            Create Load
-          </Button>
+          {isAdmin && (
+            <Button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"
+            >
+              <Plus className="h-4 w-4" />
+              Create Load
+            </Button>
+          )}
         </div>
 
         {/* Role banner */}

@@ -298,7 +298,6 @@ export type ListShipmentsQuery = {
   shipmentType?:  ShipmentType;
   accountId?:     string;
   search?:        string;
-  createdByRole?: "admin" | "shipper";
   dateFrom?:      string;
   dateTo?:        string;
   updatedFrom?:   string;

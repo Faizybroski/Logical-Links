@@ -57,12 +57,11 @@ export function AssignDialog({ shipment, companies, open, onClose, onConfirm, lo
       )
     : eligibleCompanies;
 
-  const isShipperOwned = shipment.created_by_role === "shipper";
-  const isLocked       = isShipperOwned || shipment.status !== "pending";
+  const isLocked        = shipment.status !== "pending";
   const currentCompany = shipment.account_id
     ? companies.find((c) => c.account_id === shipment.account_id)
     : null;
-  const isReassign = !!shipment.account_id && !isShipperOwned;
+  const isReassign = !!shipment.account_id;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -80,17 +79,10 @@ export function AssignDialog({ shipment, companies, open, onClose, onConfirm, lo
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 py-6 sm:px-7">
-          {isShipperOwned ? (
-            <LockedCompanyCard
-              company={currentCompany}
-              message="This load was created by the shipping company and cannot be reassigned."
-              variant="violet"
-            />
-          ) : isLocked ? (
+          {isLocked ? (
             <LockedCompanyCard
               company={currentCompany}
               message={`This load cannot be reassigned because operational processing has already started (status: ${shipment.status.replace(/_/g, " ")}).`}
-              variant="red"
             />
           ) : (
             <div className="space-y-3">
@@ -202,18 +194,12 @@ export function AssignDialog({ shipment, companies, open, onClose, onConfirm, lo
 function LockedCompanyCard({
   company,
   message,
-  variant,
 }: {
   company: Account | null | undefined;
   message: string;
-  variant: "violet" | "red";
 }) {
-  const colors = variant === "violet"
-    ? "border-violet-200 bg-violet-50/60 text-violet-700"
-    : "border-red-200 bg-red-50/60 text-red-700";
-
   return (
-    <div className={cn("rounded-[10px] border px-4 py-3", colors)}>
+    <div className="rounded-[10px] border border-red-200 bg-red-50/60 px-4 py-3 text-red-700">
       {company && (
         <div className="mb-2 flex items-center gap-2">
           <CompanyLogo
@@ -227,7 +213,7 @@ function LockedCompanyCard({
       )}
       {!company && (
         <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-          {variant === "violet" ? "Assigned Company" : "Transfer Locked"}
+          Transfer Locked
         </p>
       )}
       <p className="text-xs">{message}</p>

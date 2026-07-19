@@ -139,27 +139,33 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
             {quotation && <QuotationStatusBadge status={quotation.status} />}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
-              className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
-              <Copy className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Duplicate</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleConvert} disabled={convertMut.isPending}
-              className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
-              <Send className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">To Invoice</span>
-            </Button>
+            {!isShipper && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
+                  className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
+                  <Copy className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Duplicate</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleConvert} disabled={convertMut.isPending}
+                  className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
+                  <Send className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">To Invoice</span>
+                </Button>
+              </>
+            )}
             <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={!quotation || pdfMut.isPending}
               className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
               {pdfMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{quotation?.pdf_url ? "Regen PDF" : "Gen PDF"}</span>
             </Button>
-            <Button size="sm" onClick={() => quotation && onEditClick(quotation.id)}
-              disabled={!quotation}
-              className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1">
-              <Pencil className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Edit</span>
-            </Button>
+            {!isShipper && (
+              <Button size="sm" onClick={() => quotation && onEditClick(quotation.id)}
+                disabled={!quotation}
+                className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+            )}
             <Button variant="outline" size="icon" onClick={onClose} className="h-8 w-8 border-card-border">
               <X className="h-4 w-4" />
             </Button>

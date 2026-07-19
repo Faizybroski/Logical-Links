@@ -19,6 +19,7 @@ import {
   useDuplicateInvoice,
   useGenerateInvoicePdf,
 } from "@/hooks/use-invoices";
+import { useAuthStore } from "@/store/auth.store";
 import type { LineItem } from "@/types/api.types";
 
 function fmtDate(d?: string | null) {
@@ -54,6 +55,8 @@ interface InvoiceDetailsSheetProps {
 export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: InvoiceDetailsSheetProps) {
   const router   = useRouter();
   const pathname = usePathname();
+  const { user } = useAuthStore();
+  const isShipper = user?.role === "shipper";
 
   const { data: res, isLoading } = useInvoice(invoiceId);
   const invoice = res?.data;
@@ -97,22 +100,26 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
             {invoice && <InvoiceStatusBadge status={invoice.status} />}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
-              className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
-              <Copy className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Duplicate</span>
-            </Button>
+            {!isShipper && (
+              <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
+                className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
+                <Copy className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Duplicate</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={!invoice || pdfMut.isPending}
               className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
               {pdfMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{invoice?.pdf_url ? "Regen PDF" : "Gen PDF"}</span>
             </Button>
-            <Button size="sm" onClick={() => invoice && onEditClick(invoice.id)}
-              disabled={!invoice}
-              className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1">
-              <Pencil className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Edit</span>
-            </Button>
+            {!isShipper && (
+              <Button size="sm" onClick={() => invoice && onEditClick(invoice.id)}
+                disabled={!invoice}
+                className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+            )}
             <Button variant="outline" size="icon" onClick={onClose} className="h-8 w-8 border-card-border">
               <X className="h-4 w-4" />
             </Button>

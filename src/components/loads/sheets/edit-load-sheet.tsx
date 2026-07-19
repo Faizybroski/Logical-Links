@@ -25,7 +25,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { DeleteConfirmDialog } from "@/components/loads/dialogs/delete-confirmation-dialog";
-import { CreatorBadge, getCreatorName } from "@/components/loads/creator-badge";
 import { StatusBadge } from "@/components/loads/status-badge";
 import { formatDate, isoToDateInputValue, dateInputValueToIso } from "@/lib/utils/format-date";
 
@@ -137,9 +136,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
     }
   }
 
-  const saving         = updateMut.isPending;
-  const isShipperOwned = shipment?.created_by_role === "shipper";
-  const canDelete      = isAdmin && shipment && ["pending", "confirmed"].includes(shipment.status);
+  const saving    = updateMut.isPending;
+  const canDelete = isAdmin && shipment && ["pending", "confirmed"].includes(shipment.status);
 
   return (
     <Sheet open={open} onClose={onClose} size="xl">
@@ -184,7 +182,7 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
               </div>
             ) : (
               <div className="space-y-4 p-6">
-                {/* Ownership card (admin view) */}
+                {/* Assignment card (admin view) */}
                 {isAdmin && (
                   <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
                     <div className="flex items-center gap-3 border-b border-card-border bg-background/50 px-5 py-3">
@@ -192,21 +190,10 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
                         <User className="h-4 w-4" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-foreground">Ownership &amp; Assignment</h3>
-                        <p className="mt-0.5 text-xs text-muted">
-                          {isShipperOwned ? "Company-owned — locked" : "Admin-managed"}
-                        </p>
+                        <h3 className="text-sm font-semibold text-foreground">Assignment</h3>
                       </div>
-                      <CreatorBadge shipment={shipment} />
                     </div>
-                    <div className="grid gap-3 p-5 sm:grid-cols-3">
-                      <div className="flex items-start gap-2 rounded-xl border border-card-border bg-background p-3">
-                        <User className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted">Created By</p>
-                          <p className="mt-0.5 truncate text-sm font-medium text-foreground">{getCreatorName(shipment)}</p>
-                        </div>
-                      </div>
+                    <div className="grid gap-3 p-5 sm:grid-cols-2">
                       <div className="flex items-start gap-2 rounded-xl border border-card-border bg-background p-3">
                         <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
                         <div className="min-w-0">
@@ -224,14 +211,6 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
                         </div>
                       </div>
                     </div>
-                    {isShipperOwned && (
-                      <div className="flex items-start gap-3 border-t border-violet-200 bg-violet-50/60 px-5 py-3 dark:border-violet-800 dark:bg-violet-950/40">
-                        <Truck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" />
-                        <p className="text-xs text-violet-800 dark:text-violet-300">
-                          Company-owned load — assignment cannot be changed by anyone.
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
 

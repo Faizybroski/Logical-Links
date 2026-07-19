@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 
 const services = [
   {
-    slug: "ftl-ltl-transportation",
+    slug: "ftl",
     title: "FTL & LTL Transportation",
     items: ["Full Truckload (FTL)", "Less Than Truckload (LTL)"],
     description:
@@ -15,7 +15,7 @@ const services = [
     image: "/service1.svg",
   },
   {
-    slug: "dedicated-specialized-transport",
+    slug: "dedicated",
     title: "Dedicated & Specialized Transport",
     items: ["Dedicated Trucking Services", "Specialized & Heavy Transport"],
     description:
@@ -23,7 +23,7 @@ const services = [
     image: "/service2.svg",
   },
   {
-    slug: "rush-delivery-solutions",
+    slug: "courier",
     title: "RUSH Delivery Solutions",
     items: ["Last-Mile Delivery", "E-Commerce Delivery", "Courier Services"],
     description:
