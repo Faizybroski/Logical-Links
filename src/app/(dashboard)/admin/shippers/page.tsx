@@ -35,6 +35,7 @@ import type { SortDir } from "@/hooks/use-table-filters";
 
 import { useAccounts } from "@/hooks/use-accounts";
 import { useApproveUser } from "@/hooks/use-users";
+import { usePermission } from "@/hooks/use-permission";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { Account, AccountProfile } from "@/types/api.types";
@@ -120,6 +121,7 @@ function ApprovalPill({ approved }: { approved: boolean }) {
 function ActionsCell({ account, onView }: { account: Account; onView: (id: string) => void }) {
   const admin    = getAdmin(account.profiles);
   const approveMut = useApproveUser(admin?.id ?? "");
+  const canEdit = usePermission("customers.edit");
 
   async function handle(isApproved: boolean) {
     if (!admin) { toast.error("No company admin found for this company"); return; }
@@ -130,6 +132,8 @@ function ActionsCell({ account, onView }: { account: Account; onView: (id: strin
       toast.error((err as Error).message);
     }
   }
+
+  if (!canEdit) return null;
 
   return (
     <DropdownMenu>
@@ -222,6 +226,8 @@ export default function ShippersPage() {
   const { data: res, isLoading } = useAccounts(query);
   const allAccounts = res?.data ?? [];
   const totalCount  = (res as any)?.meta?.total ?? 0;
+
+  const canEditCustomers = usePermission("customers.edit");
 
   function handleSort(key: string, dir: SortDir) {
     setFilters({ sortBy: key && dir ? key : "", sortDir: dir ?? "", page: "1" });
@@ -344,7 +350,7 @@ export default function ShippersPage() {
           <KpiCard title="Pending Approval"   value={stats.pending}  icon={Clock}        chartColor="#EAB308" isLoading={isLoading} />
         </div>
 
-        {!isLoading && pendingAccounts.length > 0 && <PendingApprovals accounts={pendingAccounts} />}
+        {!isLoading && canEditCustomers && pendingAccounts.length > 0 && <PendingApprovals accounts={pendingAccounts} />}
 
         <DataTable<Account>
           title="Companies List"

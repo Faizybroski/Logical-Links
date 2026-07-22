@@ -11,6 +11,7 @@ import type { FilterDef } from "@/components/ui/table-filters";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import type { SortDir } from "@/hooks/use-table-filters";
 import { useQuotations, useQuotationStats, useDuplicateQuotation, useDeleteQuotation } from "@/hooks/use-quotations";
+import { usePermission } from "@/hooks/use-permission";
 import { QUOTATION_STATUS_LABELS } from "@/types/api.types";
 import type { QuotationStatus } from "@/types/api.types";
 import { CreateQuotationSheet } from "@/components/documents/sheets/create-quotation-sheet";
@@ -122,6 +123,10 @@ export default function AdminQuotationsPage() {
   const duplicateMut = useDuplicateQuotation();
   const deleteMut    = useDeleteQuotation();
 
+  const canCreate = usePermission("quotations.create");
+  const canEdit   = usePermission("quotations.edit");
+  const canDelete = usePermission("quotations.delete");
+
   function handleSort(key: string, dir: SortDir) {
     setFilters({ sortBy: key && dir ? key : "", sortDir: dir ?? "", page: "1" });
   }
@@ -170,11 +175,11 @@ export default function AdminQuotationsPage() {
           quotations={quotations}
           basePath="/admin/quotations"
           isLoading={isLoading}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
+          onDuplicate={canCreate ? handleDuplicate : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={openDetails}
-          onEdit={openEdit}
-          onCreateClick={openCreate}
+          onEdit={canEdit ? openEdit : undefined}
+          onCreateClick={canCreate ? openCreate : undefined}
           totalCount={totalCount}
           page={page}
           onPageChange={(pg) => setFilter("page", String(pg))}

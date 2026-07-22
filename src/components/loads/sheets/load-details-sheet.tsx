@@ -58,6 +58,7 @@ import { useInvoices } from "@/hooks/use-invoices";
 import { useQuotations } from "@/hooks/use-quotations";
 import { useTrackingEvents } from "@/hooks/use-tracking";
 import { useAuthStore } from "@/store/auth.store";
+import { usePermission } from "@/hooks/use-permission";
 
 import type {
   Shipment,
@@ -281,13 +282,18 @@ export function LoadDetailsSheet({
     }
   }
 
+  const canEditPerm = usePermission("deliveries.edit");
+  const canAssignPerm = usePermission("deliveries.assign");
+  const canUpdateStatusPerm = usePermission("deliveries.update_status");
+
   const transferLocked = shipment?.status !== "pending";
   // Shipping companies never edit the whole delivery — only status, location,
   // and employee assignment (handled by the buttons/dialogs below).
   const canEdit =
-    isAdmin && shipment && !["delivered", "cancelled"].includes(shipment.status);
-  const canAssign = isAdmin && !transferLocked;
+    isAdmin && canEditPerm && shipment && !["delivered", "cancelled"].includes(shipment.status);
+  const canAssign = isAdmin && canAssignPerm && !transferLocked;
   const canChangeStatus =
+    canUpdateStatusPerm &&
     shipment && (STATUS_TRANSITIONS[shipment.status] ?? []).length > 0;
 
   return (

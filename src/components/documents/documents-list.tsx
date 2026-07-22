@@ -86,8 +86,8 @@ interface QuotationListProps {
   quotations: Quotation[];
   basePath: string;
   isLoading?: boolean;
-  onDuplicate: (id: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onDuplicate?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   onView?: (id: string) => void;
   onEdit?: (id: string) => void;
   onCreateClick?: () => void;
@@ -208,15 +208,9 @@ export function QuotationsList({
       headerActions={
         <>
           {headerActions}
-          {!isAdmin ? null : onCreateClick ? (
+          {isAdmin && onCreateClick && (
             <Button size="sm" onClick={onCreateClick} className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
               <Plus className="h-3.5 w-3.5" /> New Quotation
-            </Button>
-          ) : (
-            <Button asChild size="sm" className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
-              <Link href={`${basePath}/create`}>
-                <Plus className="h-3.5 w-3.5" /> New Quotation
-              </Link>
             </Button>
           )}
         </>
@@ -234,7 +228,7 @@ export function QuotationsList({
 
 function QuotationActions({
   quotation, basePath, onDuplicate, onDelete, onView, onEdit, isAdmin,
-}: { quotation: Quotation; basePath: string; onDuplicate: (id: string) => Promise<void>; onDelete: (id: string) => Promise<void>; onView?: (id: string) => void; onEdit?: (id: string) => void; isAdmin: boolean }) {
+}: { quotation: Quotation; basePath: string; onDuplicate?: (id: string) => Promise<void>; onDelete?: (id: string) => Promise<void>; onView?: (id: string) => void; onEdit?: (id: string) => void; isAdmin: boolean }) {
   const [busy, setBusy] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -269,16 +263,10 @@ function QuotationActions({
             <Link href={`${basePath}/${quotation.id}`}><Eye className="h-4 w-4" /> View</Link>
           </DropdownMenuItem>
         )}
-        {isAdmin && (
-          onEdit ? (
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onEdit(quotation.id)}>
-              <Pencil className="h-4 w-4" /> Edit
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
-              <Link href={`${basePath}/${quotation.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
-            </DropdownMenuItem>
-          )
+        {isAdmin && onEdit && (
+          <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onEdit(quotation.id)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </DropdownMenuItem>
         )}
         {quotation.pdf_url && (
           <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={handleDownload}>
@@ -287,14 +275,22 @@ function QuotationActions({
         )}
         {isAdmin && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => act(() => onDuplicate(quotation.id))}>
-              <Copy className="h-4 w-4" /> Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => act(() => onDelete(quotation.id))}>
-              <Trash2 className="h-4 w-4" /> Delete
-            </DropdownMenuItem>
+            {onDuplicate && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => act(() => onDuplicate(quotation.id))}>
+                  <Copy className="h-4 w-4" /> Duplicate
+                </DropdownMenuItem>
+              </>
+            )}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => act(() => onDelete(quotation.id))}>
+                  <Trash2 className="h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
           </>
         )}
       </DropdownMenuContent>
@@ -308,8 +304,8 @@ interface InvoiceListProps {
   invoices: Invoice[];
   basePath: string;
   isLoading?: boolean;
-  onDuplicate: (id: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onDuplicate?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   onView?: (id: string) => void;
   onEdit?: (id: string) => void;
   onCreateClick?: () => void;
@@ -459,15 +455,9 @@ export function InvoicesList({
       headerActions={
         <>
           {headerActions}
-          {!isAdmin ? null : onCreateClick ? (
+          {isAdmin && onCreateClick && (
             <Button size="sm" onClick={onCreateClick} className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
               <Plus className="h-3.5 w-3.5" /> New Invoice
-            </Button>
-          ) : (
-            <Button asChild size="sm" className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
-              <Link href={`${basePath}/create`}>
-                <Plus className="h-3.5 w-3.5" /> New Invoice
-              </Link>
             </Button>
           )}
         </>
@@ -485,7 +475,7 @@ export function InvoicesList({
 
 function InvoiceActions({
   invoice, basePath, onDuplicate, onDelete, onView, onEdit, isAdmin,
-}: { invoice: Invoice; basePath: string; onDuplicate: (id: string) => Promise<void>; onDelete: (id: string) => Promise<void>; onView?: (id: string) => void; onEdit?: (id: string) => void; isAdmin: boolean }) {
+}: { invoice: Invoice; basePath: string; onDuplicate?: (id: string) => Promise<void>; onDelete?: (id: string) => Promise<void>; onView?: (id: string) => void; onEdit?: (id: string) => void; isAdmin: boolean }) {
   const [busy, setBusy] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -520,16 +510,10 @@ function InvoiceActions({
             <Link href={`${basePath}/${invoice.id}`}><Eye className="h-4 w-4" /> View</Link>
           </DropdownMenuItem>
         )}
-        {isAdmin && (
-          onEdit ? (
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onEdit(invoice.id)}>
-              <Pencil className="h-4 w-4" /> Edit
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
-              <Link href={`${basePath}/${invoice.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
-            </DropdownMenuItem>
-          )
+        {isAdmin && onEdit && (
+          <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onEdit(invoice.id)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </DropdownMenuItem>
         )}
         {invoice.pdf_url && (
           <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={handleDownload}>
@@ -538,14 +522,22 @@ function InvoiceActions({
         )}
         {isAdmin && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => act(() => onDuplicate(invoice.id))}>
-              <Copy className="h-4 w-4" /> Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => act(() => onDelete(invoice.id))}>
-              <Trash2 className="h-4 w-4" /> Delete
-            </DropdownMenuItem>
+            {onDuplicate && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => act(() => onDuplicate(invoice.id))}>
+                  <Copy className="h-4 w-4" /> Duplicate
+                </DropdownMenuItem>
+              </>
+            )}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => act(() => onDelete(invoice.id))}>
+                  <Trash2 className="h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
           </>
         )}
       </DropdownMenuContent>

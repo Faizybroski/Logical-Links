@@ -19,6 +19,7 @@ import {
   useUploadCaseAttachment,
 } from "@/hooks/use-support";
 import { useAuthStore } from "@/store/auth.store";
+import { usePermission } from "@/hooks/use-permission";
 import { ApiError } from "@/lib/api";
 import {
   SUPPORT_CASE_STATUS_LABELS,
@@ -57,6 +58,8 @@ interface CaseDetailsSheetProps {
 export function CaseDetailsSheet({ open, onClose, caseId }: CaseDetailsSheetProps) {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "admin";
+  const canReply = usePermission("support.reply");
+  const canClose = usePermission("support.close");
 
   const { data: res, isLoading } = useSupportCase(caseId);
   const supportCase = res?.data;
@@ -84,7 +87,8 @@ export function CaseDetailsSheet({ open, onClose, caseId }: CaseDetailsSheetProp
   }, [caseId]);
 
   const isOwner = !!supportCase && supportCase.created_by === user?.id;
-  const canEdit = !!supportCase && (isAdmin || (isOwner && OPEN_STATUSES.has(supportCase.status)));
+  const canEdit = !!supportCase && ((isAdmin && canReply) || (isOwner && OPEN_STATUSES.has(supportCase.status)));
+  const canComment = !isAdmin || canReply;
 
   function startEditing() {
     if (!supportCase) return;
@@ -161,7 +165,7 @@ export function CaseDetailsSheet({ open, onClose, caseId }: CaseDetailsSheetProp
             {supportCase && <SupportCaseStatusBadge status={supportCase.status} />}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {isAdmin && supportCase && (
+            {isAdmin && canClose && supportCase && (
               <Button
                 variant="outline"
                 size="icon"
@@ -270,7 +274,7 @@ export function CaseDetailsSheet({ open, onClose, caseId }: CaseDetailsSheetProp
                 </div>
                 <div className="flex flex-wrap items-center gap-3 p-5">
                   <SupportCaseStatusBadge status={supportCase.status} />
-                  {isAdmin ? (
+                  {isAdmin && canClose ? (
                     <div className="flex flex-wrap gap-2">
                       {STATUS_OPTIONS.filter((s) => s !== supportCase.status).map((s) => (
                         <button
@@ -349,26 +353,28 @@ export function CaseDetailsSheet({ open, onClose, caseId }: CaseDetailsSheetProp
                     ))
                   )}
                 </div>
-                <form onSubmit={handlePostComment} className="border-t border-card-border p-4">
-                  <textarea
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Write a comment…"
-                    rows={2}
-                    className="w-full resize-none rounded-xl border border-card-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <div className="mt-2 flex justify-end">
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={commentMut.isPending || !commentText.trim()}
-                      className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      Post Comment
-                    </Button>
-                  </div>
-                </form>
+                {canComment && (
+                  <form onSubmit={handlePostComment} className="border-t border-card-border p-4">
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Write a comment…"
+                      rows={2}
+                      className="w-full resize-none rounded-xl border border-card-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                    <div className="mt-2 flex justify-end">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={commentMut.isPending || !commentText.trim()}
+                        className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        Post Comment
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </div>
 
               {/* Attachments */}
@@ -380,15 +386,17 @@ export function CaseDetailsSheet({ open, onClose, caseId }: CaseDetailsSheetProp
                       Attachments {supportCase.attachments.length > 0 && `(${supportCase.attachments.length})`}
                     </h3>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadMut.isPending}
-                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"
-                  >
-                    {uploadMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlusCircle className="h-3.5 w-3.5" />}
-                    Add file
-                  </button>
+                  {canComment && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadMut.isPending}
+                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                    >
+                      {uploadMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlusCircle className="h-3.5 w-3.5" />}
+                      Add file
+                    </button>
+                  )}
                   <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelected} />
                 </div>
                 <div className="divide-y divide-card-border">

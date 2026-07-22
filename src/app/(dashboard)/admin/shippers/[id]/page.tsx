@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAccount } from "@/hooks/use-accounts";
 import { useApproveUser } from "@/hooks/use-users";
+import { usePermission } from "@/hooks/use-permission";
 import { ShipperNotesSection } from "@/components/admin/ShipperNotesSection";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -102,6 +103,7 @@ export default function AdminCompanyDetailPage({
   const { id } = use(params);
   const { data: res, isLoading } = useAccount(id);
   const account: Account | undefined = res?.data;
+  const canEditCustomers = usePermission("customers.edit");
 
   if (isLoading) {
     return (
@@ -234,7 +236,7 @@ export default function AdminCompanyDetailPage({
               </div>
 
               {/* Admin approval actions */}
-              {admin && <ApprovalActions admin={admin} companyName={account.account_name} />}
+              {admin && canEditCustomers && <ApprovalActions admin={admin} companyName={account.account_name} />}
             </div>
           </div>
 

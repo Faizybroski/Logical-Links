@@ -22,6 +22,7 @@ import { EditLoadSheet } from "@/components/loads/sheets/edit-load-sheet";
 import { LoadDetailsSheet } from "@/components/loads/sheets/load-details-sheet";
 
 import { useAuthStore } from "@/store/auth.store";
+import { usePermission } from "@/hooks/use-permission";
 import {
   useShipments,
   useDeleteShipment,
@@ -86,6 +87,14 @@ export default function LoadsPage() {
   const searchParams = useSearchParams();
   const user        = useAuthStore((s) => s.user);
   const isAdmin     = user?.role === "admin";
+
+  const canCreateLoad     = usePermission("deliveries.create");
+  const canEditPerm       = usePermission("deliveries.edit");
+  const canDeletePerm     = usePermission("deliveries.delete");
+  const canAssignPerm     = usePermission("deliveries.assign");
+  const canUpdateStatusPerm = usePermission("deliveries.update_status");
+  const canCreateQuotation = usePermission("quotations.create");
+  const canCreateInvoice   = usePermission("invoices.create");
 
   const basePath    = pathname.startsWith("/admin") ? "/admin/loads" : "/shipper/loads";
   const docBasePath = pathname.startsWith("/admin") ? "/admin" : "/shipper";
@@ -242,9 +251,10 @@ export default function LoadsPage() {
   // ── Permissions ────────────────────────────────────────────────────────────
   // Shipping companies never edit/delete the whole delivery — only status,
   // location, and employee assignment (handled elsewhere).
-  const canEdit   = (s: Shipment) => isAdmin && !["delivered", "cancelled"].includes(s.status);
-  const canDelete = (s: Shipment) => isAdmin && ["pending", "confirmed"].includes(s.status);
-  const canAssign = (s: Shipment) => isAdmin && s.status === "confirmed";
+  const canEdit   = (s: Shipment) => isAdmin && canEditPerm   && !["delivered", "cancelled"].includes(s.status);
+  const canDelete = (s: Shipment) => isAdmin && canDeletePerm && ["pending", "confirmed"].includes(s.status);
+  const canAssign = (s: Shipment) => isAdmin && canAssignPerm && s.status === "confirmed";
+  const canChangeStatus = () => canUpdateStatusPerm;
 
   // ── Sort handler ───────────────────────────────────────────────────────────
   function handleSort(key: string, dir: SortDir) {
@@ -261,6 +271,7 @@ export default function LoadsPage() {
         canEdit,
         canDelete,
         canAssign,
+        canChangeStatus,
         sortBy:  sortBy ?? "",
         sortDir,
         onSort:  handleSort,
@@ -268,11 +279,11 @@ export default function LoadsPage() {
         onDelete:          (s) => setDeletingLoad(s),
         onAssign:          (s) => setAssigningLoad(s),
         onStatusChange:    (s) => setStatusLoad(s),
-        onCreateQuotation: isAdmin ? (s) => router.push(`${docBasePath}/quotations/create?loadId=${s.shipment_id}`) : undefined,
-        onCreateInvoice:   isAdmin ? (s) => router.push(`${docBasePath}/invoices/create?loadId=${s.shipment_id}`) : undefined,
+        onCreateQuotation: isAdmin && canCreateQuotation ? (s) => router.push(`${docBasePath}/quotations/create?loadId=${s.shipment_id}`) : undefined,
+        onCreateInvoice:   isAdmin && canCreateInvoice   ? (s) => router.push(`${docBasePath}/invoices/create?loadId=${s.shipment_id}`) : undefined,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isAdmin, basePath, docBasePath, sortBy, sortDir],
+    [isAdmin, canEditPerm, canDeletePerm, canAssignPerm, canUpdateStatusPerm, canCreateQuotation, canCreateInvoice, basePath, docBasePath, sortBy, sortDir],
   );
 
   // ── Filter chips ───────────────────────────────────────────────────────────
@@ -365,7 +376,7 @@ export default function LoadsPage() {
               Manage delivery operations and shipment workflows.
             </p>
           </div>
-          {isAdmin && (
+          {isAdmin && canCreateLoad && (
             <Button
               onClick={openCreate}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"

@@ -19,10 +19,11 @@ export interface DashboardStats {
   invoicesDue?:      number
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["dashboard", "stats"],
     queryFn:  () => api.get<ApiResponse<DashboardStats>>("/api/v1/dashboard/stats"),
+    enabled:  options?.enabled ?? true,
     staleTime: 60_000, // 1 minute — dashboard data doesn't need instant freshness
   });
 }

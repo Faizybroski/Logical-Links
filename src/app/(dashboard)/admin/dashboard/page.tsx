@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, ShieldAlert, Receipt } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
+import { usePermission } from '@/hooks/use-permission'
 import { useShipments } from '@/hooks/use-shipments'
 import {
   useDashboardStats,
@@ -17,8 +18,11 @@ import { UserAvatar } from '@/components/ui/user-avatar'
 export default function AdminDashboard() {
   const user = useAuthStore((s) => s.user)
 
-  const { data: statsRes, isLoading: statsLoading } = useDashboardStats()
-  const { data: recentRes, isLoading: recentLoading } = useShipments({ limit: 5 })
+  const canViewReports   = usePermission('reports.operational')
+  const canViewDeliveries = usePermission('deliveries.view')
+
+  const { data: statsRes, isLoading: statsLoading } = useDashboardStats({ enabled: canViewReports })
+  const { data: recentRes, isLoading: recentLoading } = useShipments({ limit: 5 }, { enabled: canViewDeliveries })
 
   const stats   = statsRes?.data
   const recent  = recentRes?.data ?? []
@@ -88,50 +92,63 @@ export default function AdminDashboard() {
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
-          {kpis.map((kpi) => (
-            <KpiCard
-              key={kpi.title}
-              title={kpi.title}
-              value={kpi.value}
-              icon={kpi.icon}
-              chartColor={kpi.chartColor}
-              isLoading={statsLoading}
-              data={kpi.data}
-              growth={kpi.growth}
-              trend={kpi.trend}
-              subtitle={kpi.subtitle}
-            />
-          ))}
-        </div>
+        {canViewReports && (
+          <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
+            {kpis.map((kpi) => (
+              <KpiCard
+                key={kpi.title}
+                title={kpi.title}
+                value={kpi.value}
+                icon={kpi.icon}
+                chartColor={kpi.chartColor}
+                isLoading={statsLoading}
+                data={kpi.data}
+                growth={kpi.growth}
+                trend={kpi.trend}
+                subtitle={kpi.subtitle}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Alerts */}
-        <div className="space-y-3">
-          {!statsLoading && pending > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-5 py-3">
-              <Clock3 className="h-5 w-5 shrink-0 text-warning" />
-              <p className="text-sm text-foreground">
-                <strong>{pending}</strong> shipment{pending !== 1 ? 's' : ''} awaiting action.{' '}
-                <Link href="/admin/loads" className="underline font-medium text-warning">
-                  Review now
-                </Link>
-              </p>
-            </div>
-          )}
-          {!statsLoading && pendingApprovals > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-danger/25 bg-danger/8 px-5 py-3">
-              <ShieldAlert className="h-5 w-5 shrink-0 text-danger" />
-              <p className="text-sm text-foreground">
-                <strong>{pendingApprovals}</strong> shipping compan{pendingApprovals !== 1 ? 'ies' : 'y'} pending approval.{' '}
-                <Link href="/admin/shippers" className="underline font-medium text-danger">
-                  Review now
-                </Link>
-              </p>
-            </div>
-          )}
-        </div>
+        {canViewReports && (
+          <div className="space-y-3">
+            {!statsLoading && pending > 0 && (
+              <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-5 py-3">
+                <Clock3 className="h-5 w-5 shrink-0 text-warning" />
+                <p className="text-sm text-foreground">
+                  <strong>{pending}</strong> shipment{pending !== 1 ? 's' : ''} awaiting action.{' '}
+                  <Link href="/admin/loads" className="underline font-medium text-warning">
+                    Review now
+                  </Link>
+                </p>
+              </div>
+            )}
+            {!statsLoading && pendingApprovals > 0 && (
+              <div className="flex items-center gap-3 rounded-2xl border border-danger/25 bg-danger/8 px-5 py-3">
+                <ShieldAlert className="h-5 w-5 shrink-0 text-danger" />
+                <p className="text-sm text-foreground">
+                  <strong>{pendingApprovals}</strong> shipping compan{pendingApprovals !== 1 ? 'ies' : 'y'} pending approval.{' '}
+                  <Link href="/admin/shippers" className="underline font-medium text-danger">
+                    Review now
+                  </Link>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!canViewReports && !canViewDeliveries && (
+          <div className="rounded-3xl border border-card-border bg-card p-8 text-center shadow-sm">
+            <p className="text-sm text-muted">
+              You don&apos;t have access to any dashboard reports yet. Ask your administrator to grant you a permission under Reports &amp; Analytics or Delivery Management.
+            </p>
+          </div>
+        )}
 
         {/* Recent Shipments */}
+        {canViewDeliveries && (
         <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-card-border px-5 py-4">
             <div>
@@ -240,6 +257,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+        )}
 
       </div>
     </div>

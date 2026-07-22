@@ -96,6 +96,7 @@ type ColumnsOptions = {
   canEdit: (s: Shipment) => boolean;
   canDelete: (s: Shipment) => boolean;
   canAssign: (s: Shipment) => boolean;
+  canChangeStatus: (s: Shipment) => boolean;
   onEdit?: (s: Shipment) => void;
   onDelete: (s: Shipment) => void;
   onAssign: (s: Shipment) => void;
@@ -114,6 +115,7 @@ export function getLoadColumns({
   canEdit,
   canDelete,
   canAssign,
+  canChangeStatus,
   onEdit,
   onDelete,
   onAssign,
@@ -201,13 +203,13 @@ export function getLoadColumns({
         const deletable = canDelete(s);
         const assignable = canAssign(s);
         const transitions = STATUS_TRANSITIONS[s.status] ?? [];
-        const canChangeStatus = transitions.length > 0;
+        const statusChangeable = transitions.length > 0 && canChangeStatus(s);
 
         const hasAnyAction =
           editable ||
           deletable ||
           assignable ||
-          canChangeStatus ||
+          statusChangeable ||
           !!onCreateQuotation ||
           !!onCreateInvoice;
         if (!hasAnyAction) return null;
@@ -239,7 +241,7 @@ export function getLoadColumns({
                   </DropdownMenuItem>
                 )}
 
-                {canChangeStatus && (
+                {statusChangeable && (
                   <DropdownMenuItem
                     onClick={() => onStatusChange(s)}
                     className="cursor-pointer"

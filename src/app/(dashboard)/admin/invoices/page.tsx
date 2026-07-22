@@ -11,6 +11,7 @@ import type { FilterDef } from "@/components/ui/table-filters";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import type { SortDir } from "@/hooks/use-table-filters";
 import { useInvoices, useDuplicateInvoice, useDeleteInvoice } from "@/hooks/use-invoices";
+import { usePermission } from "@/hooks/use-permission";
 import { INVOICE_STATUS_LABELS } from "@/types/api.types";
 import type { InvoiceStatus } from "@/types/api.types";
 import { CreateInvoiceSheet } from "@/components/documents/sheets/create-invoice-sheet";
@@ -113,6 +114,10 @@ export default function AdminInvoicesPage() {
   const duplicateMut = useDuplicateInvoice();
   const deleteMut    = useDeleteInvoice();
 
+  const canCreate = usePermission("invoices.create");
+  const canEdit   = usePermission("invoices.edit");
+  const canDelete = usePermission("invoices.delete");
+
   const stats = {
     total:   totalCount,
     unpaid:  invoices.filter((i) => i.status === "unpaid").length,
@@ -166,11 +171,11 @@ export default function AdminInvoicesPage() {
           invoices={invoices}
           basePath="/admin/invoices"
           isLoading={isLoading}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
+          onDuplicate={canCreate ? handleDuplicate : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={openDetails}
-          onEdit={openEdit}
-          onCreateClick={openCreate}
+          onEdit={canEdit ? openEdit : undefined}
+          onCreateClick={canCreate ? openCreate : undefined}
           totalCount={totalCount}
           page={page}
           onPageChange={(pg) => setFilter("page", String(pg))}

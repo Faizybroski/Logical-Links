@@ -24,20 +24,22 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme } from "@/lib/utils/sidebar-theme";
 import { useAuthStore } from "@/store/auth.store";
+import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { api } from "@/lib/api";
+import { ADMIN_ROLE_LABELS } from "@/types/api.types";
 
-const navigation = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Deliveries", href: "/admin/loads", icon: Truck },
-  { label: "Companies", href: "/admin/shippers", icon: Users },
-  { label: "Invoices", href: "/admin/invoices", icon: FileText },
-  { label: "Quotations", href: "/admin/quotations", icon: FileQuestion },
-  { label: "Customization", href: "/admin/customization", icon: Settings },
-  { label: "Alerts", href: "/admin/notifications", icon: Bell },
-  { label: "Support", href: "/admin/support", icon: LifeBuoy },
-  { label: "Profile", href: "/admin/profile", icon: User },
-];
+const baseNavigation = [
+  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: null },
+  { label: "Deliveries", href: "/admin/loads", icon: Truck, permission: "deliveries.view" },
+  { label: "Companies", href: "/admin/shippers", icon: Users, permission: "customers.view" },
+  { label: "Invoices", href: "/admin/invoices", icon: FileText, permission: "invoices.view" },
+  { label: "Quotations", href: "/admin/quotations", icon: FileQuestion, permission: "quotations.view" },
+  { label: "Customization", href: "/admin/customization", icon: Settings, permission: "settings.general" },
+  { label: "Alerts", href: "/admin/notifications", icon: Bell, permission: null },
+  { label: "Support", href: "/admin/support", icon: LifeBuoy, permission: "support.view" },
+  { label: "Profile", href: "/admin/profile", icon: User, permission: null },
+] as const;
 
 type SidebarMode = "expanded" | "collapsed" | "hover";
 
@@ -50,6 +52,31 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, refreshToken, clearAuth } = useAuthStore();
+  const canViewEmployees = usePermission("employees.view");
+  const canManagePermissions = usePermission("employees.manage_permissions");
+  const canViewDeliveries = usePermission("deliveries.view");
+  const canViewCustomers = usePermission("customers.view");
+  const canViewInvoices = usePermission("invoices.view");
+  const canViewQuotations = usePermission("quotations.view");
+  const canViewSupport = usePermission("support.view");
+  const canManageSettings = usePermission("settings.general");
+
+  const permissionMap: Record<string, boolean> = {
+    "deliveries.view": canViewDeliveries,
+    "customers.view": canViewCustomers,
+    "invoices.view": canViewInvoices,
+    "quotations.view": canViewQuotations,
+    "support.view": canViewSupport,
+    "settings.general": canManageSettings,
+  };
+
+  const navigation = [
+    ...baseNavigation.slice(0, 3),
+    ...(canViewEmployees ? [{ label: "Employees", href: "/admin/employees", icon: Shield }] : []),
+    ...baseNavigation.slice(3, 6),
+    ...(canManagePermissions ? [{ label: "Roles & Permissions", href: "/admin/settings/roles", icon: Settings }] : []),
+    ...baseNavigation.slice(6),
+  ].filter((item) => !("permission" in item) || item.permission === null || permissionMap[item.permission]);
 
   const [mode, setMode] = useState<SidebarMode>("expanded");
   const [isHovered, setIsHovered] = useState(false);
@@ -217,7 +244,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
               </p>
               <span className="inline-flex items-center gap-0.5 text-[10px] text-primary">
                 <Shield className="h-2.5 w-2.5" />
-                System Admin
+                {user && user.adminRole ? ADMIN_ROLE_LABELS[user.adminRole] : "System Admin"}
               </span>
             </div>
           </div>

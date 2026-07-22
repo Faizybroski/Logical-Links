@@ -8,6 +8,8 @@ export type AuthUser = {
   email:       string;
   role:        "admin" | "shipper";
   companyRole: "company_admin" | "employee" | null;
+  adminRole:   "ceo" | "vp" | "manager" | "assistant" | null;
+  permissions: string[];
   fullName:    string | null;
   accountId:   string | null;
   avatarUrl:   string | null;

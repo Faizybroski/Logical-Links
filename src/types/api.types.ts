@@ -2,6 +2,7 @@
 
 export type UserRole    = "admin" | "shipper";
 export type CompanyRole = "company_admin" | "employee" | null;
+export type AdminRole   = "ceo" | "vp" | "manager" | "assistant" | null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,8 @@ export type AuthUserPayload = {
   email:       string;
   role:        UserRole;
   companyRole: CompanyRole;
+  adminRole:   AdminRole;
+  permissions: string[];
   fullName:    string | null;
   avatarUrl:   string | null;
   accountId:   string | null;
@@ -134,6 +137,8 @@ export type UserProfile = {
   email:       string;
   role:        UserRole;
   companyRole: CompanyRole;
+  adminRole:   AdminRole;
+  permissions: string[];
   fullName:    string | null;
   phone:       string | null;
   avatarUrl:   string | null;
@@ -154,6 +159,67 @@ export type CompanyUser = {
   is_active:   boolean;
   account_id:  string;
   created_at:  string;
+};
+
+// ── Admin Employees (Internal Staff) ──────────────────────────────────────────
+
+export type AdminRoleValue = "ceo" | "vp" | "manager" | "assistant";
+
+export const ADMIN_ROLE_LABELS: Record<AdminRoleValue, string> = {
+  ceo:       "CEO",
+  vp:        "VP",
+  manager:   "Manager",
+  assistant: "Assistant",
+};
+
+export type AdminEmployee = {
+  id:          string;
+  email:       string;
+  full_name:   string | null;
+  phone:       string | null;
+  avatar_url:  string | null;
+  // Nullable: an admin account promoted via the legacy /users/:id/role endpoint
+  // has no admin_role until the CEO explicitly assigns one from this page.
+  admin_role:  AdminRoleValue | null;
+  is_active:   boolean;
+  is_approved: boolean;
+  created_at:  string;
+  updated_at:  string;
+};
+
+export type CreateAdminEmployeeDto = {
+  email:     string;
+  password:  string;
+  fullName:  string;
+  phone?:    string;
+  adminRole: AdminRoleValue;
+};
+
+export type UpdateAdminEmployeeDto = {
+  fullName?:  string;
+  phone?:     string;
+  isActive?:  boolean;
+  adminRole?: AdminRoleValue;
+};
+
+// ── Roles & Permissions ────────────────────────────────────────────────────────
+
+export type PermissionDef = {
+  key:        string;
+  category:   string;
+  label:      string;
+  sort_order: number;
+};
+
+export type RolePermissionGrant = {
+  admin_role:     AdminRoleValue;
+  permission_key: string;
+  granted:        boolean;
+};
+
+export type PermissionsMatrixResponse = {
+  permissions: PermissionDef[];
+  matrix:      RolePermissionGrant[];
 };
 
 // ── Shipments (Loads) ─────────────────────────────────────────────────────────

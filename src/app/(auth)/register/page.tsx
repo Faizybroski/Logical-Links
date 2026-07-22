@@ -74,7 +74,7 @@ export default function RegisterPage() {
         accessToken: string;
         refreshToken: string;
         expiresIn: number;
-        user: { id: string; email: string; role: "admin" | "shipper"; companyRole: "company_admin" | "employee" | null; fullName: string | null; accountId: string | null };
+        user: { id: string; email: string; role: "admin" | "shipper"; companyRole: "company_admin" | "employee" | null; adminRole: "ceo" | "vp" | "manager" | "assistant" | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
       }>>('/api/v1/auth/register', {
         email: result.data.email,
         password: result.data.password,

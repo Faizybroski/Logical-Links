@@ -35,11 +35,12 @@ function buildQuery(params: ListShipmentsQuery): string {
   return s ? `?${s}` : "";
 }
 
-export function useShipments(query: ListShipmentsQuery = {}) {
+export function useShipments(query: ListShipmentsQuery = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: KEYS.list(query),
     queryFn:  () =>
       api.get<PaginatedResponse<Shipment>>(`/api/v1/shipments${buildQuery(query)}`),
+    enabled:  options?.enabled ?? true,
     staleTime: 30_000, // 30 seconds — shipments change frequently
   });
 }

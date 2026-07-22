@@ -28,6 +28,7 @@ import { CANADIAN_PROVINCES, type Location, type CreateLocationDto } from "@/typ
 import { useStatuses, useCreateStatus, useUpdateStatus, useDeleteStatus } from "@/hooks/use-statuses";
 import type { Status, CreateStatusDto } from "@/types/api.types";
 import type { SortDir } from "@/hooks/use-table-filters";
+import { usePermission } from "@/hooks/use-permission";
 
 /* ─── Location Dialogs ───────────────────────────────────────────────────── */
 
@@ -183,6 +184,7 @@ const LOC_FILTER_DEFS: FilterDef[] = [
 ];
 
 function LocationsTab() {
+  const canManage = usePermission("settings.general");
   const [page, setPage]                 = useState(1);
   const [search, setSearch]             = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -229,9 +231,11 @@ function LocationsTab() {
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">Manage Canadian cities and provinces used in tracking events and load forms.</p>
-        <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
-          <Plus className="mr-1.5 h-4 w-4" />New Location
-        </Button>
+        {canManage && (
+          <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
+            <Plus className="mr-1.5 h-4 w-4" />New Location
+          </Button>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -285,10 +289,14 @@ function LocationsTab() {
                   <td className="px-6 py-3.5 font-medium text-foreground">{loc.city}</td>
                   <td className="px-6 py-3.5 text-muted">{loc.province}</td>
                   <td className="px-6 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button type="button" onClick={() => setEditLocation(loc)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border text-muted transition-colors hover:border-primary/30 hover:text-primary" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                      <button type="button" onClick={() => setDeleteLocation(loc)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border text-muted transition-colors hover:border-danger/30 hover:text-danger" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
+                    {canManage ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <button type="button" onClick={() => setEditLocation(loc)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border text-muted transition-colors hover:border-primary/30 hover:text-primary" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => setDeleteLocation(loc)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border text-muted transition-colors hover:border-danger/30 hover:text-danger" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -327,6 +335,7 @@ const ST_FILTER_DEFS: FilterDef[] = [
 ];
 
 function StatusesTab() {
+  const canManage = usePermission("settings.general");
   const [page, setPage]               = useState(1);
   const [search, setSearch]           = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -386,9 +395,11 @@ function StatusesTab() {
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">Manage load statuses. System statuses are protected. Custom statuses are fully editable.</p>
-        <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
-          <Plus className="mr-1.5 h-4 w-4" />New Status
-        </Button>
+        {canManage && (
+          <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
+            <Plus className="mr-1.5 h-4 w-4" />New Status
+          </Button>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -455,7 +466,7 @@ function StatusesTab() {
                   <td className="px-6 py-3.5 text-right">
                     {s.is_system ? (
                       <span className="text-xs text-muted">Protected</span>
-                    ) : (
+                    ) : canManage ? (
                       <div className="flex items-center justify-end gap-1">
                         <button type="button" onClick={() => handleToggleActive(s)} className={`flex h-7 w-7 items-center justify-center rounded-lg border border-card-border transition-colors hover:border-primary/30 ${s.is_active ? "text-muted hover:text-primary" : "text-primary"}`} title={s.is_active ? "Disable" : "Enable"}>
                           {s.is_active ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}
@@ -463,6 +474,8 @@ function StatusesTab() {
                         <button type="button" onClick={() => setEditStatus(s)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border text-muted transition-colors hover:border-primary/30 hover:text-primary" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => setDeleteStatus(s)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-card-border text-muted transition-colors hover:border-danger/30 hover:text-danger" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
+                    ) : (
+                      <span className="text-xs text-muted">—</span>
                     )}
                   </td>
                 </tr>
