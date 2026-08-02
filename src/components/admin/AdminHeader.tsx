@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import {
-  Bell,
   ChevronDown,
   Menu,
   User,
@@ -21,17 +20,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 import { useAuthStore } from '@/store/auth.store'
 import { api } from '@/lib/api'
 
 interface Props {
-  notificationCount?: number
   onMenuToggle?: () => void
 }
 
 export default function AdminHeader({
-  notificationCount = 0,
   onMenuToggle,
 }: Props) {
   const router = useRouter()
@@ -114,45 +112,7 @@ export default function AdminHeader({
       <div className="flex items-center gap-3">
 
         {/* Notifications */}
-        <Link
-          href="/admin/notifications"
-          aria-label="Notifications"
-          className="
-            relative flex h-11 w-11
-            items-center justify-center
-            rounded-2xl
-
-            border border-card-border
-            bg-background
-
-            text-muted
-            transition-all duration-200
-
-            hover:border-primary/30
-            hover:bg-primary/5
-            hover:text-primary
-          "
-        >
-          <Bell className="h-5 w-5" />
-
-          {notificationCount > 0 && (
-            <span
-              className="
-                absolute -right-1 -top-1
-                flex h-5 min-w-5
-                items-center justify-center
-
-                rounded-full bg-primary
-                px-1 text-[10px]
-                font-bold text-sidebar
-              "
-            >
-              {notificationCount > 9
-                ? '9+'
-                : notificationCount}
-            </span>
-          )}
-        </Link>
+        <NotificationBell basePath="/admin" size="default" />
 
         {/* Theme Toggle */}
         <ThemeToggle className="h-11 w-11 rounded-2xl" />

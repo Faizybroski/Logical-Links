@@ -1,10 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, CheckCheck } from 'lucide-react'
+import { Bell, CheckCheck, Megaphone } from 'lucide-react'
+import { toast } from 'sonner'
 import { useNotifications, useMarkNotificationsRead, useMarkAllNotificationsRead, type NotificationCategory } from '@/hooks/use-notifications'
+import { useAuthStore } from '@/store/auth.store'
+import { CreateAlertSheet } from './CreateAlertSheet'
 import { formatDate } from '@/lib/utils/format-date'
 import { cn } from '@/lib/utils/cn'
+
+const SEVERITY_STYLES: Record<string, string> = {
+  info:     'bg-blue-50 text-blue-700 border-blue-200',
+  warning:  'bg-amber-50 text-amber-700 border-amber-200',
+  critical: 'bg-red-50 text-red-700 border-red-200',
+}
 
 type Tab = 'all' | 'unread' | NotificationCategory
 
@@ -14,17 +23,22 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'deliveries', label: 'Deliveries' },
   { id: 'invoices',   label: 'Invoices' },
   { id: 'quotes',     label: 'Quotes' },
+  { id: 'support',    label: 'Support' },
   { id: 'account',    label: 'Account' },
+  { id: 'team',       label: 'Team' },
+  { id: 'operations', label: 'Operations' },
 ]
 
 export function NotificationsView() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin')
   const [tab, setTab] = useState<Tab>('all')
   const [page, setPage] = useState(1)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const unreadOnly = tab === 'unread'
   const category = tab === 'all' || tab === 'unread' ? undefined : tab
 
-  const { data, isLoading } = useNotifications({ page, limit: 20, unreadOnly, category })
+  const { data, isLoading } = useNotifications({ page, limit: 20, unreadOnly, category }, { poll: true })
   const markRead    = useMarkNotificationsRead()
   const markAllRead = useMarkAllNotificationsRead()
 
@@ -33,7 +47,11 @@ export function NotificationsView() {
   const unreadCount   = meta?.unreadCount ?? 0
 
   function handleMarkRead(id: string) {
-    markRead.mutate([id])
+    markRead.mutate([id], { onError: (err) => toast.error((err as Error).message) })
+  }
+
+  function handleMarkAllRead() {
+    markAllRead.mutate(undefined, { onError: (err) => toast.error((err as Error).message) })
   }
 
   function handleTabChange(next: Tab) {
@@ -51,18 +69,32 @@ export function NotificationsView() {
             {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
-            className="flex items-center gap-2 rounded-xl border border-card-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-primary/5 hover:text-primary disabled:opacity-50"
-          >
-            <CheckCheck className="h-4 w-4" />
-            Mark All Read
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-sidebar transition-colors hover:bg-primary/85"
+            >
+              <Megaphone className="h-4 w-4" />
+              Create Alert
+            </button>
+          )}
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              disabled={markAllRead.isPending}
+              className="flex items-center gap-2 rounded-xl border border-card-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+            >
+              <CheckCheck className="h-4 w-4" />
+              Mark All Read
+            </button>
+          )}
+        </div>
       </div>
+
+      {isAdmin && <CreateAlertSheet open={createOpen} onClose={() => setCreateOpen(false)} />}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2">
@@ -112,8 +144,13 @@ export function NotificationsView() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className={cn("text-sm font-medium", n.is_read ? "text-muted" : "text-foreground")}>
+                  <p className={cn("flex flex-wrap items-center gap-2 text-sm font-medium", n.is_read ? "text-muted" : "text-foreground")}>
                     {n.title}
+                    {n.severity && (
+                      <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", SEVERITY_STYLES[n.severity])}>
+                        {n.severity}
+                      </span>
+                    )}
                   </p>
                   {n.body && (
                     <p className="mt-0.5 text-sm text-muted">{n.body}</p>

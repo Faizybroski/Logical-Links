@@ -15,8 +15,8 @@ interface Props {
   readOnly?: boolean;
 }
 
-function fmt(n: number, currency = "AUD") {
-  return new Intl.NumberFormat("en-AU", { style: "currency", currency }).format(
+function fmt(n: number, currency = "CAD") {
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency }).format(
     n,
   );
 }
@@ -27,7 +27,7 @@ export function PricingSummary({
   taxRate,
   tax,
   total,
-  currency = "AUD",
+  currency = "CAD",
   amountPaid,
   balanceDue,
   onDiscountChange,
@@ -63,7 +63,7 @@ export function PricingSummary({
               </span>
             ) : (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted">AUD</span>
+                <span className="text-xs text-muted">CAD</span>
                 <input
                   type="number"
                   min="0"
@@ -137,7 +137,7 @@ export function PricingSummary({
                   </span>
                 ) : (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-muted">AUD</span>
+                    <span className="text-xs text-muted">CAD</span>
                     <input
                       type="number"
                       min="0"

@@ -6,6 +6,7 @@ import { useMe, useUpdateMe } from '@/hooks/use-users'
 import { useAuthStore } from '@/store/auth.store'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { uploadUserAvatar, removeUserAvatar } from '@/lib/upload-images'
+import { AppearanceSettings } from '@/components/settings/appearance-settings'
 import { toast } from 'sonner'
 
 export default function AdminProfilePage() {
@@ -172,6 +173,8 @@ export default function AdminProfilePage() {
               {updateMe.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
+
+          <AppearanceSettings />
         </>
       )}
     </div>

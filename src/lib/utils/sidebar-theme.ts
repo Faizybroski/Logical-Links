@@ -1,4 +1,5 @@
 export interface SidebarTheme {
+  id: string;
   name: string;
   bg: string;
   secondary: string;
@@ -11,17 +12,24 @@ export interface SidebarTheme {
 // the same white/zinc text contrast ratios as the original navy sidebar —
 // no color choice can make sidebar content harder to read than another.
 const SIDEBAR_THEMES: SidebarTheme[] = [
-  { name: "Black", bg: "#0a0a0a", secondary: "#161616", border: "rgba(255,255,255,0.06)" },
-  { name: "Midnight Navy", bg: "#060b16", secondary: "#0c1424", border: "rgba(255,255,255,0.06)" },
-  { name: "Dark Chocolate", bg: "#18100b", secondary: "#251811", border: "rgba(255,255,255,0.07)" },
-  { name: "Light Chocolate", bg: "#19100a", secondary: "#241910", border: "rgba(255,255,255,0.07)" },
-  { name: "Espresso", bg: "#16110e", secondary: "#211a14", border: "rgba(255,255,255,0.06)" },
-  { name: "Charcoal", bg: "#121212", secondary: "#1b1b1b", border: "rgba(255,255,255,0.06)" },
-  { name: "Forest", bg: "#0a1410", secondary: "#0f1e18", border: "rgba(255,255,255,0.06)" },
-  { name: "Wine", bg: "#170b10", secondary: "#25121a", border: "rgba(255,255,255,0.07)" },
-  { name: "Slate", bg: "#0d1316", secondary: "#141c22", border: "rgba(255,255,255,0.06)" },
-  { name: "Plum", bg: "#150e1c", secondary: "#22162d", border: "rgba(255,255,255,0.07)" },
+  { id: "black",           name: "Black",           bg: "#0a0a0a", secondary: "#161616", border: "rgba(255,255,255,0.06)" },
+  { id: "midnight-navy",   name: "Midnight Navy",   bg: "#060b16", secondary: "#0c1424", border: "rgba(255,255,255,0.06)" },
+  { id: "dark-chocolate",  name: "Dark Chocolate",  bg: "#18100b", secondary: "#251811", border: "rgba(255,255,255,0.07)" },
+  { id: "light-chocolate", name: "Light Chocolate", bg: "#19100a", secondary: "#241910", border: "rgba(255,255,255,0.07)" },
+  { id: "espresso",        name: "Espresso",        bg: "#16110e", secondary: "#211a14", border: "rgba(255,255,255,0.06)" },
+  { id: "charcoal",        name: "Charcoal",        bg: "#121212", secondary: "#1b1b1b", border: "rgba(255,255,255,0.06)" },
+  { id: "forest",          name: "Forest",          bg: "#0a1410", secondary: "#0f1e18", border: "rgba(255,255,255,0.06)" },
+  { id: "wine",            name: "Wine",            bg: "#170b10", secondary: "#25121a", border: "rgba(255,255,255,0.07)" },
+  { id: "slate",           name: "Slate",           bg: "#0d1316", secondary: "#141c22", border: "rgba(255,255,255,0.06)" },
+  { id: "plum",            name: "Plum",            bg: "#150e1c", secondary: "#22162d", border: "rgba(255,255,255,0.07)" },
 ];
+
+export { SIDEBAR_THEMES };
+
+export function getSidebarThemeById(id: string | null | undefined): SidebarTheme | undefined {
+  if (!id) return undefined;
+  return SIDEBAR_THEMES.find((t) => t.id === id);
+}
 
 function hashString(value: string): number {
   let hash = 0;

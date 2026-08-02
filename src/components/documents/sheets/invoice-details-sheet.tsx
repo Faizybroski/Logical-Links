@@ -28,7 +28,7 @@ function fmtDate(d?: string | null) {
 }
 
 function fmtCurrency(n: number) {
-  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(n);
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(n);
 }
 
 function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {

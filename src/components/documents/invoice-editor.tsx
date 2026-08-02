@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { LineItemsTable, type LineItemsTableHandle } from "./line-items-table";
 import { PricingSummary } from "./pricing-summary";
 import { InvoiceStatusBadge } from "./document-status-badge";
@@ -234,7 +235,7 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
       paymentInstructions: values.paymentInstructions || null,
       subtotal, discount: values.discount, taxRate: values.taxRate,
       tax, total, amountPaid: values.amountPaid, balanceDue,
-      currency: "AUD",
+      currency: "CAD",
       items,
     };
 
@@ -271,7 +272,7 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
   }
 
   const fmtCurrency = (n: number) =>
-    new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(n);
+    new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(n);
 
   const backPath = isAdmin ? "/admin/invoices" : "/shipper/invoices";
 
@@ -512,13 +513,15 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
                     <FormItem className="sm:col-span-2 space-y-1.5">
                       <FormLabel className={fieldLabelCls}>Billing Address</FormLabel>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="Street, City, State, Postcode"
+                        <AddressAutocomplete
+                          as="textarea"
                           rows={2}
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder="Street, City, State, Postcode"
                           className="resize-none"
-                          aria-invalid={!!fieldState.error}
+                          ariaInvalid={!!fieldState.error}
                         />
                       </FormControl>
                       <FormMessage className="text-xs" />

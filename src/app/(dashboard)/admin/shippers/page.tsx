@@ -205,7 +205,7 @@ export default function ShippersPage() {
   const sortDir = (filters.sortDir as SortDir) || null;
 
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => setDebouncedSearch(filters.search), 300);

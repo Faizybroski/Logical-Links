@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import ShipperSidebar from '@/components/shipper/ShipperSidebar'
 import AdminHeader from '@/components/admin/AdminHeader'
 import ShipperHeader from '@/components/shipper/ShipperHeader'
 import { Toaster } from '@/components/ui/sonner'
 import { useAuthStore } from '@/store/auth.store'
-import { useUnreadCount } from '@/hooks/use-notifications'
+import { useTheme } from '@/components/providers/theme-provider'
+import { useAppearance } from '@/components/providers/appearance-provider'
+import { getContentSwatchById } from '@/lib/utils/content-theme'
 
 interface Props {
   children: React.ReactNode
@@ -16,9 +18,11 @@ interface Props {
 export default function DashboardShell({ children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
-  const { data: unreadCount = 0 } = useUnreadCount()
+  const { theme } = useTheme()
+  const { contentSwatchId } = useAppearance()
 
   const isAdmin = user?.role === 'admin'
+  const contentSwatch = getContentSwatchById(theme, contentSwatchId[theme])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -38,17 +42,22 @@ export default function DashboardShell({ children }: Props) {
       )}
 
       {/* Main Layout */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        style={
+          contentSwatch
+            ? ({
+                "--background":   contentSwatch.bg,
+                "--card":          contentSwatch.card,
+                "--card-border":   contentSwatch.cardBorder,
+              } as CSSProperties)
+            : undefined
+        }
+        className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background"
+      >
         {isAdmin ? (
-          <AdminHeader
-            notificationCount={unreadCount}
-            onMenuToggle={() => setSidebarOpen((v) => !v)}
-          />
+          <AdminHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
         ) : (
-          <ShipperHeader
-            notificationCount={unreadCount}
-            onMenuToggle={() => setSidebarOpen((v) => !v)}
-          />
+          <ShipperHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
         )}
 
         <main className="flex-1 overflow-y-auto bg-background px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">

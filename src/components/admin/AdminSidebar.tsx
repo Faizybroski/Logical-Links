@@ -22,7 +22,9 @@ import {
   LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { getSidebarTheme } from "@/lib/utils/sidebar-theme";
+import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
+import { useTheme } from "@/components/providers/theme-provider";
+import { useAppearance } from "@/components/providers/appearance-provider";
 import { useAuthStore } from "@/store/auth.store";
 import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -118,7 +120,9 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
     router.refresh();
   }
 
-  const sidebarTheme = getSidebarTheme(user?.id);
+  const { theme } = useTheme();
+  const { sidebarSwatchId } = useAppearance();
+  const sidebarTheme = getSidebarThemeById(sidebarSwatchId[theme]) ?? getSidebarTheme(user?.id);
 
   return (
     <aside

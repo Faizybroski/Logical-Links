@@ -84,9 +84,9 @@ const BLANK_ITEM = (sortOrder = 0): FormItem => ({
 });
 
 function fmt(n: number) {
-  return new Intl.NumberFormat("en-AU", {
+  return new Intl.NumberFormat("en-CA", {
     style: "currency",
-    currency: "AUD",
+    currency: "CAD",
     minimumFractionDigits: 2,
   }).format(n);
 }

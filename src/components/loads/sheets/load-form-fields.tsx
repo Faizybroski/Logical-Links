@@ -5,6 +5,7 @@ import { MapPin, Package, Clock } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import {
   FormControl,
   FormField,
@@ -13,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { CityProvinceCombobox } from "@/components/tracking/city-province-combobox";
+import type { AddressSuggestion } from "@/lib/utils/geocode";
 import type { LoadFormValues } from "@/lib/validations/load";
 
 export const F = "h-10 rounded-lg border-card-border bg-background text-sm focus-visible:ring-primary/30";
@@ -50,6 +52,18 @@ export function LoadLocationFields({ form }: { form: UseFormReturn<LoadFormValue
   const destCity    = form.watch("destinationCity");
   const destState   = form.watch("destinationState");
 
+  function handleAddressSelect(prefix: "origin" | "destination", s: AddressSuggestion) {
+    if (prefix === "origin") {
+      if (s.context?.city)     form.setValue("originCity", s.context.city, { shouldValidate: true });
+      if (s.context?.region)   form.setValue("originState", s.context.region, { shouldValidate: true });
+      if (s.context?.postcode) form.setValue("originPostcode", s.context.postcode, { shouldValidate: true });
+    } else {
+      if (s.context?.city)     form.setValue("destinationCity", s.context.city, { shouldValidate: true });
+      if (s.context?.region)   form.setValue("destinationState", s.context.region, { shouldValidate: true });
+      if (s.context?.postcode) form.setValue("destinationPostcode", s.context.postcode, { shouldValidate: true });
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Origin */}
@@ -58,7 +72,16 @@ export function LoadLocationFields({ form }: { form: UseFormReturn<LoadFormValue
           <FormField control={form.control} name="originAddress" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Street Address</FormLabel>
-              <FormControl><Input {...field} placeholder="123 Main Street" className={F} /></FormControl>
+              <FormControl>
+                <AddressAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onSelect={(s) => handleAddressSelect("origin", s)}
+                  placeholder="123 Main Street"
+                  className={F}
+                />
+              </FormControl>
               <FormMessage className="text-xs" />
             </FormItem>
           )} />
@@ -96,7 +119,16 @@ export function LoadLocationFields({ form }: { form: UseFormReturn<LoadFormValue
           <FormField control={form.control} name="destinationAddress" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Street Address</FormLabel>
-              <FormControl><Input {...field} placeholder="456 Market Street" className={F} /></FormControl>
+              <FormControl>
+                <AddressAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onSelect={(s) => handleAddressSelect("destination", s)}
+                  placeholder="456 Market Street"
+                  className={F}
+                />
+              </FormControl>
               <FormMessage className="text-xs" />
             </FormItem>
           )} />
@@ -239,7 +271,7 @@ export function LoadCargoFields({
           {showQuotedPrice && (
             <FormField control={form.control} name="quotedPrice" render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Quoted Price (AUD)</FormLabel>
+                <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Quoted Price (CAD)</FormLabel>
                 <FormControl>
                   <Input
                     {...field}

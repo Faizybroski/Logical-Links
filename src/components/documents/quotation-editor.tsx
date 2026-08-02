@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, FileDown, Copy, Send, Loader2, X, Truck } from "lucide-react";
+import { Save, FileDown, FileOutput, Copy, Send, Loader2, X, Truck, Route as RouteIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +38,10 @@ import {
   useGenerateQuotationPdf,
 } from "@/hooks/use-quotations";
 import { useConvertQuotationToInvoice } from "@/hooks/use-invoices";
+import { useAccounts } from "@/hooks/use-accounts";
+import { CompanyLogo } from "@/components/ui/company-logo";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { geocodeAddress, haversineDistanceKm, type AddressSuggestion, type Coordinates } from "@/lib/utils/geocode";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -66,6 +70,8 @@ const quotationFormSchema = z
                        .nullable(),
     customerPhone:   z.string().max(50, "Maximum 50 characters").optional().nullable(),
     billingAddress:  z.string().max(500, "Maximum 500 characters").optional().nullable(),
+    originAddress:      z.string().max(500, "Maximum 500 characters").optional().nullable(),
+    destinationAddress: z.string().max(500, "Maximum 500 characters").optional().nullable(),
     notes:           z.string().max(2000, "Maximum 2000 characters").optional().nullable(),
     terms:           z.string().max(5000, "Maximum 5000 characters").optional().nullable(),
     discount:        z.number().min(0, "Discount cannot be negative"),
@@ -83,12 +89,11 @@ type QuotationFormValues = z.infer<typeof quotationFormSchema>;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+// Admin can only ever move a quotation between Draft and Sent — Accepted/Declined
+// are recorded exclusively by the shipper via the accept/decline workflow.
 const QUOTATION_STATUSES: { value: QuotationStatus; label: string }[] = [
-  { value: "draft",    label: "Draft"    },
-  { value: "sent",     label: "Sent"     },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Rejected" },
-  { value: "expired",  label: "Expired"  },
+  { value: "draft", label: "Draft" },
+  { value: "sent",  label: "Sent"  },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -146,6 +151,34 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
   const router = useRouter();
   const isEdit = !!quotation;
 
+  // Shipper picker — only relevant when an admin is creating a brand-new,
+  // standalone quotation. Selecting a shipper sets who the quotation belongs
+  // to (profile_id) and autofills the customer fields from that company.
+  const { data: accountsRes } = useAccounts(
+    { limit: 100, isActive: "true" },
+    { enabled: !!isAdmin && !isEdit },
+  );
+  const shipperAccounts = accountsRes?.data ?? [];
+  const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | undefined>(undefined);
+
+  function handleShipperSelect(accountId: string) {
+    const account = shipperAccounts.find((a) => a.account_id === accountId);
+    if (!account) return;
+    const admin = account.profiles?.find((p) => p.company_role === "company_admin") ?? account.profiles?.[0];
+    setSelectedAccountId(accountId);
+    setSelectedProfileId(admin?.id);
+
+    const billingAddress = [account.billing_address, account.billing_city, account.billing_state, account.billing_postcode]
+      .filter(Boolean).join(", ");
+
+    form.setValue("customerName", admin?.full_name || account.contact_name || account.account_name, { shouldValidate: true, shouldDirty: true });
+    form.setValue("customerCompany", account.account_name, { shouldDirty: true });
+    form.setValue("customerEmail", account.contact_email ?? "", { shouldDirty: true });
+    form.setValue("customerPhone", account.contact_phone ?? admin?.phone ?? "", { shouldDirty: true });
+    if (billingAddress) form.setValue("billingAddress", billingAddress, { shouldDirty: true });
+  }
+
   // Line items live outside the main form (managed by LineItemsTable's own useForm)
   const [items, setItems] = useState<FormItem[]>(() => {
     if (quotation?.quotation_items?.length) {
@@ -169,6 +202,35 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
     return [];
   });
 
+  const [originCoords, setOriginCoords] = useState<Coordinates | null>(
+    quotation?.origin_lat != null && quotation?.origin_lng != null
+      ? { lat: quotation.origin_lat, lng: quotation.origin_lng }
+      : null,
+  );
+  const [destinationCoords, setDestinationCoords] = useState<Coordinates | null>(
+    quotation?.destination_lat != null && quotation?.destination_lng != null
+      ? { lat: quotation.destination_lat, lng: quotation.destination_lng }
+      : null,
+  );
+  const [geocoding, setGeocoding] = useState<"origin" | "destination" | null>(null);
+
+  const distanceKm = originCoords && destinationCoords
+    ? Math.round(haversineDistanceKm(originCoords, destinationCoords) * 10) / 10
+    : (quotation?.distance_km ?? null);
+
+  async function handleAddressBlur(field: "origin" | "destination", address: string) {
+    setGeocoding(field);
+    const coords = await geocodeAddress(address);
+    if (field === "origin") setOriginCoords(coords);
+    else setDestinationCoords(coords);
+    setGeocoding(null);
+  }
+
+  function handleAddressSelect(field: "origin" | "destination", suggestion: AddressSuggestion) {
+    if (field === "origin") setOriginCoords(suggestion.center);
+    else setDestinationCoords(suggestion.center);
+  }
+
   const form = useForm<QuotationFormValues>({
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
@@ -180,6 +242,10 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
       customerEmail:   quotation?.customer_email ?? "",
       customerPhone:   quotation?.customer_phone ?? "",
       billingAddress:  quotation?.billing_address ?? "",
+      originAddress:      quotation?.origin_address
+        ?? (loadPrefill ? `${loadPrefill.originCity}, ${loadPrefill.originState}` : ""),
+      destinationAddress: quotation?.destination_address
+        ?? (loadPrefill ? `${loadPrefill.destinationCity}, ${loadPrefill.destinationState}` : ""),
       notes:           quotation?.notes ?? "",
       terms:           quotation?.terms ?? "Standard freight terms apply.",
       discount:        quotation?.discount ?? 0,
@@ -205,6 +271,11 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
   const lineItemsRef = useRef<LineItemsTableHandle>(null);
 
   async function onSubmit(values: QuotationFormValues) {
+    if (isAdmin && !isEdit && !selectedProfileId) {
+      toast.error("Please select the shipper this quotation is for");
+      return;
+    }
+
     // Validate line items (separate sub-form)
     const itemsValid = await lineItemsRef.current?.validate() ?? true;
     if (!itemsValid) {
@@ -225,7 +296,14 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
       notes:           values.notes || null,
       terms:           values.terms || null,
       subtotal, discount: values.discount, taxRate: values.taxRate, tax, total,
-      currency: "AUD",
+      currency: "CAD",
+      originAddress:      values.originAddress || null,
+      destinationAddress: values.destinationAddress || null,
+      originLat:          originCoords?.lat ?? null,
+      originLng:          originCoords?.lng ?? null,
+      destinationLat:     destinationCoords?.lat ?? null,
+      destinationLng:     destinationCoords?.lng ?? null,
+      distanceKm,
       items,
     };
 
@@ -234,7 +312,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
         await updateMut.mutateAsync(dto as UpdateQuotationDto);
         toast.success("Quotation saved");
       } else {
-        const res = await createMut.mutateAsync({ ...dto, profileId, loadId: loadId ?? undefined } as CreateQuotationDto);
+        const res = await createMut.mutateAsync({ ...dto, profileId: selectedProfileId ?? profileId, loadId: loadId ?? undefined } as CreateQuotationDto);
         toast.success("Quotation created");
         const newId = (res as any)?.data?.id;
         if (redirectTo && newId) router.push(redirectTo.replace("[id]", newId));
@@ -249,6 +327,15 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
       const url = (res as any)?.data?.pdfUrl;
       if (url) window.open(url, "_blank");
       toast.success("PDF generated");
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  async function handleSendToShipper() {
+    if (!quotation?.id) return;
+    try {
+      await updateMut.mutateAsync({ status: "sent" } as UpdateQuotationDto);
+      form.setValue("status", "sent");
+      toast.success("Quotation sent to shipper");
     } catch (err) { toast.error((err as Error).message); }
   }
 
@@ -287,13 +374,19 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
           <div className="flex flex-wrap gap-2">
             {isEdit && (
               <>
+                {quotation?.status === "draft" && (
+                  <Button variant="outline" size="sm" onClick={handleSendToShipper} disabled={updateMut.isPending}
+                    className="h-8 rounded-lg border-primary/30 px-3 text-xs gap-1.5 text-primary">
+                    <Send className="h-3.5 w-3.5" /> Send to Shipper
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
                   className="h-8 rounded-lg border-card-border px-3 text-xs gap-1.5">
                   <Copy className="h-3.5 w-3.5" /> Duplicate
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleConvert} disabled={convertMut.isPending}
                   className="h-8 rounded-lg border-card-border px-3 text-xs gap-1.5">
-                  <Send className="h-3.5 w-3.5" /> To Invoice
+                  <FileOutput className="h-3.5 w-3.5" /> To Invoice
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={pdfMut.isPending}
                   className="h-8 rounded-lg border-card-border px-3 text-xs gap-1.5">
@@ -407,13 +500,20 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel className={fieldLabelCls}>Status</FormLabel>
-                      <SearchableSelect
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        onBlur={field.onBlur}
-                        options={QUOTATION_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-                        searchPlaceholder="Search status…"
-                      />
+                      {field.value === "draft" || field.value === "sent" ? (
+                        <SearchableSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          options={QUOTATION_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+                          searchPlaceholder="Search status…"
+                        />
+                      ) : (
+                        <div className="flex h-10 items-center gap-2">
+                          <QuotationStatusBadge status={field.value} />
+                          <span className="text-xs text-muted">Set by the shipper</span>
+                        </div>
+                      )}
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
@@ -424,6 +524,27 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
             {/* Customer Information */}
             <Section title="Customer Information">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {isAdmin && !isEdit && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className={fieldLabelCls}>
+                      Shipper <span className="text-destructive">*</span>
+                    </label>
+                    <SearchableSelect
+                      value={selectedAccountId ?? ""}
+                      onValueChange={handleShipperSelect}
+                      options={shipperAccounts.map((a) => ({
+                        value: a.account_id,
+                        label: a.account_name,
+                        icon: <CompanyLogo name={a.account_name} logoUrl={a.logo_url} size="xs" rounded="lg" />,
+                      }))}
+                      placeholder="Select the shipper this quotation is for…"
+                      searchPlaceholder="Search shipping companies…"
+                      emptyText="No active shipping companies"
+                    />
+                    <p className="text-xs text-muted">Selecting a shipper fills in the fields below and links the quotation to them.</p>
+                  </div>
+                )}
+
                 <FormField
                   control={form.control}
                   name="customerName"
@@ -513,19 +634,85 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                     <FormItem className="sm:col-span-2 space-y-1.5">
                       <FormLabel className={fieldLabelCls}>Billing Address</FormLabel>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="Street, City, State, Postcode"
+                        <AddressAutocomplete
+                          as="textarea"
                           rows={2}
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder="Street, City, State, Postcode"
                           className="resize-none"
-                          aria-invalid={!!fieldState.error}
+                          ariaInvalid={!!fieldState.error}
                         />
                       </FormControl>
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
+              </div>
+            </Section>
+
+            {/* Origin & Destination */}
+            <Section title="Origin & Destination">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="originAddress"
+                  render={({ field, fieldState }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className={fieldLabelCls}>Origin Address</FormLabel>
+                      <FormControl>
+                        <AddressAutocomplete
+                          as="textarea"
+                          rows={2}
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={() => { field.onBlur(); handleAddressBlur("origin", field.value ?? ""); }}
+                          onSelect={(s) => handleAddressSelect("origin", s)}
+                          placeholder="Street, City, Province, Postal Code"
+                          className="resize-none"
+                          ariaInvalid={!!fieldState.error}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="destinationAddress"
+                  render={({ field, fieldState }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className={fieldLabelCls}>Destination Address</FormLabel>
+                      <FormControl>
+                        <AddressAutocomplete
+                          as="textarea"
+                          rows={2}
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={() => { field.onBlur(); handleAddressBlur("destination", field.value ?? ""); }}
+                          onSelect={(s) => handleAddressSelect("destination", s)}
+                          placeholder="Street, City, Province, Postal Code"
+                          className="resize-none"
+                          ariaInvalid={!!fieldState.error}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted">
+                <RouteIcon className="h-3.5 w-3.5" />
+                {geocoding ? (
+                  <span>Locating {geocoding} address…</span>
+                ) : distanceKm != null ? (
+                  <span className="font-semibold text-foreground">≈ {distanceKm} km</span>
+                ) : (
+                  <span>Distance appears once both addresses are located</span>
+                )}
               </div>
             </Section>
 
@@ -603,7 +790,8 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
               <div className="space-y-0">
                 {[
                   { label: "Items",    value: String(items.length), mono: false },
-                  { label: "Subtotal", value: new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(subtotal), mono: true },
+                  { label: "Subtotal", value: new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(subtotal), mono: true },
+                  ...(distanceKm != null ? [{ label: "Distance", value: `≈ ${distanceKm} km`, mono: true }] : []),
                 ].map(({ label, value, mono }) => (
                   <div key={label} className="flex items-center justify-between border-b border-card-border px-5 py-3">
                     <span className="text-sm text-muted">{label}</span>
@@ -613,7 +801,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                 <div className="flex items-center justify-between bg-primary/5 px-5 py-4">
                   <span className="text-sm font-semibold text-foreground">Total</span>
                   <span className="text-base font-bold text-primary tabular-nums">
-                    {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(total)}
+                    {new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(total)}
                   </span>
                 </div>
               </div>
@@ -689,7 +877,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
           <p className="mt-2 text-center text-xs text-muted tabular-nums">
             {items.length} item{items.length !== 1 ? "s" : ""} ·{" "}
             <span className="font-semibold text-primary">
-              {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(total)}
+              {new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(total)}
             </span>
           </p>
         </div>

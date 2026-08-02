@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import NavigationProgress from '@/components/NavigationProgress'
 import QueryProvider from '@/components/providers/query-provider'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { AppearanceProvider } from '@/components/providers/appearance-provider'
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,8 +43,10 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} antialiased`}>
         <ThemeProvider>
-          <NavigationProgress />
-          <QueryProvider>{children}</QueryProvider>
+          <AppearanceProvider>
+            <NavigationProgress />
+            <QueryProvider>{children}</QueryProvider>
+          </AppearanceProvider>
         </ThemeProvider>
       </body>
     </html>

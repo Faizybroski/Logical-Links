@@ -342,7 +342,10 @@ export type CreateShipmentDto = {
 export type UpdateShipmentDto = Partial<Omit<CreateShipmentDto, "shipmentType" | "accountId">>;
 
 export type UpdateShipmentStatusDto = {
-  status: ShipmentStatus;
+  // Not narrowed to ShipmentStatus — the backend schema (and the
+  // StatusCombobox UI this feeds) intentionally accept any custom status
+  // slug, not just the fixed lifecycle enum.
+  status: string;
   reason?: string;
 };
 
@@ -499,6 +502,13 @@ export type Quotation = {
   tax:              number;
   total:            number;
   currency:         string;
+  origin_address:      string | null;
+  origin_lat:          number | null;
+  origin_lng:          number | null;
+  destination_address: string | null;
+  destination_lat:     number | null;
+  destination_lng:     number | null;
+  distance_km:         number | null;
   pdf_url:          string | null;
   accepted_at:      string | null;
   declined_at:      string | null;
@@ -552,6 +562,13 @@ export type CreateQuotationDto = {
   tax?:            number;
   total?:          number;
   currency?:       string;
+  originAddress?:      string | null;
+  originLat?:          number | null;
+  originLng?:          number | null;
+  destinationAddress?: string | null;
+  destinationLat?:     number | null;
+  destinationLng?:     number | null;
+  distanceKm?:         number | null;
   items?:          Omit<LineItem, "id" | "created_at" | "updated_at">[];
 };
 

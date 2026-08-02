@@ -250,7 +250,7 @@ export function LoadDetailsSheet({
   const assignMut = useAssignShipment(loadId);
   const assignEmpMut = useAssignEmployee(loadId);
 
-  async function handleStatusChange(status: ShipmentStatus, reason?: string) {
+  async function handleStatusChange(status: string, reason?: string) {
     try {
       await statusMut.mutateAsync({ status, reason });
       toast.success("Status updated");
@@ -575,7 +575,7 @@ export function LoadDetailsSheet({
                         <InfoTile
                           icon={<DollarSign className="h-4 w-4" />}
                           label="Quoted Price"
-                          value={`${shipment.currency} ${shipment.quoted_price.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`}
+                          value={`${shipment.currency} ${shipment.quoted_price.toLocaleString("en-CA", { minimumFractionDigits: 2 })}`}
                         />
                       )}
                       {shipment.reference_number && (
@@ -767,9 +767,9 @@ export function LoadDetailsSheet({
                           </div>
                           <div className="flex items-center gap-3">
                             <p className="text-sm font-semibold tabular-nums text-foreground">
-                              {new Intl.NumberFormat("en-AU", {
+                              {new Intl.NumberFormat("en-CA", {
                                 style: "currency",
-                                currency: q.currency ?? "AUD",
+                                currency: q.currency ?? "CAD",
                               }).format(q.total ?? 0)}
                             </p>
                             <Link
@@ -818,17 +818,17 @@ export function LoadDetailsSheet({
                           <div className="flex items-center gap-3">
                             <div className="text-right">
                               <p className="text-sm font-semibold tabular-nums text-foreground">
-                                {new Intl.NumberFormat("en-AU", {
+                                {new Intl.NumberFormat("en-CA", {
                                   style: "currency",
-                                  currency: inv.currency ?? "AUD",
+                                  currency: inv.currency ?? "CAD",
                                 }).format(inv.total ?? 0)}
                               </p>
                               {inv.balance_due > 0 && (
                                 <p className="text-xs text-danger tabular-nums">
                                   Due{" "}
-                                  {new Intl.NumberFormat("en-AU", {
+                                  {new Intl.NumberFormat("en-CA", {
                                     style: "currency",
-                                    currency: inv.currency ?? "AUD",
+                                    currency: inv.currency ?? "CAD",
                                   }).format(inv.balance_due)}
                                 </p>
                               )}

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth.store'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { CompanyLogo } from '@/components/ui/company-logo'
 import { uploadUserAvatar, removeUserAvatar } from '@/lib/upload-images'
+import { AppearanceSettings } from '@/components/settings/appearance-settings'
 import { toast } from 'sonner'
 
 export default function ShipperProfilePage() {
@@ -270,6 +271,8 @@ export default function ShipperProfilePage() {
               {updateMe.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
+
+          <AppearanceSettings />
         </>
       )}
     </div>

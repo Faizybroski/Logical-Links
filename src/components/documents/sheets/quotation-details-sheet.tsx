@@ -34,7 +34,7 @@ function fmtDate(d?: string | null) {
 }
 
 function fmtCurrency(n: number) {
-  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(n);
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(n);
 }
 
 function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
@@ -217,6 +217,24 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                   )}
                 </div>
               </div>
+
+              {/* Route */}
+              {(quotation.origin_address || quotation.destination_address) && (
+                <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+                  <div className="border-b border-card-border px-5 py-4">
+                    <h3 className="text-sm font-semibold text-foreground">Origin & Destination</h3>
+                  </div>
+                  <div className="grid gap-3 p-4 sm:grid-cols-2">
+                    <InfoTile icon={<MapPin className="h-4 w-4" />} label="Origin" value={quotation.origin_address} />
+                    <InfoTile icon={<MapPin className="h-4 w-4" />} label="Destination" value={quotation.destination_address} />
+                    {quotation.distance_km != null && (
+                      <div className="sm:col-span-2">
+                        <InfoTile icon={<Truck className="h-4 w-4" />} label="Distance" value={`≈ ${quotation.distance_km} km`} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Line items */}
               <div className="space-y-2">

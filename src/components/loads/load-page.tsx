@@ -337,7 +337,7 @@ export default function LoadsPage() {
     }
   }
 
-  async function handleStatusChange(status: ShipmentStatus, reason?: string) {
+  async function handleStatusChange(status: string, reason?: string) {
     if (!statusLoad) return;
     try {
       await statusMut.mutateAsync({ status, reason });
