@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware";
 export type AuthUser = {
   id:          string;
   email:       string;
-  role:        "admin" | "shipper";
+  role:        "admin" | "shipper" | "residential";
   companyRole: "company_admin" | "employee" | null;
   adminRole:   "ceo" | "vp" | "manager" | "assistant" | null;
   permissions: string[];

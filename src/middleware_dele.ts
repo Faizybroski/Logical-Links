@@ -14,8 +14,9 @@ const PROTECTED_PREFIXES = ["/admin", "/shipper", "/driver"];
 const AUTH_ONLY_PATHS = new Set(["/", "/login", "/register", "/forgot-password"]);
 
 function getDashboard(role: string | undefined): string {
-  if (role === "admin")   return "/admin/dashboard";
-  if (role === "shipper") return "/shipper/dashboard";
+  if (role === "admin")       return "/admin/dashboard";
+  if (role === "residential") return "/residential/dashboard";
+  if (role === "shipper")     return "/shipper/dashboard";
   return "/admin/dashboard"; // safe fallback
 }
 

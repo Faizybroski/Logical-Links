@@ -8,22 +8,29 @@ import { z } from "zod";
 
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
+import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
 
-const registerSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  company: z.string().min(2, "Company name is required"),
-  phone: z
-    .string()
-    .min(7, "Phone number is too short")
-    .regex(/^[0-9+()\-\s]+$/, "Invalid phone number format"),
-  email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Must contain at least one number"),
-});
+const registerSchema = z
+  .object({
+    accountType: z.enum(["corporate", "residential"]),
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
+    company: z.string().min(2, "Company name is required").optional().or(z.literal("")),
+    phone: z
+      .string()
+      .min(7, "Phone number is too short")
+      .regex(/^[0-9+()\-\s]+$/, "Invalid phone number format"),
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Must contain at least one number"),
+  })
+  .refine((data) => data.accountType !== "corporate" || !!data.company, {
+    message: "Company name is required",
+    path: ["company"],
+  });
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
@@ -35,6 +42,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState<RegisterForm>({
+    accountType: "corporate",
     email: "",
     password: "",
     firstName: "",
@@ -44,9 +52,16 @@ export default function RegisterPage() {
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterForm, string>>>({});
 
+  const isCorporate = form.accountType === "corporate";
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleAccountTypeChange(accountType: "corporate" | "residential") {
+    setForm((prev) => ({ ...prev, accountType }));
+    setFieldErrors({});
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -74,12 +89,13 @@ export default function RegisterPage() {
         accessToken: string;
         refreshToken: string;
         expiresIn: number;
-        user: { id: string; email: string; role: "admin" | "shipper"; companyRole: "company_admin" | "employee" | null; adminRole: "ceo" | "vp" | "manager" | "assistant" | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
+        user: { id: string; email: string; role: "admin" | "shipper" | "residential"; companyRole: "company_admin" | "employee" | null; adminRole: "ceo" | "vp" | "manager" | "assistant" | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
       }>>('/api/v1/auth/register', {
+        accountType: result.data.accountType,
         email: result.data.email,
         password: result.data.password,
         fullName,
-        company: result.data.company,
+        company: result.data.accountType === "corporate" ? result.data.company : undefined,
         phone: result.data.phone,
       });
 
@@ -90,7 +106,7 @@ export default function RegisterPage() {
         user:         res.data.user,
       });
 
-      router.push("/shipper/dashboard");
+      router.push(dashboardPathForRole(res.data.user.role));
     } catch (err) {
       if (err instanceof ApiError) {
         // Map backend error codes to field-level errors where possible
@@ -132,14 +148,42 @@ export default function RegisterPage() {
 
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              Create Shipping Company
+              {isCorporate ? "Create Shipping Company" : "Create Your Account"}
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Register your company and get started as Company Admin
+              {isCorporate
+                ? "Register your company and get started as Company Admin"
+                : "Sign up to book and track your own deliveries"}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Account type */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleAccountTypeChange("residential")}
+                className={`h-12 rounded-2xl border text-sm font-semibold transition ${
+                  !isCorporate
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-card-border text-muted hover:text-foreground"
+                }`}
+              >
+                Residential
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAccountTypeChange("corporate")}
+                className={`h-12 rounded-2xl border text-sm font-semibold transition ${
+                  isCorporate
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-card-border text-muted hover:text-foreground"
+                }`}
+              >
+                Corporate (Shipper)
+              </button>
+            </div>
+
             {/* First + Last Name */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
@@ -175,22 +219,24 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Company */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">Company Name</label>
-              <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-                <input
-                  type="text"
-                  name="company"
-                  value={form.company}
-                  onChange={handleChange}
-                  placeholder="Logical Links Inc."
-                  className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                />
+            {/* Company (corporate only) */}
+            {isCorporate && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">Company Name</label>
+                <div className="relative">
+                  <Building2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+                  <input
+                    type="text"
+                    name="company"
+                    value={form.company}
+                    onChange={handleChange}
+                    placeholder="Logical Links Inc."
+                    className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  />
+                </div>
+                {fieldErrors.company && <p className="mt-1 text-xs text-danger">{fieldErrors.company}</p>}
               </div>
-              {fieldErrors.company && <p className="mt-1 text-xs text-danger">{fieldErrors.company}</p>}
-            </div>
+            )}
 
             {/* Phone */}
             <div>

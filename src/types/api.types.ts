@@ -1,6 +1,6 @@
 // ── Shared ────────────────────────────────────────────────────────────────────
 
-export type UserRole    = "admin" | "shipper";
+export type UserRole    = "admin" | "shipper" | "residential";
 export type CompanyRole = "company_admin" | "employee" | null;
 export type AdminRole   = "ceo" | "vp" | "manager" | "assistant" | null;
 
@@ -309,12 +309,18 @@ export type Shipment = {
   profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper'; avatar_url?: string | null } | null;
   /** Profile of the assigned employee (joined via profiles!assigned_employee_id). */
   employee?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
+  /** UUID of the residential customer this delivery belongs to (mutually exclusive with account_id). */
+  customer_id?: string | null;
+  /** Profile of the residential customer (joined via profiles!customer_id). */
+  customer?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
 };
 
 export type CreateShipmentDto = {
   shipmentType?: ShipmentType;
   /** UUID of the shipping company (accounts.account_id) to pre-assign. */
   accountId?: string;
+  /** UUID of the residential customer (profiles.id) this delivery belongs to. Mutually exclusive with accountId. */
+  customerId?: string;
   originAddress: string;
   originCity: string;
   originState: string;
@@ -366,6 +372,7 @@ export type ListShipmentsQuery = {
   statuses?:      string; // comma-separated list, takes precedence over status
   shipmentType?:  ShipmentType;
   accountId?:     string;
+  customerId?:    string;
   search?:        string;
   dateFrom?:      string;
   dateTo?:        string;
@@ -972,4 +979,6 @@ export type ListSupportCasesQuery = {
   limit?:  number;
   status?: SupportCaseStatus;
   search?: string;
+  /** Admin-only: view all cases raised by a specific user. */
+  userId?: string;
 };

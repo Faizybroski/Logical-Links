@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { api, type ApiResponse } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
+import { dashboardPathForRole } from '@/lib/utils/dashboard-path'
 import type { LoginResult } from '@/types/api.types'
 
 function LoginForm() {
@@ -24,8 +25,7 @@ function LoginForm() {
   useEffect(() => {
     if (!_hasHydrated) return
     if (isAuthenticated && user) {
-      const dest = user.role === 'admin' ? '/admin/dashboard' : '/shipper/dashboard'
-      router.replace(dest)
+      router.replace(dashboardPathForRole(user.role))
     }
   }, [isAuthenticated, user, _hasHydrated, router])
 
@@ -43,11 +43,7 @@ function LoginForm() {
     const { accessToken, refreshToken, expiresIn, user } = res.data
     setAuth({ accessToken, refreshToken, expiresIn, user })
 
-    if (user.role === 'admin') {
-      router.push('/admin/dashboard')
-    } else {
-      router.push('/shipper/dashboard')
-    }
+    router.push(dashboardPathForRole(user.role))
     router.refresh()
   }
 

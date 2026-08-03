@@ -24,6 +24,7 @@ function buildQuery(params: ListShipmentsQuery): string {
   else if (params.status)   q.set("status",        params.status);
   if (params.shipmentType)  q.set("shipmentType",  params.shipmentType);
   if (params.accountId)     q.set("accountId",     params.accountId);
+  if (params.customerId)    q.set("customerId",    params.customerId);
   if (params.search)        q.set("search",        params.search);
   if (params.dateFrom)      q.set("dateFrom",      params.dateFrom);
   if (params.dateTo)        q.set("dateTo",        params.dateTo);

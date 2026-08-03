@@ -29,6 +29,15 @@ export function useUsers(
   });
 }
 
+export function useUser(id: string) {
+  return useQuery({
+    queryKey: KEYS.detail(id),
+    queryFn:  () => api.get<ApiResponse<UserProfile>>(`/api/v1/users/${id}`),
+    enabled:  !!id,
+    staleTime: 2 * 60_000,
+  });
+}
+
 export function useMe() {
   return useQuery({
     queryKey: KEYS.me,

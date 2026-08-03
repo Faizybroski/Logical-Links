@@ -3,8 +3,10 @@
 import { useState, type CSSProperties } from 'react'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import ShipperSidebar from '@/components/shipper/ShipperSidebar'
+import ResidentialSidebar from '@/components/residential/ResidentialSidebar'
 import AdminHeader from '@/components/admin/AdminHeader'
 import ShipperHeader from '@/components/shipper/ShipperHeader'
+import ResidentialHeader from '@/components/residential/ResidentialHeader'
 import { Toaster } from '@/components/ui/sonner'
 import { useAuthStore } from '@/store/auth.store'
 import { useTheme } from '@/components/providers/theme-provider'
@@ -22,6 +24,7 @@ export default function DashboardShell({ children }: Props) {
   const { contentSwatchId } = useAppearance()
 
   const isAdmin = user?.role === 'admin'
+  const isResidential = user?.role === 'residential'
   const contentSwatch = getContentSwatchById(theme, contentSwatchId[theme])
 
   return (
@@ -37,6 +40,8 @@ export default function DashboardShell({ children }: Props) {
       {/* Sidebar */}
       {isAdmin ? (
         <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      ) : isResidential ? (
+        <ResidentialSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       ) : (
         <ShipperSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
@@ -56,6 +61,8 @@ export default function DashboardShell({ children }: Props) {
       >
         {isAdmin ? (
           <AdminHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
+        ) : isResidential ? (
+          <ResidentialHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
         ) : (
           <ShipperHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
         )}

@@ -6,6 +6,7 @@ export const loadSchema = z.object({
   shipmentType: z.enum(SHIPMENT_TYPES),
 
   accountId: z.string().uuid("Please select a company").optional(),
+  customerId: z.string().uuid("Please select a residential customer").optional(),
 
   originCity:     z.string().min(1, "Origin city required"),
   originState:    z.string().min(1, "Origin state required"),

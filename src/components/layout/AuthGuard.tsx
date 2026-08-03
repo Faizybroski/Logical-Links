@@ -3,9 +3,10 @@
 import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
+import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
 
 type Props = {
-  allowedRoles?: ("admin" | "shipper")[];
+  allowedRoles?: ("admin" | "shipper" | "residential")[];
   children: React.ReactNode;
 };
 
@@ -38,7 +39,7 @@ export default function AuthGuard({ allowedRoles, children }: Props) {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-      const dest = user.role === "admin" ? "/admin/dashboard" : "/shipper/dashboard";
+      const dest = dashboardPathForRole(user.role);
       authLog.warn(`Role "${user.role}" not allowed on "${pathname}" — redirecting to ${dest}`);
       router.replace(dest);
     }

@@ -21,7 +21,7 @@ function timeAgo(iso: string): string {
 }
 
 interface Props {
-  basePath: '/admin' | '/shipper'
+  basePath: '/admin' | '/shipper' | '/residential'
   /** Matches each header's existing bell sizing so the swap is visually seamless. */
   size?: 'default' | 'compact'
 }

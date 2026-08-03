@@ -24,7 +24,9 @@ import { CompanyLogo } from "@/components/ui/company-logo";
 import { loadSchema, type LoadFormValues } from "@/lib/validations/load";
 import { useCreateShipment } from "@/hooks/use-shipments";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useUsers } from "@/hooks/use-users";
 import { useAuthStore } from "@/store/auth.store";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { dateInputValueToIso } from "@/lib/utils/format-date";
 import type { AccountProfile } from "@/types/api.types";
 
@@ -46,12 +48,19 @@ export function CreateLoadSheet({ open, onClose }: CreateLoadSheetProps) {
   );
   const companies = accountsRes?.data ?? [];
 
+  const { data: customersRes } = useUsers(
+    { role: "residential", limit: 100 },
+    { enabled: isAdmin && open },
+  );
+  const customers = customersRes?.data ?? [];
+
   const form = useForm<LoadFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(loadSchema) as any,
     defaultValues: {
       shipmentType:        "freight",
       accountId:           undefined,
+      customerId:          undefined,
       originAddress:       "",
       originCity:          "",
       originState:         "",
@@ -84,6 +93,7 @@ export function CreateLoadSheet({ open, onClose }: CreateLoadSheetProps) {
       await createMut.mutateAsync({
         shipmentType:        values.shipmentType,
         accountId:           values.accountId || undefined,
+        customerId:          values.customerId || undefined,
         originAddress:       values.originAddress,
         originCity:          values.originCity,
         originState:         values.originState,
@@ -183,54 +193,92 @@ export function CreateLoadSheet({ open, onClose }: CreateLoadSheetProps) {
                 </div>
               </FormSection>
 
-              {/* Company assignment (admin only) */}
+              {/* Company / residential customer assignment (admin only) */}
               {isAdmin && (
                 <FormSection
                   title="Assignment"
-                  description="Assign to a shipping company (optional)"
+                  description="Assign to a shipping company or a residential customer (optional, mutually exclusive)"
                   icon={<User className="h-4 w-4" />}
                 >
-                  <FormField
-                    control={form.control}
-                    name="accountId"
-                    render={({ field }) => {
-                      const companyOptions = companies.map((c) => {
-                        const adm = c.profiles?.find(
-                          (p: AccountProfile) => p.company_role === "company_admin",
-                        );
-                        return {
-                          value: c.account_id,
-                          label: c.account_name,
-                          description: adm?.full_name ? `Admin: ${adm.full_name}` : undefined,
-                          icon: (
-                            <CompanyLogo
-                              name={c.account_name}
-                              logoUrl={c.logo_url ?? null}
-                              size="xs"
-                              rounded="lg"
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="accountId"
+                      render={({ field }) => {
+                        const companyOptions = companies.map((c) => {
+                          const adm = c.profiles?.find(
+                            (p: AccountProfile) => p.company_role === "company_admin",
+                          );
+                          return {
+                            value: c.account_id,
+                            label: c.account_name,
+                            description: adm?.full_name ? `Admin: ${adm.full_name}` : undefined,
+                            icon: (
+                              <CompanyLogo
+                                name={c.account_name}
+                                logoUrl={c.logo_url ?? null}
+                                size="xs"
+                                rounded="lg"
+                              />
+                            ),
+                          };
+                        });
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">
+                              Shipping Company <span className="font-normal text-muted">(optional)</span>
+                            </FormLabel>
+                            <SearchableSelect
+                              value={field.value ?? ""}
+                              onValueChange={(v) => {
+                                field.onChange(v);
+                                if (v) form.setValue("customerId", undefined);
+                              }}
+                              onBlur={field.onBlur}
+                              options={companyOptions}
+                              placeholder="Unassigned — assign later"
+                              searchPlaceholder="Search companies…"
+                              emptyText="No active shipping companies"
                             />
-                          ),
-                        };
-                      });
-                      return (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">
-                            Shipping Company <span className="font-normal text-muted">(optional)</span>
-                          </FormLabel>
-                          <SearchableSelect
-                            value={field.value ?? ""}
-                            onValueChange={field.onChange}
-                            onBlur={field.onBlur}
-                            options={companyOptions}
-                            placeholder="Unassigned — assign later"
-                            searchPlaceholder="Search companies…"
-                            emptyText="No active shipping companies"
-                          />
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      );
-                    }}
-                  />
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="customerId"
+                      render={({ field }) => {
+                        const customerOptions = customers.map((u) => ({
+                          value: u.id,
+                          label: u.fullName ?? u.email,
+                          description: u.fullName ? u.email : undefined,
+                          icon: <UserAvatar name={u.fullName} avatarUrl={u.avatarUrl} size="xs" rounded="lg" />,
+                        }));
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">
+                              Residential Customer <span className="font-normal text-muted">(optional)</span>
+                            </FormLabel>
+                            <SearchableSelect
+                              value={field.value ?? ""}
+                              onValueChange={(v) => {
+                                field.onChange(v);
+                                if (v) form.setValue("accountId", undefined);
+                              }}
+                              onBlur={field.onBlur}
+                              options={customerOptions}
+                              placeholder="Unassigned — assign later"
+                              searchPlaceholder="Search customers…"
+                              emptyText="No residential customers"
+                            />
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  </div>
                 </FormSection>
               )}
 

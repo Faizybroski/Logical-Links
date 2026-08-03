@@ -96,8 +96,9 @@ export default function LoadsPage() {
   const canCreateQuotation = usePermission("quotations.create");
   const canCreateInvoice   = usePermission("invoices.create");
 
-  const basePath    = pathname.startsWith("/admin") ? "/admin/loads" : "/shipper/loads";
-  const docBasePath = pathname.startsWith("/admin") ? "/admin" : "/shipper";
+  const isResidential = user?.role === "residential";
+  const basePath    = pathname.startsWith("/admin") ? "/admin/loads" : isResidential ? "/residential/loads" : "/shipper/loads";
+  const docBasePath = pathname.startsWith("/admin") ? "/admin" : isResidential ? "/residential" : "/shipper";
 
   // ── Sheet URL params ───────────────────────────────────────────────────────
   const createParam  = searchParams.get("create");
@@ -403,9 +404,11 @@ export default function LoadsPage() {
           <span className="font-medium">
             {isAdmin
               ? "Viewing as System Admin — full access to all deliveries"
-              : user?.companyRole === "employee"
-                ? "Viewing as Employee — your assigned deliveries"
-                : "Viewing as Company Admin — your company's deliveries"}
+              : isResidential
+                ? "Viewing as Residential Customer — your deliveries"
+                : user?.companyRole === "employee"
+                  ? "Viewing as Employee — your assigned deliveries"
+                  : "Viewing as Company Admin — your company's deliveries"}
           </span>
         </div>
 
