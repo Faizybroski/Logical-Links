@@ -738,6 +738,25 @@ export type ListLocationsQuery = {
   sortDir?:  "asc" | "desc";
 };
 
+export type Tier = {
+  tier_id:            string;
+  rank:                number;
+  slug:                string;
+  name:                string;
+  min_deliveries:      number;
+  benefits:            string[];
+  cumulativeBenefits:  string[];
+  quote_turnaround:    string;
+  created_at:          string;
+  updated_at:          string;
+};
+
+export type UpdateTierDto = {
+  min_deliveries?:   number;
+  benefits?:         string[];
+  quote_turnaround?: string;
+};
+
 export const CANADIAN_PROVINCES = [
   "Alberta",
   "British Columbia",

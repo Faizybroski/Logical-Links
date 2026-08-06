@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuoteGate } from "@/hooks/use-quote-gate";
 
 const nav = [
   { label: "Home", section: "hero" },
@@ -19,6 +20,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const requestQuote = useQuoteGate();
 
   const goToSection = (section: string) => {
     if (pathname === "/") {
@@ -85,7 +87,7 @@ export default function Header() {
           </a>
           <button
             type="button"
-            onClick={() => goToSection("quote")}
+            onClick={() => requestQuote(() => goToSection("quote"))}
             className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
             Request a Quote
@@ -147,7 +149,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => {
-                goToSection("quote");
+                requestQuote(() => goToSection("quote"));
                 setOpen(false);
               }}
               className="mt-2 px-6 py-2 text-sm font-medium text-center outline outline-primary outline-offset-2 text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"

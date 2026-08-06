@@ -1,17 +1,22 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, AlertTriangle, FileText, Send, DollarSign, AlertCircle } from 'lucide-react'
+import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, AlertTriangle, FileText, Send, DollarSign, AlertCircle, Award } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useShipments } from '@/hooks/use-shipments'
 import { useQuotations } from '@/hooks/use-quotations'
 import { useInvoices } from '@/hooks/use-invoices'
+import { useTiers } from '@/hooks/use-tiers'
 import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/loads/status-badge'
 import { KpiCard } from '@/components/loads/kpi-card'
+import { TierDetailsSheet } from '@/components/loads/sheets/tier-details-sheet'
+import { getTierProgress } from '@/lib/tiers'
 
 export default function ShipperDashboard() {
   const user = useAuthStore((s) => s.user)
+  const [tierSheetOpen, setTierSheetOpen] = useState(false)
 
   const { data: statsRes, isLoading: statsLoading } = useDashboardStats()
   const { data: recentRes, isLoading: recentLoading } = useShipments({
@@ -20,6 +25,7 @@ export default function ShipperDashboard() {
   })
   const { data: quotationsRes, isLoading: quotationsLoading } = useQuotations({ limit: 200 })
   const { data: invoicesRes,   isLoading: invoicesLoading   } = useInvoices({ limit: 200 })
+  const { data: tiersRes,      isLoading: tiersLoading      } = useTiers()
 
   const stats   = statsRes?.data
   const recent  = recentRes?.data ?? []
@@ -86,6 +92,24 @@ export default function ShipperDashboard() {
     },
   ]
 
+  const tiers = tiersRes?.data ?? []
+  const tierProgress = tiers.length > 0 ? getTierProgress(delivered, tiers) : null
+
+  const tierKpi = {
+    title:      tierProgress?.current.name ?? 'Partner Tier',
+    value:      tierProgress?.current.name ?? '—',
+    icon:       Award,
+    chartColor: '#8B5CF6',
+    subtitle:   tierProgress?.next
+      ? `${tierProgress.deliveriesToNext} to ${tierProgress.next.name}`
+      : tierProgress
+        ? 'Highest tier reached'
+        : '',
+    progressPct: tierProgress?.progressPct,
+    isLoading:  statsLoading || tiersLoading,
+    onClick:    () => setTierSheetOpen(true),
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 lg:p-2">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -103,7 +127,7 @@ export default function ShipperDashboard() {
         </div>
 
         {/* Load KPI cards */}
-        <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-5 xl:grid-cols-5">
           {kpis.map((kpi) => (
             <KpiCard
               key={kpi.title}
@@ -119,7 +143,26 @@ export default function ShipperDashboard() {
               subtitle={kpi.subtitle}
             />
           ))}
+
+          <KpiCard
+            title={tierKpi.title}
+            value={tierKpi.value}
+            icon={tierKpi.icon}
+            chartColor={tierKpi.chartColor}
+            isLoading={tierKpi.isLoading}
+            subtitle={tierKpi.subtitle}
+            progressPct={tierKpi.progressPct}
+            onClick={tierKpi.onClick}
+          />
         </div>
+
+        <TierDetailsSheet
+          open={tierSheetOpen}
+          onClose={() => setTierSheetOpen(false)}
+          delivered={delivered}
+          tiers={tiers}
+          isLoading={tiersLoading}
+        />
 
         {/* Quotations summary */}
         <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">

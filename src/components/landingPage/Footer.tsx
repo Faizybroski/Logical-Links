@@ -30,8 +30,14 @@ export default function Footer() {
       className="relative overflow-hidden bg-primary text-white"
     >
       <div className="absolute inset-0">
-        <Image src="/f.svg" alt="Warehouse" fill className="object-cover" />
+        <Image
+          src="/f.svg"
+          alt="Warehouse"
+          fill
+          className="object-cover opacity-20"
+        />
       </div>
+      <div className="absolute inset-0 bg-primary/90" />
 
       <div className="relative z-10 mx-auto max-w-6xl py-20">
         <motion.div
@@ -84,6 +90,7 @@ export default function Footer() {
               <Link href="#">Careers</Link>
               <Link href="#">News &amp; Updates</Link>
               <Link href="#">Case Studies</Link>
+              <Link href="/tiers">Partner Tiers</Link>
               <button
                 type="button"
                 onClick={() => goToSection("quote")}

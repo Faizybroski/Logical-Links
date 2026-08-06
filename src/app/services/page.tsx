@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/landingPage/Header";
 import Footer from "@/components/landingPage/Footer";
+import { useQuoteGate } from "@/hooks/use-quote-gate";
 
 interface ServiceBullet {
   title: string;
@@ -298,6 +299,8 @@ const SERVICE_MAP = Object.fromEntries(
 
 export default function ServicesPage() {
   const [activeId, setActiveId] = useState<string>("ftl");
+  const requestQuote = useQuoteGate();
+  const router = useRouter();
 
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
@@ -343,10 +346,16 @@ export default function ServicesPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-16 w-full">
         <div className="overflow-x-clip rounded-2xl bg-[#FBF3E5] p-4 sm:p-8 lg:p-10">
-          <div className="grid gap-8 lg:grid-cols-[240px_1fr_1fr] lg:gap-10">
+          <div className="grid items-stretch gap-8 lg:grid-cols-[240px_1fr_1fr] lg:gap-10">
             {/* Nav column — sits on top like a book cover, overlapping the
-                "why" column so its content can slide out from underneath it */}
-            <nav className="relative z-20 flex gap-1 overflow-x-auto rounded-2xl bg-white p-3 shadow-[6px_0_24px_-8px_rgba(0,0,0,0.18)] pb-2 lg:flex-col lg:overflow-visible lg:p-4 lg:pb-4 lg:mr-[-2.5rem] lg:pr-10">
+                "why" column so its content can slide out from underneath it.
+                Its right edge is squared off (no rounding) so it sits flush
+                against the "why" column, with a clickable indicator line
+                running down the seam between them. */}
+            <nav className="relative z-20 flex h-full gap-1 overflow-x-auto rounded-2xl bg-white p-3 shadow-[6px_0_24px_-8px_rgba(0,0,0,0.18)] pb-2 lg:flex-col lg:overflow-visible lg:rounded-r-none lg:p-4 lg:pb-4 lg:mr-[-2.5rem] lg:pr-10">
+              {/* Static guide line running the full height of the seam */}
+              <div className="pointer-events-none absolute right-5 top-4 bottom-4 hidden w-px bg-gray-200 lg:block" />
+
               {NAV_STRUCTURE.map((entry, i) =>
                 entry.kind === "link" ? (
                   <NavLink
@@ -376,69 +385,82 @@ export default function ServicesPage() {
               )}
             </nav>
 
-            {/* Why column — pulled out from behind the nav "book cover" */}
-            <motion.div
-              key={`${active.id}-why`}
-              initial={{ x: -56, opacity: 0, rotate: -2 }}
-              animate={{ x: 0, opacity: 1, rotate: 0 }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformOrigin: "top left" }}
-              className="relative z-10 rounded-2xl bg-white p-6 shadow-md lg:pl-12"
-            >
-              <h2 className="text-xl sm:text-2xl font-bold text-primary mb-6">
-                {active.whyHeading}
-              </h2>
+            {/* Why column — pulled out from underneath the nav "book cover" */}
+            <div className="relative z-10 h-full overflow-hidden rounded-2xl lg:overflow-visible lg:rounded-l-none">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${active.id}-why`}
+                  initial={{ x: "-100%", opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: "-100%", opacity: 0 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="h-full rounded-2xl bg-white p-6 shadow-md lg:rounded-l-none lg:pl-12"
+                >
+                  <h2 className="text-xl sm:text-2xl font-bold text-primary mb-6">
+                    {active.whyHeading}
+                  </h2>
 
-              <div className="space-y-4">
-                {active.bullets.map((bullet) => (
-                  <div key={bullet.title}>
-                    <p className="text-sm font-semibold text-black">
-                      {bullet.title}:
-                    </p>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {bullet.description}
-                    </p>
+                  <div className="space-y-4">
+                    {active.bullets.map((bullet) => (
+                      <div key={bullet.title}>
+                        <p className="text-sm font-semibold text-black">
+                          {bullet.title}:
+                        </p>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {bullet.description}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              <Link
-                href="/#quote"
-                className="mt-8 inline-block rounded-full bg-primary px-8 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-primary-dark"
-              >
-                Get a Quote
-              </Link>
-            </motion.div>
+                  <button
+                    type="button"
+                    onClick={() => requestQuote(() => router.push("/#quote"))}
+                    className="mt-8 inline-block rounded-full bg-primary px-8 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-primary-dark"
+                  >
+                    Get a Quote
+                  </button>
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
-            {/* Image + description column */}
-            <motion.div
-              key={`${active.id}-detail`}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
-              className="rounded-2xl bg-white p-6 shadow-lg"
-            >
-              <div className="relative aspect-[1.4] overflow-hidden rounded-lg">
-                <Image
-                  src={active.image}
-                  alt={active.navLabel}
-                  fill
-                  className="object-cover"
-                />
-              </div>
+            {/* Image + description column — the card itself stays put, only its
+                content (image + copy) crossfades between services */}
+            <div className="h-full rounded-2xl bg-white p-6 shadow-lg">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${active.id}-detail`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <div className="relative aspect-[1.4] overflow-hidden rounded-lg">
+                    <Image
+                      src={active.image}
+                      alt={active.navLabel}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
 
-              <h3 className="mt-5 text-lg font-semibold text-primary">
-                {active.imageHeading}
-              </h3>
+                  <h3 className="mt-5 text-lg font-semibold text-primary">
+                    {active.imageHeading}
+                  </h3>
 
-              <div className="mt-3 space-y-3">
-                {active.paragraphs.map((paragraph, i) => (
-                  <p key={i} className="text-sm text-gray-600 leading-relaxed">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </motion.div>
+                  <div className="mt-3 space-y-3">
+                    {active.paragraphs.map((paragraph, i) => (
+                      <p
+                        key={i}
+                        className="text-sm text-gray-600 leading-relaxed"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
@@ -463,7 +485,7 @@ function NavLink({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors lg:whitespace-normal ${
+      className={`group relative shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors lg:w-full lg:whitespace-normal ${
         indent ? "lg:pl-6" : ""
       } ${
         active
@@ -472,6 +494,18 @@ function NavLink({
       }`}
     >
       {label}
+      {/* Extends the click target into the seam gutter and highlights the
+          portion of the divider line level with this item when it's active */}
+      <span
+        aria-hidden
+        className="absolute -right-10 top-0 bottom-0 hidden w-10 lg:block"
+      >
+        <span
+          className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors ${
+            active ? "bg-primary" : "bg-transparent group-hover:bg-primary/40"
+          }`}
+        />
+      </span>
     </button>
   );
 }

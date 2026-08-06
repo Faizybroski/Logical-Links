@@ -13,7 +13,6 @@ import {
 import { StatusBadge } from '@/components/loads/status-badge'
 import { KpiCard } from '@/components/loads/kpi-card'
 import { CompanyLogo } from '@/components/ui/company-logo'
-import { UserAvatar } from '@/components/ui/user-avatar'
 
 export default function AdminDashboard() {
   const user = useAuthStore((s) => s.user)
@@ -168,7 +167,7 @@ export default function AdminDashboard() {
             <table className="w-full">
               <thead className="bg-primary">
                 <tr>
-                  {['Load #', 'Company', 'Created By', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
+                  {['Load #', 'Company', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
                     <th
                       key={h}
                       className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
@@ -181,13 +180,13 @@ export default function AdminDashboard() {
               <tbody>
                 {recentLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-sm text-muted">
+                    <td colSpan={6} className="py-10 text-center text-sm text-muted">
                       Loading...
                     </td>
                   </tr>
                 ) : recent.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-sm text-muted">
+                    <td colSpan={6} className="py-10 text-center text-sm text-muted">
                       No shipments yet.
                     </td>
                   </tr>
@@ -214,23 +213,6 @@ export default function AdminDashboard() {
                           </div>
                         ) : (
                           <span className="text-sm text-muted italic">Unassigned</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        {s.profiles ? (
-                          <div className="flex items-center gap-2">
-                            <UserAvatar
-                              name={s.profiles.full_name}
-                              avatarUrl={s.profiles.avatar_url ?? null}
-                              size="xs"
-                              rounded="full"
-                            />
-                            <span className="text-sm text-foreground truncate max-w-[100px]">
-                              {s.profiles.full_name ?? '—'}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted">—</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-sm text-foreground">

@@ -335,22 +335,6 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                 </div>
               )}
 
-              {/* Created by */}
-              {quotation.profiles && (
-                <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-                  <div className="border-b border-card-border px-5 py-4">
-                    <h3 className="text-sm font-semibold text-foreground">Created By</h3>
-                  </div>
-                  <div className="p-4">
-                    <InfoTile
-                      icon={<UserAvatar name={quotation.profiles.full_name} avatarUrl={quotation.profiles.avatar_url} size="sm" rounded="lg" />}
-                      label="Shipper"
-                      value={quotation.profiles.full_name ?? "—"}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Acceptance / decline record — read-only once the decision is made */}
               {quotation.status === "accepted" && acceptance && (
                 <div className="overflow-hidden rounded-2xl border border-green-200 bg-green-50/60 shadow-sm dark:border-green-800 dark:bg-green-950/40">

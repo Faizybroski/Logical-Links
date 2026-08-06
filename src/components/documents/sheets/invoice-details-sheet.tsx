@@ -299,21 +299,6 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
                 </div>
               )}
 
-              {/* Created by */}
-              {invoice.profiles && (
-                <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-                  <div className="border-b border-card-border px-5 py-4">
-                    <h3 className="text-sm font-semibold text-foreground">Created By</h3>
-                  </div>
-                  <div className="p-4">
-                    <InfoTile
-                      icon={<UserAvatar name={invoice.profiles.full_name} avatarUrl={invoice.profiles.avatar_url} size="sm" rounded="lg" />}
-                      label="Shipper"
-                      value={invoice.profiles.full_name ?? "—"}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

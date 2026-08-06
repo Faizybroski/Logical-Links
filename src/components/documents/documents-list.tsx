@@ -380,20 +380,6 @@ export function InvoicesList({
       ),
     },
     {
-      id: "created_by",
-      header: "Created By",
-      cell: ({ row }) => {
-        const p = row.original.profiles;
-        if (!p) return <span className="text-xs text-muted">—</span>;
-        return (
-          <div className="flex items-center gap-2">
-            <UserAvatar name={p.full_name} avatarUrl={p.avatar_url ?? null} size="sm" rounded="full" />
-            <span className="text-sm text-foreground truncate max-w-[100px]">{p.full_name ?? p.email}</span>
-          </div>
-        );
-      },
-    },
-    {
       id: "status",
       header: () => sh("Status", "status"),
       cell: ({ row }) => <InvoiceStatusBadge status={row.original.status} />,

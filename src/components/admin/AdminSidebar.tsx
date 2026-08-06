@@ -21,6 +21,7 @@ import {
   Settings,
   LifeBuoy,
   UserCircle2,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
@@ -39,6 +40,7 @@ const baseNavigation = [
   { label: "Residential", href: "/admin/residential", icon: UserCircle2, permission: "customers.view" },
   { label: "Invoices", href: "/admin/invoices", icon: FileText, permission: "invoices.view" },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion, permission: "quotations.view" },
+  { label: "Tiers", href: "/admin/tiers", icon: Award, permission: "tiers.view" },
   { label: "Customization", href: "/admin/customization", icon: Settings, permission: "settings.general" },
   { label: "Alerts", href: "/admin/notifications", icon: Bell, permission: null },
   { label: "Support", href: "/admin/support", icon: LifeBuoy, permission: "support.view" },
@@ -64,6 +66,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const canViewQuotations = usePermission("quotations.view");
   const canViewSupport = usePermission("support.view");
   const canManageSettings = usePermission("settings.general");
+  const canViewTiers = usePermission("tiers.view");
 
   const permissionMap: Record<string, boolean> = {
     "deliveries.view": canViewDeliveries,
@@ -72,6 +75,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
     "quotations.view": canViewQuotations,
     "support.view": canViewSupport,
     "settings.general": canManageSettings,
+    "tiers.view": canViewTiers,
   };
 
   const navigation = [

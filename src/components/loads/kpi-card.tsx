@@ -28,6 +28,9 @@ export interface KpiCardProps {
   data?: KpiDataPoint[];
   isLoading?: boolean;
   className?: string;
+  onClick?: () => void;
+  // 0-100 — renders a thin progress bar under the subtitle instead of the sparkline.
+  progressPct?: number;
 }
 
 // ─── Custom recharts tooltip ──────────────────────────────────────────────────
@@ -60,6 +63,8 @@ export function KpiCard({
   data,
   isLoading = false,
   className,
+  onClick,
+  progressPct,
 }: KpiCardProps) {
   const isUp = trend !== "down";
   const gradientId = `kpi-grad-${title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -86,11 +91,25 @@ export function KpiCard({
 
   return (
     <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       className={cn(
         "group relative overflow-hidden rounded-[22px] border border-card-border bg-card",
         "px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-5",
         "shadow-sm transition-all duration-300",
         "hover:-translate-y-0.75 hover:shadow-md",
+        onClick && "cursor-pointer",
         className,
       )}
     >
@@ -149,6 +168,19 @@ export function KpiCard({
           <Icon className="h-5 w-5 sm:h-6 sm:w-6" size={20} />
         </div>
       </div>
+
+      {/* Progress bar */}
+      {progressPct !== undefined && (
+        <div className="relative mt-5 h-1.5 w-full overflow-hidden rounded-full bg-foreground/8">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${Math.max(0, Math.min(100, progressPct))}%`,
+              background: chartColor,
+            }}
+          />
+        </div>
+      )}
 
       {/* Sparkline */}
       {data && data.length > 0 && (

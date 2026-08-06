@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
+import { useQuoteGate } from "@/hooks/use-quote-gate";
 
 export default function LogisticsHero() {
+  const requestQuote = useQuoteGate();
+
   return (
     <section id="quote" className="relative min-h-screen overflow-hidden">
       <div
@@ -77,7 +80,13 @@ export default function LogisticsHero() {
                 Fill out the form and we&apos;ll get back to you within 24 hours
               </p>
 
-              <form className="mt-8 space-y-4">
+              <form
+                className="mt-8 space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  requestQuote(() => {});
+                }}
+              >
                 <div className="grid gap-4 md:grid-cols-2">
                   <Input
                     placeholder="First Name"
