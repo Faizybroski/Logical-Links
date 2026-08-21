@@ -118,7 +118,7 @@ export default function ShipperDashboard() {
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
-              Welcome back, {user?.fullName ?? (user?.companyRole === 'employee' ? 'Employee' : 'Company Admin')}
+              Welcome back, {user?.fullName ?? 'Company Admin'}
             </h1>
             <p className="mt-1 text-sm text-muted">
               Your shipments at a glance.

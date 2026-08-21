@@ -3,13 +3,16 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
-import { UserCircle2, Mail, Phone, Calendar } from "lucide-react";
+import { UserCircle2, Mail, Phone, Calendar, Plus } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/loads/kpi-card";
 import { DataTable } from "@/components/loads/loads-table";
 import { useTableFilters } from "@/hooks/use-table-filters";
+import { CreateLoadSheet } from "@/components/loads/sheets/create-load-sheet";
 
 import { useUsers } from "@/hooks/use-users";
+import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { UserProfile } from "@/types/api.types";
 
@@ -28,6 +31,9 @@ const FILTER_DEFAULTS = {
 
 export default function ResidentialCustomersPage() {
   const router = useRouter();
+  const canCreate = usePermission("deliveries.create");
+  const canView = usePermission("customers.view");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { filters, setFilter } = useTableFilters(FILTER_DEFAULTS);
   const page = parseInt(filters.page || "1", 10);
@@ -47,7 +53,7 @@ export default function ResidentialCustomersPage() {
     ...(debouncedSearch && { search: debouncedSearch }),
   }), [page, debouncedSearch]);
 
-  const { data: res, isLoading } = useUsers(query);
+  const { data: res, isLoading } = useUsers(query, { enabled: canView });
   const customers   = res?.data ?? [];
   const totalCount  = (res as any)?.meta?.total ?? 0;
 
@@ -96,6 +102,14 @@ export default function ResidentialCustomersPage() {
     [],
   );
 
+  if (!canView) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted">You do not have access to Residential Customers.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6 lg:p-2">
       <div className="mx-auto max-w-7xl space-y-7">
@@ -128,8 +142,18 @@ export default function ResidentialCustomersPage() {
               <p className="text-sm text-muted">No residential customers found.</p>
             </div>
           }
+          headerActions={
+            canCreate && (
+              <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
+                <Plus className="h-4 w-4" />
+                Create a Delivery
+              </Button>
+            )
+          }
         />
       </div>
+
+      <CreateLoadSheet open={createOpen} onClose={() => setCreateOpen(false)} context="residential" />
     </div>
   );
 }

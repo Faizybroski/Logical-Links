@@ -10,12 +10,17 @@ import {
   SUPPORT_CASE_STATUS_COLORS,
 } from "@/types/api.types";
 
-export function QuotationStatusBadge({ status }: { status: QuotationStatus }) {
+// "Sent" is a corporate-only concept — it means an admin has priced and issued
+// a quotation. Residential quotes are priced and returned instantly by the
+// system, so a residential viewer sees "Ready to Accept" for the same
+// underlying `sent` status instead of a label that implies someone sent it.
+export function QuotationStatusBadge({ status, residential }: { status: QuotationStatus; residential?: boolean }) {
+  const label = residential && status === "sent" ? "Ready to Accept" : QUOTATION_STATUS_LABELS[status];
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${QUOTATION_STATUS_COLORS[status]}`}
     >
-      {QUOTATION_STATUS_LABELS[status]}
+      {label}
     </span>
   );
 }

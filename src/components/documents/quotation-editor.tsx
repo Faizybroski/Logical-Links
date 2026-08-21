@@ -24,12 +24,15 @@ import { LineItemsTable, type LineItemsTableHandle } from "./line-items-table";
 import { PricingSummary } from "./pricing-summary";
 import { QuotationStatusBadge } from "./document-status-badge";
 import { DatePicker } from "./date-picker";
+import { PricingCalculatorDialog } from "@/components/loads/dialogs/pricing-calculator-dialog";
+import { Calculator } from "lucide-react";
 import type {
   Quotation,
   CreateQuotationDto,
   UpdateQuotationDto,
   QuotationStatus,
   LineItem,
+  PriceBreakdown,
 } from "@/types/api.types";
 import {
   useCreateQuotation,
@@ -46,7 +49,7 @@ import { geocodeAddress, haversineDistanceKm, type AddressSuggestion, type Coord
 // ── Schema ────────────────────────────────────────────────────────────────────
 
 const QUOTATION_STATUS_VALUES = [
-  "draft", "sent", "accepted", "rejected", "expired",
+  "requested", "draft", "sent", "accepted", "rejected", "expired",
 ] as const;
 
 const quotationFormSchema = z
@@ -214,6 +217,16 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
   );
   const [geocoding, setGeocoding] = useState<"origin" | "destination" | null>(null);
 
+  // City/state/postcode aren't geocodable from a blurred free-text address —
+  // only captured when the user picks a suggestion. Needed so an accepted
+  // quotation has everything createShipment requires.
+  const [originParts, setOriginParts] = useState({
+    city: quotation?.origin_city ?? "", state: quotation?.origin_state ?? "", postcode: quotation?.origin_postcode ?? "",
+  });
+  const [destinationParts, setDestinationParts] = useState({
+    city: quotation?.destination_city ?? "", state: quotation?.destination_state ?? "", postcode: quotation?.destination_postcode ?? "",
+  });
+
   const distanceKm = originCoords && destinationCoords
     ? Math.round(haversineDistanceKm(originCoords, destinationCoords) * 10) / 10
     : (quotation?.distance_km ?? null);
@@ -227,8 +240,13 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
   }
 
   function handleAddressSelect(field: "origin" | "destination", suggestion: AddressSuggestion) {
-    if (field === "origin") setOriginCoords(suggestion.center);
-    else setDestinationCoords(suggestion.center);
+    const parts = {
+      city:     suggestion.context?.city ?? "",
+      state:    suggestion.context?.region ?? "",
+      postcode: suggestion.context?.postcode ?? "",
+    };
+    if (field === "origin") { setOriginCoords(suggestion.center); setOriginParts(parts); }
+    else { setDestinationCoords(suggestion.center); setDestinationParts(parts); }
   }
 
   const form = useForm<QuotationFormValues>({
@@ -269,6 +287,32 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
 
   const isSaving     = createMut.isPending || updateMut.isPending;
   const lineItemsRef = useRef<LineItemsTableHandle>(null);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+
+  function handleApplyPricing(breakdown: PriceBreakdown) {
+    const nextItems: FormItem[] = [
+      {
+        description: `${breakdown.label} Delivery`,
+        category:    "freight_charge",
+        quantity:    1,
+        unit:        "delivery",
+        unit_price:  breakdown.deliveryCharge,
+        amount:      breakdown.deliveryCharge,
+        sort_order:  0,
+      },
+      ...breakdown.additionalCharges.map((c, idx) => ({
+        description: c.label,
+        category:    "accessorial" as const,
+        quantity:    1,
+        unit:        "charge",
+        unit_price:  c.amount,
+        amount:      c.amount,
+        sort_order:  idx + 1,
+      })),
+    ];
+    setItems(nextItems);
+    toast.success("Pricing applied — review the line items below");
+  }
 
   async function onSubmit(values: QuotationFormValues) {
     if (isAdmin && !isEdit && !selectedProfileId) {
@@ -304,6 +348,12 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
       destinationLat:     destinationCoords?.lat ?? null,
       destinationLng:     destinationCoords?.lng ?? null,
       distanceKm,
+      originCity:          originParts.city || null,
+      originState:         originParts.state || null,
+      originPostcode:      originParts.postcode || null,
+      destinationCity:     destinationParts.city || null,
+      destinationState:    destinationParts.state || null,
+      destinationPostcode: destinationParts.postcode || null,
       items,
     };
 
@@ -500,7 +550,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel className={fieldLabelCls}>Status</FormLabel>
-                      {field.value === "draft" || field.value === "sent" ? (
+                      {field.value === "draft" || field.value === "sent" || field.value === "requested" ? (
                         <SearchableSelect
                           value={field.value}
                           onValueChange={field.onChange}
@@ -718,7 +768,18 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
 
             {/* Line Items */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Line Items</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Line Items</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCalculatorOpen(true)}
+                  className="h-8 rounded-lg border-card-border px-3 text-xs gap-1.5"
+                >
+                  <Calculator className="h-3.5 w-3.5" /> Price with Calculator
+                </Button>
+              </div>
               <LineItemsTable ref={lineItemsRef} items={items} onChange={setItems} />
             </div>
 
@@ -773,6 +834,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
             <div className="lg:hidden">
               <PricingSummary
                 subtotal={subtotal} discount={watchedDiscount} taxRate={watchedTaxRate} tax={tax} total={total}
+                itemsCount={items.length} distanceKm={distanceKm}
                 onDiscountChange={(v) => form.setValue("discount", v, { shouldValidate: true, shouldDirty: true })}
                 onTaxRateChange={(v) => form.setValue("taxRate", v, { shouldValidate: true, shouldDirty: true })}
               />
@@ -782,34 +844,10 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
           {/* ── Sticky sidebar (desktop only) ── */}
           <div className="hidden lg:flex lg:flex-col lg:gap-4 lg:self-start lg:sticky lg:top-24">
 
-            {/* Live totals */}
-            <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-              <div className="border-b border-card-border px-5 py-4">
-                <h3 className="text-sm font-semibold text-foreground">Summary</h3>
-              </div>
-              <div className="space-y-0">
-                {[
-                  { label: "Items",    value: String(items.length), mono: false },
-                  { label: "Subtotal", value: new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(subtotal), mono: true },
-                  ...(distanceKm != null ? [{ label: "Distance", value: `≈ ${distanceKm} km`, mono: true }] : []),
-                ].map(({ label, value, mono }) => (
-                  <div key={label} className="flex items-center justify-between border-b border-card-border px-5 py-3">
-                    <span className="text-sm text-muted">{label}</span>
-                    <span className={`text-sm font-semibold text-foreground ${mono ? "tabular-nums" : ""}`}>{value}</span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between bg-primary/5 px-5 py-4">
-                  <span className="text-sm font-semibold text-foreground">Total</span>
-                  <span className="text-base font-bold text-primary tabular-nums">
-                    {new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(total)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing controls (discount + tax) */}
+            {/* Totals (merged with what used to be a separate "Summary" card — they showed the same numbers) */}
             <PricingSummary
               subtotal={subtotal} discount={watchedDiscount} taxRate={watchedTaxRate} tax={tax} total={total}
+              itemsCount={items.length} distanceKm={distanceKm}
               onDiscountChange={(v) => form.setValue("discount", v, { shouldValidate: true, shouldDirty: true })}
               onTaxRateChange={(v) => form.setValue("taxRate", v, { shouldValidate: true, shouldDirty: true })}
             />
@@ -882,6 +920,14 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
           </p>
         </div>
       </div>
+
+      <PricingCalculatorDialog
+        open={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+        pickupAddress={form.watch("originAddress") ?? undefined}
+        deliveryAddress={form.watch("destinationAddress") ?? undefined}
+        onApply={handleApplyPricing}
+      />
     </Form>
   );
 }

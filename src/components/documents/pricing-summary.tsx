@@ -9,6 +9,9 @@ interface Props {
   currency?: string;
   amountPaid?: number;
   balanceDue?: number;
+  /** Optional recap rows shown above Subtotal — merged in from what used to be a separate "Summary" card. */
+  itemsCount?: number;
+  distanceKm?: number | null;
   onDiscountChange?: (v: number) => void;
   onTaxRateChange?: (v: number) => void;
   onAmountPaidChange?: (v: number) => void;
@@ -30,6 +33,8 @@ export function PricingSummary({
   currency = "CAD",
   amountPaid,
   balanceDue,
+  itemsCount,
+  distanceKm,
   onDiscountChange,
   onTaxRateChange,
   onAmountPaidChange,
@@ -46,6 +51,18 @@ export function PricingSummary({
         </div>
 
         <div className="px-5 py-4 space-y-0">
+          {itemsCount !== undefined && (
+            <div className="flex items-center justify-between border-b border-card-border py-2">
+              <span className="text-sm text-muted">Items</span>
+              <span className="text-sm font-medium tabular-nums text-foreground">{itemsCount}</span>
+            </div>
+          )}
+          {distanceKm != null && (
+            <div className="flex items-center justify-between border-b border-card-border py-2">
+              <span className="text-sm text-muted">Distance</span>
+              <span className="text-sm font-medium tabular-nums text-foreground">≈ {distanceKm} km</span>
+            </div>
+          )}
           {/* Subtotal */}
           <div className="flex items-center justify-between py-2">
             <span className="text-sm text-muted">Subtotal</span>

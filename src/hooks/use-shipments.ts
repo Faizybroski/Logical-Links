@@ -109,11 +109,11 @@ export function useAssignShipment(id: string) {
   });
 }
 
-export function useAssignEmployee(id: string) {
+export function useAssignDriver(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto: AssignEmployeeDto) =>
-      api.post<ApiResponse<Shipment>>(`/api/v1/shipments/${id}/assign-employee`, dto),
+      api.post<ApiResponse<Shipment>>(`/api/v1/shipments/${id}/assign-driver`, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all });
       qc.invalidateQueries({ queryKey: KEYS.detail(id) });

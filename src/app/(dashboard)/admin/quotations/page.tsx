@@ -3,7 +3,7 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { FileText, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { FileText, CheckCircle2, Clock, AlertTriangle, Inbox } from "lucide-react";
 import { KpiCard } from "@/components/loads/kpi-card";
 import { QuotationsList } from "@/components/documents/documents-list";
 import { TableFilters } from "@/components/ui/table-filters";
@@ -117,6 +117,11 @@ export default function AdminQuotationsPage() {
   const quotations = res?.data ?? [];
   const totalCount = (res as any)?.meta?.total ?? 0;
 
+  // Incoming corporate quote requests awaiting pricing — a quick way in,
+  // independent of whatever the main status filter is currently set to.
+  const { data: requestedRes } = useQuotations({ page: 1, limit: 1, status: "requested" });
+  const requestedCount = (requestedRes as any)?.meta?.total ?? 0;
+
   const { data: statsRes, isLoading: statsLoading } = useQuotationStats();
   const stats = statsRes?.data ?? { total: 0, pendingReview: 0, accepted: 0, expired: 0 };
 
@@ -163,6 +168,20 @@ export default function AdminQuotationsPage() {
           <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">Quotations</h1>
           <p className="mt-2 text-sm text-muted">Create and manage all customer quotations.</p>
         </div>
+
+        {requestedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setFilters({ status: "requested", page: "1" })}
+            className="flex w-full items-center gap-3 rounded-2xl border border-purple-200 bg-purple-50 px-5 py-3 text-left transition-colors hover:bg-purple-100"
+          >
+            <Inbox className="h-5 w-5 shrink-0 text-purple-700" />
+            <p className="text-sm text-purple-900">
+              <strong>{requestedCount}</strong> corporate quote request{requestedCount !== 1 ? "s" : ""} awaiting pricing.{" "}
+              <span className="underline font-medium">Review now</span>
+            </p>
+          </button>
+        )}
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard title="Total Quotations" value={stats.total}         icon={FileText}      chartColor="#C89B3C" isLoading={statsLoading} />

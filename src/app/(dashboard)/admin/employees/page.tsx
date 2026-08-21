@@ -30,11 +30,14 @@ import { KpiCard } from "@/components/loads/kpi-card";
 import { DataTable } from "@/components/loads/loads-table";
 
 import { useAdminEmployees, useUpdateAdminEmployee } from "@/hooks/use-admin-employees";
+import { useAdminRoles } from "@/hooks/use-admin-role-permissions";
 import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { ADMIN_ROLE_LABELS, type AdminEmployee, type AdminRoleValue } from "@/types/api.types";
+import { ADMIN_ROLE_LABELS, type AdminEmployee, type AdminRoleDef, type AdminRoleValue } from "@/types/api.types";
 
-const ADMIN_ROLES: AdminRoleValue[] = ["ceo", "vp", "manager", "assistant"];
+function roleLabel(role: string, roles: AdminRoleDef[]): string {
+  return roles.find((r) => r.slug === role)?.label ?? ADMIN_ROLE_LABELS[role] ?? role;
+}
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-AU", {
@@ -68,7 +71,7 @@ function StatusPill({ active }: { active: boolean }) {
   );
 }
 
-function RolePill({ role }: { role: AdminRoleValue | null }) {
+function RolePill({ role, roles }: { role: AdminRoleValue | null; roles: AdminRoleDef[] }) {
   if (!role) {
     return (
       <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/10 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">
@@ -78,12 +81,12 @@ function RolePill({ role }: { role: AdminRoleValue | null }) {
   }
   return (
     <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-      {ADMIN_ROLE_LABELS[role]}
+      {roleLabel(role, roles)}
     </span>
   );
 }
 
-function ActionsCell({ employee }: { employee: AdminEmployee }) {
+function ActionsCell({ employee, roles }: { employee: AdminEmployee; roles: AdminRoleDef[] }) {
   const updateMut = useUpdateAdminEmployee(employee.id);
   const canSuspend = usePermission("employees.suspend");
   const canManageRoles = usePermission("employees.manage_roles");
@@ -105,7 +108,7 @@ function ActionsCell({ employee }: { employee: AdminEmployee }) {
     if (role === employee.admin_role) return;
     try {
       await updateMut.mutateAsync({ adminRole: role });
-      toast.success(`${employee.full_name ?? employee.email} is now ${ADMIN_ROLE_LABELS[role]}`);
+      toast.success(`${employee.full_name ?? employee.email} is now ${roleLabel(role, roles)}`);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -134,14 +137,14 @@ function ActionsCell({ employee }: { employee: AdminEmployee }) {
               Change Role
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="rounded-xl border border-card-border bg-card shadow-lg">
-              {ADMIN_ROLES.map((role) => (
+              {roles.map((role) => (
                 <DropdownMenuItem
-                  key={role}
+                  key={role.slug}
                   className="cursor-pointer rounded-lg"
-                  disabled={role === employee.admin_role || updateMut.isPending}
-                  onClick={() => changeRole(role)}
+                  disabled={role.slug === employee.admin_role || updateMut.isPending}
+                  onClick={() => changeRole(role.slug)}
                 >
-                  {ADMIN_ROLE_LABELS[role]}
+                  {role.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuSubContent>
@@ -187,6 +190,9 @@ export default function AdminEmployeesPage() {
 
   const { data: res, isLoading } = useAdminEmployees({ limit: 100 }, { enabled: canView });
   const allEmployees = (res?.data ?? []) as AdminEmployee[];
+
+  const { data: rolesRes } = useAdminRoles({ enabled: canView });
+  const roles = rolesRes?.data ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -238,7 +244,7 @@ export default function AdminEmployeesPage() {
       {
         id: "role",
         header: "Role",
-        cell: ({ row }) => <RolePill role={row.original.admin_role} />,
+        cell: ({ row }) => <RolePill role={row.original.admin_role} roles={roles} />,
       },
       {
         id: "phone",
@@ -271,13 +277,14 @@ export default function AdminEmployeesPage() {
               id: "actions",
               header: "",
               cell: ({ row }: { row: { original: AdminEmployee } }) => (
-                <ActionsCell employee={row.original} />
+                <ActionsCell employee={row.original} roles={roles} />
               ),
             } as ColumnDef<AdminEmployee>,
           ]
         : []),
     ],
-    [canShowActions],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canShowActions, roles],
   );
 
   if (!canView) {

@@ -70,6 +70,16 @@ export async function fetchAddressSuggestions(query: string, limit = 5): Promise
 }
 
 export async function geocodeAddress(address: string): Promise<Coordinates | null> {
+  const full = await geocodeAddressFull(address);
+  return full?.center ?? null;
+}
+
+// Same lookup as geocodeAddress, but also returns the parsed city/region/
+// postcode context — used on blur so a typed-and-tabbed-away address (never
+// clicked from the suggestion dropdown) still gets its city/state/postcode
+// filled in, not just coordinates. Without this, a form that requires those
+// fields silently stays unsubmittable for anyone who didn't click a suggestion.
+export async function geocodeAddressFull(address: string): Promise<AddressSuggestion | null> {
   const trimmed = address.trim();
   if (!MAPBOX_TOKEN || !trimmed) return null;
 
@@ -80,9 +90,14 @@ export async function geocodeAddress(address: string): Promise<Coordinates | nul
     );
     if (!res.ok) return null;
     const json = await res.json();
-    const coords = json?.features?.[0]?.center as [number, number] | undefined;
-    if (!coords) return null;
-    return { lng: coords[0], lat: coords[1] };
+    const feature = json?.features?.[0] as MapboxFeature | undefined;
+    if (!feature?.center) return null;
+    return {
+      id:        feature.id,
+      placeName: feature.place_name,
+      center:    { lng: feature.center[0], lat: feature.center[1] },
+      context:   parseContext(feature.context),
+    };
   } catch {
     return null;
   }

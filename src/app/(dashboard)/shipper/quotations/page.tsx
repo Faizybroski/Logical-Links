@@ -3,8 +3,10 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { FileText, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { FileText, CheckCircle2, Clock, AlertTriangle, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/loads/kpi-card";
+import { useAuthStore } from "@/store/auth.store";
 import { QuotationsList } from "@/components/documents/documents-list";
 import { TableFilters } from "@/components/ui/table-filters";
 import type { FilterDef } from "@/components/ui/table-filters";
@@ -46,6 +48,7 @@ export default function ShipperQuotationsPage() {
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
+  const isCompanyAdmin = useAuthStore((s) => s.user?.companyRole === "company_admin");
 
   // Sheet params
   const createParam  = searchParams.get("create");
@@ -152,10 +155,21 @@ export default function ShipperQuotationsPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-2">
       <div className="mx-auto max-w-7xl space-y-6 sm:space-y-7">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Shipper Portal</p>
-          <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">My Quotations</h1>
-          <p className="mt-2 text-sm text-muted">View and manage your freight quotations.</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Shipper Portal</p>
+            <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">My Quotations</h1>
+            <p className="mt-2 text-sm text-muted">View and manage your freight quotations.</p>
+          </div>
+          {isCompanyAdmin && (
+            <Button
+              onClick={() => router.push("/shipper/quotations/request")}
+              className="rounded-lg bg-primary text-sidebar hover:bg-primary/85"
+            >
+              <Plus className="h-4 w-4" />
+              Request a Quote
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

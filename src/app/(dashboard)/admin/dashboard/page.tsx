@@ -19,6 +19,7 @@ export default function AdminDashboard() {
 
   const canViewReports   = usePermission('reports.operational')
   const canViewDeliveries = usePermission('deliveries.view')
+  const canViewCustomers = usePermission('customers.view')
 
   const { data: statsRes, isLoading: statsLoading } = useDashboardStats({ enabled: canViewReports })
   const { data: recentRes, isLoading: recentLoading } = useShipments({ limit: 5 }, { enabled: canViewDeliveries })
@@ -113,7 +114,7 @@ export default function AdminDashboard() {
         {/* Alerts */}
         {canViewReports && (
           <div className="space-y-3">
-            {!statsLoading && pending > 0 && (
+            {canViewDeliveries && !statsLoading && pending > 0 && (
               <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-5 py-3">
                 <Clock3 className="h-5 w-5 shrink-0 text-warning" />
                 <p className="text-sm text-foreground">
@@ -124,12 +125,12 @@ export default function AdminDashboard() {
                 </p>
               </div>
             )}
-            {!statsLoading && pendingApprovals > 0 && (
+            {canViewCustomers && !statsLoading && pendingApprovals > 0 && (
               <div className="flex items-center gap-3 rounded-2xl border border-danger/25 bg-danger/8 px-5 py-3">
                 <ShieldAlert className="h-5 w-5 shrink-0 text-danger" />
                 <p className="text-sm text-foreground">
-                  <strong>{pendingApprovals}</strong> shipping compan{pendingApprovals !== 1 ? 'ies' : 'y'} pending approval.{' '}
-                  <Link href="/admin/shippers" className="underline font-medium text-danger">
+                  <strong>{pendingApprovals}</strong> corporate customer{pendingApprovals !== 1 ? 's' : ''} pending approval.{' '}
+                  <Link href="/admin/corporate-customers" className="underline font-medium text-danger">
                     Review now
                   </Link>
                 </p>

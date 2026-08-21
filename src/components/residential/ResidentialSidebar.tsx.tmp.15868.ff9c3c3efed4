@@ -1,54 +1,36 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   LayoutDashboard,
   Truck,
-  Building2,
-  FileText,
-  FileQuestion,
   Bell,
   User,
-  LogOut,
-  X,
   PanelLeft,
   Circle,
-  MapPin,
-  Shield,
-  Settings,
+  LogOut,
+  X,
   LifeBuoy,
-  UserCircle2,
-  Award,
-  Gift,
-  DollarSign,
+  FileQuestion,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useAppearance } from "@/components/providers/appearance-provider";
 import { useAuthStore } from "@/store/auth.store";
-import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { api } from "@/lib/api";
-import { ADMIN_ROLE_LABELS } from "@/types/api.types";
 
-const baseNavigation = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: null },
-  { label: "Deliveries", href: "/admin/loads", icon: Truck, permission: "deliveries.view" },
-  { label: "Residential Customers", href: "/admin/residential", icon: UserCircle2, permission: "customers.view" },
-  { label: "Corporate Customers", href: "/admin/corporate-customers", icon: Building2, permission: "customers.view" },
-  { label: "Quotations", href: "/admin/quotations", icon: FileQuestion, permission: "quotations.view" },
-  { label: "Invoices", href: "/admin/invoices", icon: FileText, permission: "invoices.view" },
-  { label: "Rewards", href: "/admin/rewards", icon: Gift, permission: "rewards.view" },
-  { label: "Tiers", href: "/admin/tiers", icon: Award, permission: "tiers.view" },
-  { label: "Support", href: "/admin/support", icon: LifeBuoy, permission: "support.view" },
-  { label: "Alerts", href: "/admin/notifications", icon: Bell, permission: null },
-  { label: "Customization", href: "/admin/customization", icon: Settings, permission: "settings.general" },
-  { label: "Admin Profile", href: "/admin/profile", icon: User, permission: null },
-] as const;
+const NAVIGATION = [
+  { label: "Dashboard", href: "/residential/dashboard", icon: LayoutDashboard },
+  { label: "My Deliveries", href: "/residential/loads", icon: Truck },
+  { label: "Alerts", href: "/residential/notifications", icon: Bell },
+  { label: "Support", href: "/residential/support", icon: LifeBuoy },
+  { label: "My Profile", href: "/residential/profile", icon: User },
+];
 
 type SidebarMode = "expanded" | "collapsed" | "hover";
 
@@ -57,41 +39,10 @@ interface Props {
   onClose?: () => void;
 }
 
-export default function AdminSidebar({ isOpen = false, onClose }: Props) {
+export default function ResidentialSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, refreshToken, clearAuth } = useAuthStore();
-  const canViewEmployees = usePermission("employees.view");
-  const canManagePermissions = usePermission("employees.manage_permissions");
-  const canViewDeliveries = usePermission("deliveries.view");
-  const canViewCustomers = usePermission("customers.view");
-  const canViewInvoices = usePermission("invoices.view");
-  const canViewQuotations = usePermission("quotations.view");
-  const canViewSupport = usePermission("support.view");
-  const canManageSettings = usePermission("settings.general");
-  const canViewTiers = usePermission("tiers.view");
-  const canViewRewards = usePermission("rewards.view");
-  const canViewPricing = usePermission("pricing.view");
-
-  const permissionMap: Record<string, boolean> = {
-    "deliveries.view": canViewDeliveries,
-    "customers.view": canViewCustomers,
-    "invoices.view": canViewInvoices,
-    "quotations.view": canViewQuotations,
-    "support.view": canViewSupport,
-    "settings.general": canManageSettings,
-    "tiers.view": canViewTiers,
-    "rewards.view": canViewRewards,
-  };
-
-  const navigation = [
-    ...baseNavigation.slice(0, 2),
-    ...(canViewEmployees ? [{ label: "Employees", href: "/admin/employees", icon: Shield }] : []),
-    ...baseNavigation.slice(2, 11),
-    ...(canViewPricing ? [{ label: "Pricing Settings", href: "/admin/settings/delivery-rates", icon: DollarSign }] : []),
-    ...(canManagePermissions ? [{ label: "Roles & Permissions", href: "/admin/settings/roles", icon: Settings }] : []),
-    ...baseNavigation.slice(11),
-  ].filter((item) => !("permission" in item) || item.permission === null || permissionMap[item.permission]);
 
   const [mode, setMode] = useState<SidebarMode>("expanded");
   const [isHovered, setIsHovered] = useState(false);
@@ -101,33 +52,28 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
 
   useEffect(() => {
     const saved = localStorage.getItem(
-      "admin-sidebar-mode",
+      "residential-sidebar-mode",
     ) as SidebarMode | null;
+
     if (saved) setMode(saved);
   }, []);
 
   function changeMode(nextMode: SidebarMode) {
     setMode(nextMode);
-    localStorage.setItem("admin-sidebar-mode", nextMode);
+    localStorage.setItem("residential-sidebar-mode", nextMode);
     setControlOpen(false);
   }
 
   async function signOut() {
-    console.info(
-      "[Auth][AdminSidebar] User initiated logout — user=" +
-        (user?.email ?? "unknown"),
-    );
     try {
       await api.post("/api/v1/auth/logout", {
         refreshToken,
         allDevices: false,
       });
     } catch (err) {
-      console.warn(
-        "[Auth][AdminSidebar] Backend logout request failed (session cleared anyway):",
-        err,
-      );
+      console.warn("[Auth][ResidentialSidebar] Backend logout request failed:", err);
     }
+
     clearAuth();
     router.push("/login");
     router.refresh();
@@ -152,7 +98,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
         } as CSSProperties
       }
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-62 flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:relative lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-out lg:relative lg:translate-x-0",
         isExpanded ? "w-62" : "w-[72px]",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
@@ -165,13 +111,13 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
         )}
       >
         <Link
-          href="/admin/dashboard"
+          href="/residential/dashboard"
           className={cn(
-            "flex items-center gap-2.5",
+            "flex min-w-0 items-center gap-2.5",
             !isExpanded && "justify-center",
           )}
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
             <Image
               src="/logical-links-logo.png"
               alt="Logical Links"
@@ -180,15 +126,19 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
               className="h-auto w-10 object-contain"
             />
           </div>
+
           {isExpanded && (
             <div className="min-w-0">
-              <h2 className="text-[13px] font-semibold tracking-wide text-white">
+              <h2 className="truncate text-[13px] font-semibold tracking-wide text-white">
                 Logical Links
               </h2>
-              <p className="text-[11px] text-zinc-500">Shipping CMS</p>
+              <p className="truncate text-[11px] text-zinc-500">
+                My Deliveries
+              </p>
             </div>
           )}
         </Link>
+
         {isExpanded && (
           <button
             type="button"
@@ -204,10 +154,11 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="space-y-0.5">
-          {navigation.map((item) => {
+          {NAVIGATION.map((item) => {
             const Icon = item.icon;
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
+
             return (
               <Link
                 key={item.href}
@@ -215,26 +166,16 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
                 onClick={onClose}
                 title={!isExpanded ? item.label : undefined}
                 className={cn(
-                  "group flex items-center rounded-xl text-[13px] font-medium transition-all duration-200",
+                  "group flex items-center rounded-xl text-[13px] font-medium transition-all",
                   isExpanded
                     ? "gap-2.5 px-3 py-2.5"
                     : "justify-center px-0 py-3",
-
                   active
-                    ? isExpanded
-                      ? "bg-primary text-sidebar shadow-md"
-                      : "text-primary"
+                    ? "bg-primary text-sidebar shadow-md"
                     : "text-zinc-300 hover:bg-sidebar-secondary hover:text-white",
                 )}
               >
-                <Icon
-                  className={cn(
-                    "h-4 w-4 shrink-0 transition-all duration-200",
-                    active &&
-                      !isExpanded &&
-                      "text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]",
-                  )}
-                />
+                <Icon className="h-4 w-4 shrink-0" />
                 {isExpanded && <span>{item.label}</span>}
               </Link>
             );
@@ -243,7 +184,8 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-3 space-y-2">
+      <div className="space-y-2 border-t border-sidebar-border p-3">
+        {/* User card */}
         {isExpanded ? (
           <div className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-sidebar-secondary p-2.5">
             <UserAvatar
@@ -252,19 +194,15 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
               size="md"
               rounded="xl"
             />
+
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold text-white">
-                {user?.fullName ?? "Admin"}
+                {user?.fullName ?? "Customer"}
               </p>
               <p className="truncate text-[11px] text-zinc-400">
                 {user?.email ?? ""}
               </p>
-              <span className="inline-flex items-center gap-0.5 text-[10px] text-primary">
-                <Shield className="h-2.5 w-2.5" />
-                {user && user.adminRole
-                  ? ADMIN_ROLE_LABELS[user.adminRole] ?? (user.adminRole.charAt(0).toUpperCase() + user.adminRole.slice(1))
-                  : "System Admin"}
-              </span>
+              <span className="text-[10px] text-primary">Residential</span>
             </div>
           </div>
         ) : (
@@ -277,6 +215,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
             />
           </div>
         )}
+
         <button
           type="button"
           onClick={signOut}
@@ -289,7 +228,9 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
           <LogOut className="h-4 w-4 shrink-0" />
           {isExpanded && "Sign Out"}
         </button>
-        <div className="hidden sm:block relative">
+
+        {/* Sidebar Control */}
+        <div className="relative">
           {controlOpen && (
             <div className="absolute bottom-12 left-0 w-60 overflow-hidden rounded-lg border border-sidebar-border bg-[#232323] shadow-2xl">
               <div className="border-b border-white/10 px-4 py-3 text-sm font-medium text-zinc-400">
@@ -341,13 +282,15 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
             type="button"
             onClick={() => setControlOpen((prev) => !prev)}
             className={cn(
-              "flex h-9 items-center rounded-xl border border-white/5 text-zinc-400 transition-colors hover:bg-sidebar-secondary hover:text-white",
-              isExpanded ? "w-full gap-2.5 px-3" : "w-full justify-center",
+              "flex h-9 w-full items-center rounded-xl border border-white/5 text-zinc-400 transition-colors hover:bg-sidebar-secondary hover:text-white",
+              isExpanded ? "gap-2.5 px-3" : "justify-center px-0",
             )}
           >
             <PanelLeft className="h-4 w-4" />
             {isExpanded && (
-              <span className="text-[13px] font-medium">Sidebar control</span>
+              <span className="text-[13px] font-medium">
+                Sidebar control
+              </span>
             )}
           </button>
         </div>

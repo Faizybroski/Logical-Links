@@ -77,7 +77,8 @@ export default function ShipperProfilePage() {
   }
 
   const approved = profile?.isApproved ?? false
-  const roleLabel = profile?.companyRole === 'company_admin' ? 'Company Admin' : 'Employee'
+  // Corporate customers have no employees of their own — one login per account.
+  const roleLabel = 'Company Admin'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-5">

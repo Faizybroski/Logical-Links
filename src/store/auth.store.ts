@@ -8,7 +8,8 @@ export type AuthUser = {
   email:       string;
   role:        "admin" | "shipper" | "residential";
   companyRole: "company_admin" | "employee" | null;
-  adminRole:   "ceo" | "vp" | "manager" | "assistant" | null;
+  // Admin roles are DB-driven — see AdminRoleDef in api.types.ts.
+  adminRole:   string | null;
   permissions: string[];
   fullName:    string | null;
   accountId:   string | null;

@@ -14,6 +14,7 @@ import {
   LogOut,
   X,
   LifeBuoy,
+  FileQuestion,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
@@ -26,6 +27,7 @@ import { api } from "@/lib/api";
 const NAVIGATION = [
   { label: "Dashboard", href: "/residential/dashboard", icon: LayoutDashboard },
   { label: "My Deliveries", href: "/residential/loads", icon: Truck },
+  { label: "Get a Quote", href: "/residential/quotations", icon: FileQuestion },
   { label: "Alerts", href: "/residential/notifications", icon: Bell },
   { label: "Support", href: "/residential/support", icon: LifeBuoy },
   { label: "My Profile", href: "/residential/profile", icon: User },

@@ -11,6 +11,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { useSupportCases } from "@/hooks/use-support";
 import { useAuthStore } from "@/store/auth.store";
+import { usePermission } from "@/hooks/use-permission";
 import { KNOWLEDGE_BASE_ARTICLES } from "@/lib/knowledge-base";
 import type { SupportCase } from "@/types/api.types";
 
@@ -50,6 +51,7 @@ function KnowledgeBaseCard({ slug, title, summary, body }: (typeof KNOWLEDGE_BAS
 export function SupportPageContent() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "admin";
+  const canView = usePermission("support.view");
 
   const [createOpen, setCreateOpen] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
@@ -127,6 +129,14 @@ export function SupportPageContent() {
       ),
     },
   ];
+
+  if (isAdmin && !canView) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted">You do not have access to Support &amp; Ticketing.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-2">

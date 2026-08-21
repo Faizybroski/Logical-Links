@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Building2, Users, Save, Calendar, Hash, Globe, MapPin,
+  Building2, Save, Calendar, Hash, Globe, MapPin,
   User, Mail, Phone, Receipt,
 } from 'lucide-react'
 import { useMyProfile, useUpdateMyCompanyLogo, useUpdateMyCompany } from '@/hooks/use-accounts'
-import { useAuthStore } from '@/store/auth.store'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { SecuritySection } from '@/components/company/SecuritySection'
 import { uploadCompanyLogo, removeCompanyLogo } from '@/lib/upload-images'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 import { ApiError } from '@/lib/api'
 
 const inputClass =
@@ -44,15 +42,6 @@ function errorMessage(err: unknown, fallback: string): string {
 }
 
 export default function CompanyProfilePage() {
-  const router = useRouter()
-  const { user } = useAuthStore()
-
-  // Redirect employees — only company admins can access this page
-  if (user && user.companyRole !== 'company_admin') {
-    router.replace('/shipper/dashboard')
-    return null
-  }
-
   const { data: accountRes, isLoading } = useMyProfile()
   const account = accountRes?.data
 
@@ -148,9 +137,6 @@ export default function CompanyProfilePage() {
     })
   }
 
-  const members = account?.profiles ?? []
-  const employees = members.filter((p) => p.company_role === 'employee')
-
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-5">
       {/* Header */}
@@ -184,23 +170,6 @@ export default function CompanyProfilePage() {
                 Active since {new Date(account.created_at).toLocaleDateString()}
               </p>
             </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: 'Employees', value: employees.length, icon: Users },
-              { label: 'Members',   value: members.length,   icon: Building2 },
-            ].map(({ label, value, icon: Icon }) => (
-              <div
-                key={label}
-                className="rounded-2xl border border-card-border bg-card p-4 text-center shadow-sm"
-              >
-                <Icon className="mx-auto mb-1 h-4 w-4 text-muted" />
-                <p className="text-xl font-bold text-foreground">{value}</p>
-                <p className="text-xs text-muted">{label}</p>
-              </div>
-            ))}
           </div>
 
           {/* Section 1: Company Information */}
@@ -400,38 +369,6 @@ export default function CompanyProfilePage() {
               {updateCompanyMutation.isPending ? 'Saving...' : 'Save'}
             </button>
           </form>
-
-          {/* Team members */}
-          {members.length > 0 && (
-            <div className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-4">
-              <h2 className="text-base font-semibold text-foreground">Team</h2>
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 rounded-xl border border-card-border bg-background px-3 py-2.5"
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-sidebar">
-                      {(member.full_name ?? '??').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {member.full_name ?? '—'}
-                      </p>
-                      <p className="text-xs text-muted">
-                        {member.company_role === 'company_admin' ? 'Company Admin' : 'Employee'}
-                      </p>
-                    </div>
-                    {!member.is_approved && (
-                      <span className="text-[10px] font-medium text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
-                        Pending
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Section 4: Security */}
           <SecuritySection />

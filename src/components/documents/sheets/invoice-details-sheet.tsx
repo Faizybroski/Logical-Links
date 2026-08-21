@@ -274,7 +274,7 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
                     {invoice.shipments.profiles && (
                       <InfoTile
                         icon={<UserAvatar name={invoice.shipments.profiles.full_name} avatarUrl={invoice.shipments.profiles.avatar_url} size="sm" rounded="lg" />}
-                        label="Assigned Employee"
+                        label="Assigned Driver"
                         value={invoice.shipments.profiles.full_name ?? "—"}
                       />
                     )}

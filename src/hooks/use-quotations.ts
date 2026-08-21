@@ -7,6 +7,8 @@ import type {
   ListQuotationsQuery,
   QuotationStats,
   AcceptQuotationDto,
+  ResidentialQuoteRequestDto,
+  CorporateQuoteRequestDto,
 } from "@/types/api.types";
 
 const KEYS = {
@@ -55,6 +57,24 @@ export function useCreateQuotation() {
   return useMutation({
     mutationFn: (dto: CreateQuotationDto) =>
       api.post<ApiResponse<Quotation>>("/api/v1/quotations", dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+export function useCreateResidentialQuote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: ResidentialQuoteRequestDto) =>
+      api.post<ApiResponse<Quotation>>("/api/v1/quotations/residential-quote", dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+export function useRequestCorporateQuote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: CorporateQuoteRequestDto) =>
+      api.post<ApiResponse<Quotation>>("/api/v1/quotations/request", dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   });
 }

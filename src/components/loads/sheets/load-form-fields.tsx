@@ -14,10 +14,35 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { CityProvinceCombobox } from "@/components/tracking/city-province-combobox";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { AddressSuggestion } from "@/lib/utils/geocode";
 import type { LoadFormValues } from "@/lib/validations/load";
 
+export const PACKAGE_TYPE_OPTIONS = [
+  { value: "pallet",   label: "Pallet" },
+  { value: "box",      label: "Box" },
+  { value: "crate",    label: "Crate" },
+  { value: "envelope", label: "Envelope" },
+  { value: "other",    label: "Other" },
+];
+
 export const F = "h-10 rounded-lg border-card-border bg-background text-sm focus-visible:ring-primary/30";
+
+// Granular last-mile service types (Aug 2026 chat requirement) — extensible list,
+// not a DB enum, so adding a new one here is enough, no migration needed.
+export const LAST_MILE_SERVICE_TYPES: { value: string; label: string }[] = [
+  { value: "courier",   label: "Courier Delivery" },
+  { value: "medical",   label: "Medical Delivery" },
+  { value: "grocery",   label: "Grocery Delivery" },
+  { value: "ecommerce", label: "E-Commerce Delivery" },
+  { value: "same_day",  label: "Same-Day Delivery" },
+  { value: "scheduled", label: "Scheduled Delivery" },
+  { value: "priority",  label: "Priority Delivery" },
+];
+
+export const LAST_MILE_SERVICE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  LAST_MILE_SERVICE_TYPES.map((t) => [t.value, t.label]),
+);
 
 export function FormSection({
   title,
@@ -186,9 +211,24 @@ export function LoadScheduleFields({ form }: { form: UseFormReturn<LoadFormValue
           </FormItem>
         )} />
 
-        <FormField control={form.control} name="estimatedDeliveryDate" render={({ field }) => (
+        <FormField control={form.control} name="preferredDeliveryDate" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Estimated Delivery (ETA)</FormLabel>
+            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Preferred Delivery Date</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                type="date"
+                value={field.value ?? ""}
+                className={F}
+              />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )} />
+
+        <FormField control={form.control} name="estimatedDeliveryDate" render={({ field }) => (
+          <FormItem className="col-span-2">
+            <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Estimated Delivery (ETA, when available)</FormLabel>
             <FormControl>
               <Input
                 {...field}
@@ -214,7 +254,7 @@ export function LoadCargoFields({
 }) {
   return (
     <FormSection
-      title="Cargo Details"
+      title="Delivery Details"
       description="Description and physical characteristics"
       icon={<Package className="h-4 w-4" />}
     >
@@ -264,6 +304,21 @@ export function LoadCargoFields({
                   className={F}
                 />
               </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="packageType" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Package Type</FormLabel>
+              <SearchableSelect
+                value={field.value ?? ""}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                options={PACKAGE_TYPE_OPTIONS}
+                placeholder="Select type"
+                searchPlaceholder="Search…"
+              />
               <FormMessage className="text-xs" />
             </FormItem>
           )} />

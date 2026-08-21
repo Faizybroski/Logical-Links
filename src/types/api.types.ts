@@ -2,7 +2,10 @@
 
 export type UserRole    = "admin" | "shipper" | "residential";
 export type CompanyRole = "company_admin" | "employee" | null;
-export type AdminRole   = "ceo" | "vp" | "manager" | "assistant" | null;
+// Admin roles are DB-driven (admin_roles table) — CEO/VP/Manager/Assistant/Driver
+// ship as seeded system rows, but the CEO can add arbitrary custom roles from the
+// Roles & Permissions page, so this can't be a fixed string-literal union.
+export type AdminRole   = string | null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -147,29 +150,30 @@ export type UserProfile = {
   createdAt:   string;
 };
 
-// ── Company Users (Employees) ─────────────────────────────────────────────────
-
-export type CompanyUser = {
-  id:          string;
-  email:       string;
-  full_name:   string | null;
-  phone:       string | null;
-  avatar_url:  string | null;
-  company_role: "employee";
-  is_active:   boolean;
-  account_id:  string;
-  created_at:  string;
-};
-
 // ── Admin Employees (Internal Staff) ──────────────────────────────────────────
 
-export type AdminRoleValue = "ceo" | "vp" | "manager" | "assistant";
+// Admin roles are DB-driven — see AdminRoleDef / useAdminRoles(). This is kept as
+// a plain string alias (not a literal union) since custom roles can be added at
+// runtime from the Roles & Permissions page.
+export type AdminRoleValue = string;
 
-export const ADMIN_ROLE_LABELS: Record<AdminRoleValue, string> = {
+// Fallback labels for the roles seeded at launch, used only until the real
+// admin_roles list (fetched via useAdminRoles()) has loaded, or for any call
+// site that can't reasonably fetch it. Prefer AdminRoleDef.label from the API
+// wherever possible — this map has no entry for admin-created custom roles.
+export const ADMIN_ROLE_LABELS: Record<string, string> = {
   ceo:       "CEO",
   vp:        "VP",
   manager:   "Manager",
   assistant: "Assistant",
+  driver:    "Driver",
+};
+
+export type AdminRoleDef = {
+  slug:       string;
+  label:      string;
+  is_system:  boolean;
+  sort_order: number;
 };
 
 export type AdminEmployee = {
@@ -220,6 +224,7 @@ export type RolePermissionGrant = {
 export type PermissionsMatrixResponse = {
   permissions: PermissionDef[];
   matrix:      RolePermissionGrant[];
+  roles:       AdminRoleDef[];
 };
 
 // ── Shipments (Loads) ─────────────────────────────────────────────────────────
@@ -262,6 +267,13 @@ export type Shipment = {
   shipment_id:          string;
   load_number:          string;
   shipment_type:        ShipmentType;
+  /** Specific last-mile service (courier/medical/grocery/etc) when shipment_type is 'last_mile'. */
+  service_type:         string | null;
+  /** e.g. Standard/Express/Same-Day/Priority — distinct from service_type. */
+  service_level:        string | null;
+  package_type:         string | null;
+  /** The customer's requested delivery date — distinct from estimated_delivery_date (the ops estimate). */
+  preferred_delivery_date: string | null;
   account_id:           string | null;
   assigned_employee_id: string | null;
   status:               ShipmentStatus;
@@ -307,7 +319,7 @@ export type Shipment = {
   accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null; logo_url?: string | null };
   /** Profile of the user who created this load (joined via profiles!created_by). */
   profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper'; avatar_url?: string | null } | null;
-  /** Profile of the assigned employee (joined via profiles!assigned_employee_id). */
+  /** Profile of the assigned driver (joined via profiles!assigned_employee_id) — corporate customers have no employees of their own, so this is always a Logical Links driver. */
   employee?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
   /** UUID of the residential customer this delivery belongs to (mutually exclusive with account_id). */
   customer_id?: string | null;
@@ -317,6 +329,13 @@ export type Shipment = {
 
 export type CreateShipmentDto = {
   shipmentType?: ShipmentType;
+  /** Specific last-mile service (courier/medical/grocery/etc) when shipmentType is 'last_mile'. */
+  serviceType?: string;
+  /** e.g. Standard/Express/Same-Day/Priority — distinct from serviceType. */
+  serviceLevel?: string;
+  packageType?: string;
+  /** The customer's requested delivery date — distinct from estimatedDeliveryDate (the ops estimate). */
+  preferredDeliveryDate?: string;
   /** UUID of the shipping company (accounts.account_id) to pre-assign. */
   accountId?: string;
   /** UUID of the residential customer (profiles.id) this delivery belongs to. Mutually exclusive with accountId. */
@@ -342,10 +361,13 @@ export type CreateShipmentDto = {
   quotedPrice?: number;
   currency?: string;
   specialInstructions?: string;
-  referenceNumber?: string;
+  // Confirmation number is auto-generated (LLC-####) by the DB — not accepted on create.
 };
 
-export type UpdateShipmentDto = Partial<Omit<CreateShipmentDto, "shipmentType" | "accountId">>;
+export type UpdateShipmentDto = Partial<Omit<CreateShipmentDto, "shipmentType" | "accountId">> & {
+  /** Confirmation number can be corrected post-creation. */
+  referenceNumber?: string;
+};
 
 export type UpdateShipmentStatusDto = {
   // Not narrowed to ShipmentStatus — the backend schema (and the
@@ -360,7 +382,7 @@ export type AssignShipmentDto = {
   accountId: string;
 };
 
-// Company admin assigns (or unassigns) a load to an employee.
+// Platform admin assigns (or unassigns) a delivery to a Logical Links driver.
 export type AssignEmployeeDto = {
   employeeId: string | null;
 };
@@ -461,9 +483,10 @@ export type LineItem = {
 
 // ── Quotations ────────────────────────────────────────────────────────────────
 
-export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+export type QuotationStatus = "requested" | "draft" | "sent" | "accepted" | "rejected" | "expired";
 
 export const QUOTATION_STATUS_LABELS: Record<QuotationStatus, string> = {
+  requested: "Requested",
   draft:    "Draft",
   sent:     "Sent",
   accepted: "Accepted",
@@ -472,6 +495,7 @@ export const QUOTATION_STATUS_LABELS: Record<QuotationStatus, string> = {
 };
 
 export const QUOTATION_STATUS_COLORS: Record<QuotationStatus, string> = {
+  requested: "bg-purple-50 text-purple-700 border-purple-200",
   draft:    "bg-slate-50 text-slate-700 border-slate-200",
   sent:     "bg-blue-50 text-blue-700 border-blue-200",
   accepted: "bg-green-50 text-green-700 border-green-200",
@@ -508,6 +532,8 @@ export type Quotation = {
   tax_rate:         number;
   tax:              number;
   total:            number;
+  /** Amount of the customer's Rewards Credit balance applied to this quotation (residential only). */
+  rewards_credit_applied: number;
   currency:         string;
   origin_address:      string | null;
   origin_lat:          number | null;
@@ -516,6 +542,18 @@ export type Quotation = {
   destination_lat:     number | null;
   destination_lng:     number | null;
   distance_km:         number | null;
+  origin_city:         string | null;
+  origin_state:        string | null;
+  origin_postcode:     string | null;
+  destination_city:    string | null;
+  destination_state:   string | null;
+  destination_postcode: string | null;
+  cargo_description:   string | null;
+  service_type:        string | null;
+  service_level:       string | null;
+  weight_kg:           number | null;
+  pieces:              number | null;
+  preferred_delivery_date: string | null;
   pdf_url:          string | null;
   accepted_at:      string | null;
   declined_at:      string | null;
@@ -531,6 +569,19 @@ export type Quotation = {
     destination_city: string;
     account_id: string | null;
     assigned_employee_id: string | null;
+    shipment_type: ShipmentType;
+    service_type: string | null;
+    service_level: string | null;
+    origin_address: string;
+    destination_address: string;
+    cargo_description: string;
+    pieces: number | null;
+    package_type: string | null;
+    weight_kg: number | null;
+    preferred_delivery_date: string | null;
+    estimated_delivery_date: string | null;
+    special_instructions: string | null;
+    customer_id: string | null;
     accounts?: { account_id: string; account_name: string; logo_url?: string | null } | null;
     profiles?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
   } | null;
@@ -576,10 +627,57 @@ export type CreateQuotationDto = {
   destinationLat?:     number | null;
   destinationLng?:     number | null;
   distanceKm?:         number | null;
+  originCity?:            string | null;
+  originState?:           string | null;
+  originPostcode?:        string | null;
+  destinationCity?:       string | null;
+  destinationState?:      string | null;
+  destinationPostcode?:   string | null;
+  cargoDescription?:      string | null;
+  serviceType?:           string | null;
+  serviceLevel?:          string | null;
+  weightKg?:              number | null;
+  pieces?:                number | null;
+  preferredDeliveryDate?: string | null;
   items?:          Omit<LineItem, "id" | "created_at" | "updated_at">[];
 };
 
 export type UpdateQuotationDto = Partial<Omit<CreateQuotationDto, "profileId">>;
+
+// ── Self-service quote request ──────────────────────────────────────────────────
+
+type QuoteRequestCommonFields = {
+  customerName:    string;
+  customerCompany?: string | null;
+  customerEmail:   string;
+  customerPhone:   string;
+  originAddress:      string;
+  originLat:          number;
+  originLng:          number;
+  originCity:         string;
+  originState:        string;
+  originPostcode:     string;
+  destinationAddress: string;
+  destinationLat:     number;
+  destinationLng:     number;
+  destinationCity:    string;
+  destinationState:   string;
+  destinationPostcode: string;
+  serviceType:        string;
+  serviceLevel:       string;
+  cargoDescription:   string;
+  pieces:             number;
+  weightKg:           number;
+  preferredDeliveryDate: string;
+  notes?:             string | null;
+};
+
+export type ResidentialQuoteRequestDto = QuoteRequestCommonFields & {
+  distanceKm:           number;
+  additionalChargeKeys?: string[];
+};
+
+export type CorporateQuoteRequestDto = QuoteRequestCommonFields;
 
 export type ListQuotationsQuery = {
   page?:           number;
@@ -755,6 +853,153 @@ export type UpdateTierDto = {
   min_deliveries?:   number;
   benefits?:         string[];
   quote_turnaround?: string;
+};
+
+export type RewardsRule = {
+  rule_id:     string;
+  rank:        number;
+  slug:        string;
+  title:       string;
+  description: string;
+  value:       number | null;
+  unit:        "usd" | "percent" | null;
+  is_editable: boolean;
+  created_at:  string;
+  updated_at:  string;
+};
+
+export type UpdateRewardsRuleDto = {
+  value?: number;
+};
+
+export type DeliveryRateCard = {
+  rate_id:        string;
+  service_type:   string;
+  label:          string;
+  base_fee:       number;
+  per_km_rate:    number;
+  minimum_charge: number;
+  is_active:      boolean;
+  created_at:     string;
+  updated_at:     string;
+};
+
+export type CreateDeliveryRateDto = {
+  serviceType:   string;
+  label:         string;
+  baseFee:       number;
+  perKmRate:     number;
+  minimumCharge: number;
+};
+
+export type UpdateDeliveryRateDto = {
+  label?:         string;
+  baseFee?:       number;
+  perKmRate?:     number;
+  minimumCharge?: number;
+  isActive?:      boolean;
+};
+
+export type AdditionalChargeUnit = "flat" | "per_hour" | "per_stop" | "per_km";
+
+export type AdditionalCharge = {
+  charge_id:  string;
+  key:        string;
+  category:   string;
+  label:      string;
+  amount:     number | null;
+  unit:       AdditionalChargeUnit;
+  purpose:    string | null;
+  is_active:  boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateChargeDto = {
+  key:      string;
+  category: string;
+  label:    string;
+  amount?:  number;
+  unit?:    AdditionalChargeUnit;
+  purpose?: string;
+};
+
+export type UpdateChargeDto = {
+  label?:    string;
+  amount?:   number;
+  unit?:     AdditionalChargeUnit;
+  purpose?:  string;
+  isActive?: boolean;
+};
+
+export type ServiceLevel = {
+  level_id:   string;
+  slug:       string;
+  label:      string;
+  multiplier: number;
+  is_active:  boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateServiceLevelDto = {
+  slug:       string;
+  label:      string;
+  multiplier: number;
+};
+
+export type UpdateServiceLevelDto = {
+  label?:      string;
+  multiplier?: number;
+  isActive?:   boolean;
+};
+
+export type WeightRate = {
+  key:        string;
+  label:      string;
+  value:      number;
+  unit:       string | null;
+  updated_at: string;
+};
+
+export type CalculatePriceDto = {
+  serviceType:          string;
+  serviceLevel:         string;
+  distanceKm:           number;
+  weightKg?:            number;
+  additionalChargeKeys: string[];
+};
+
+export type RewardsCreditBalance = {
+  balance: number;
+};
+
+export type ApplyRewardsCreditResult = {
+  quotation:        Quotation;
+  applied:          number;
+  remainingBalance: number;
+};
+
+export type PriceBreakdown = {
+  serviceType:            string;
+  label:                  string;
+  baseFee:                number;
+  distanceKm:             number;
+  perKmRate:              number;
+  distanceCharge:         number;
+  minimumCharge:          number;
+  serviceLevel:           string;
+  serviceLevelLabel:      string;
+  serviceLevelMultiplier: number;
+  deliveryCharge:         number;
+  weightKg:               number;
+  weightPerKgRate:        number;
+  weightCharge:           number;
+  additionalCharges:      { key: string; label: string; amount: number }[];
+  additionalChargesTotal: number;
+  subtotal:               number;
 };
 
 export const CANADIAN_PROVINCES = [

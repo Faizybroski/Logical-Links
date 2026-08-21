@@ -48,7 +48,8 @@ export default function ShipperHeader({
     router.refresh()
   }
 
-  const roleLabel = user?.companyRole === 'company_admin' ? 'Company Admin' : 'Employee'
+  // Corporate customers have no employees of their own — one login per account.
+  const roleLabel = 'Company Admin'
 
   return (
     <header

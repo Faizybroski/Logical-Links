@@ -11,7 +11,6 @@ import {
   FileQuestion,
   Bell,
   User,
-  Users,
   PanelLeft,
   Circle,
   Building2,
@@ -29,6 +28,8 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { api } from "@/lib/api";
 
+// Corporate customers have no employees of their own — one login per account,
+// so "Company" is a plain nav item rather than gated on company_role.
 const BASE_NAVIGATION = [
   { label: "Dashboard", href: "/shipper/dashboard", icon: LayoutDashboard },
   { label: "My Deliveries", href: "/shipper/loads", icon: Truck },
@@ -36,6 +37,7 @@ const BASE_NAVIGATION = [
   { label: "Quotations", href: "/shipper/quotations", icon: FileQuestion },
   { label: "Alerts", href: "/shipper/notifications", icon: Bell },
   { label: "Support", href: "/shipper/support", icon: LifeBuoy },
+  { label: "Company", href: "/shipper/company", icon: Building2 },
   { label: "My Profile", href: "/shipper/profile", icon: User },
 ];
 
@@ -73,15 +75,7 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
     setControlOpen(false);
   }
 
-  const navigation = [
-    ...BASE_NAVIGATION,
-    ...(user?.companyRole === "company_admin"
-      ? [
-          { label: "Employees", href: "/shipper/employees", icon: Users },
-          { label: "Company", href: "/shipper/company", icon: Building2 },
-        ]
-      : []),
-  ];
+  const navigation = BASE_NAVIGATION;
 
   async function signOut() {
     console.info(
@@ -106,8 +100,7 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
     router.refresh();
   }
 
-  const roleLabel =
-    user?.companyRole === "company_admin" ? "Company Admin" : "Employee";
+  const roleLabel = "Company Admin";
 
   const { theme } = useTheme();
   const { sidebarSwatchId } = useAppearance();
@@ -256,10 +249,7 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold text-white">
-                {user?.fullName ??
-                  (user?.companyRole === "employee"
-                    ? "Employee"
-                    : "Company Admin")}
+                {user?.fullName ?? "Company Admin"}
               </p>
               <p className="truncate text-[11px] text-zinc-400">
                 {user?.email ?? ""}

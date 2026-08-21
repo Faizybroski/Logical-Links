@@ -184,7 +184,8 @@ const LOC_FILTER_DEFS: FilterDef[] = [
 ];
 
 function LocationsTab() {
-  const canManage = usePermission("settings.general");
+  const canCreate = usePermission("locations.create");
+  const canManage = usePermission("locations.edit");
   const [page, setPage]                 = useState(1);
   const [search, setSearch]             = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -231,7 +232,7 @@ function LocationsTab() {
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">Manage Canadian cities and provinces used in tracking events and load forms.</p>
-        {canManage && (
+        {canCreate && (
           <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
             <Plus className="mr-1.5 h-4 w-4" />New Location
           </Button>
@@ -335,7 +336,8 @@ const ST_FILTER_DEFS: FilterDef[] = [
 ];
 
 function StatusesTab() {
-  const canManage = usePermission("settings.general");
+  const canCreate = usePermission("statuses.create");
+  const canManage = usePermission("statuses.edit");
   const [page, setPage]               = useState(1);
   const [search, setSearch]           = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -395,7 +397,7 @@ function StatusesTab() {
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">Manage load statuses. System statuses are protected. Custom statuses are fully editable.</p>
-        {canManage && (
+        {canCreate && (
           <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
             <Plus className="mr-1.5 h-4 w-4" />New Status
           </Button>

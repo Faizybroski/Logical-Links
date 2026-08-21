@@ -18,10 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateAdminEmployee } from "@/hooks/use-admin-employees";
+import { useAdminRoles } from "@/hooks/use-admin-role-permissions";
 import { usePermission } from "@/hooks/use-permission";
-import { ADMIN_ROLE_LABELS, type AdminRoleValue } from "@/types/api.types";
-
-const ALL_ADMIN_ROLES: AdminRoleValue[] = ["ceo", "vp", "manager", "assistant"];
+import type { AdminRoleValue } from "@/types/api.types";
 
 const schema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -33,7 +32,7 @@ const schema = z.object({
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Must contain at least one uppercase letter")
     .regex(/[0-9]/, "Must contain at least one number"),
-  adminRole: z.enum(["ceo", "vp", "manager", "assistant"]),
+  adminRole: z.string().min(1, "Select a role"),
 });
 
 type Form = z.infer<typeof schema>;
@@ -43,7 +42,9 @@ export default function CreateAdminEmployeePage() {
   const createMut = useCreateAdminEmployee();
   const canCreate = usePermission("employees.create");
   const canManageRoles = usePermission("employees.manage_roles");
-  const availableRoles = canManageRoles ? ALL_ADMIN_ROLES : ALL_ADMIN_ROLES.filter((r) => r !== "ceo");
+  const { data: rolesRes } = useAdminRoles({ enabled: canCreate });
+  const allRoles = rolesRes?.data ?? [];
+  const availableRoles = canManageRoles ? allRoles : allRoles.filter((r) => r.slug !== "ceo");
 
   const [form, setForm] = useState<Form>({
     firstName: "",
@@ -180,8 +181,8 @@ export default function CreateAdminEmployeePage() {
                 </SelectTrigger>
                 <SelectContent>
                   {availableRoles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {ADMIN_ROLE_LABELS[role]}
+                    <SelectItem key={role.slug} value={role.slug}>
+                      {role.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

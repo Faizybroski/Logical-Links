@@ -71,6 +71,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
       quotedPrice:         undefined,
       referenceNumber:     "",
       specialInstructions: "",
+      packageType:         undefined,
+      preferredDeliveryDate: "",
     },
   });
 
@@ -94,6 +96,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
         quotedPrice:         shipment.quoted_price         ?? undefined,
         referenceNumber:     shipment.reference_number     ?? "",
         specialInstructions: shipment.special_instructions ?? "",
+        packageType:         shipment.package_type          ?? undefined,
+        preferredDeliveryDate: isoToDateInputValue(shipment.preferred_delivery_date),
       });
     }
   }, [shipment]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -117,6 +121,8 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
         ...(isAdmin && { quotedPrice: values.quotedPrice }),
         referenceNumber:     values.referenceNumber,
         specialInstructions: values.specialInstructions,
+        packageType:         values.packageType,
+        preferredDeliveryDate: dateInputValueToIso(values.preferredDeliveryDate),
       });
       toast.success("Load updated");
       onClose();
@@ -222,9 +228,9 @@ export function EditLoadSheet({ open, onClose, loadId }: EditLoadSheetProps) {
                 >
                   <FormField control={form.control} name="referenceNumber" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Reference No.</FormLabel>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted">Confirmation Number</FormLabel>
                       <FormControl>
-                        <Input {...field} value={field.value ?? ""} placeholder="REF-001" className={F} />
+                        <Input {...field} value={field.value ?? ""} placeholder="LLC-0001" className={F} />
                       </FormControl>
                       <FormMessage className="text-xs" />
                     </FormItem>

@@ -2,8 +2,16 @@ import { z } from "zod";
 
 export const SHIPMENT_TYPES = ["freight", "last_mile"] as const;
 
+export const PACKAGE_TYPES = ["pallet", "box", "crate", "envelope", "other"] as const;
+
 export const loadSchema = z.object({
   shipmentType: z.enum(SHIPMENT_TYPES),
+  /** Granular last-mile service (courier/medical/grocery/etc) — only relevant when shipmentType is 'last_mile'. */
+  serviceType: z.string().optional(),
+  /** e.g. Standard/Express/Same-Day/Priority — distinct from serviceType. */
+  serviceLevel: z.string().optional(),
+  packageType: z.string().optional(),
+  preferredDeliveryDate: z.string().optional(),
 
   accountId: z.string().uuid("Please select a company").optional(),
   customerId: z.string().uuid("Please select a residential customer").optional(),

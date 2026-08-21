@@ -3,8 +3,7 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, ShieldAlert, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldAlert, User } from "lucide-react";
 
 import { DataTable } from "@/components/loads/loads-table";
 import KpiGrid from "@/components/loads/kpi-grid";
@@ -88,7 +87,6 @@ export default function LoadsPage() {
   const user        = useAuthStore((s) => s.user);
   const isAdmin     = user?.role === "admin";
 
-  const canCreateLoad     = usePermission("deliveries.create");
   const canEditPerm       = usePermission("deliveries.edit");
   const canDeletePerm     = usePermission("deliveries.delete");
   const canAssignPerm     = usePermission("deliveries.assign");
@@ -149,7 +147,6 @@ export default function LoadsPage() {
     return qs ? `${pathname}?${qs}` : pathname;
   }
 
-  const openCreate  = () => router.push(buildSheetUrl("create", "true"));
   const openDetails = (id: string) => router.push(buildSheetUrl("details", id));
   const openEdit    = (id: string) => router.push(buildSheetUrl("edit", id));
   const closeSheet  = () => router.push(closeSheetUrl());
@@ -377,15 +374,6 @@ export default function LoadsPage() {
               Manage delivery operations and shipment workflows.
             </p>
           </div>
-          {isAdmin && canCreateLoad && (
-            <Button
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"
-            >
-              <Plus className="h-4 w-4" />
-              Create Load
-            </Button>
-          )}
         </div>
 
         {/* Role banner */}
@@ -406,9 +394,7 @@ export default function LoadsPage() {
               ? "Viewing as System Admin — full access to all deliveries"
               : isResidential
                 ? "Viewing as Residential Customer — your deliveries"
-                : user?.companyRole === "employee"
-                  ? "Viewing as Employee — your assigned deliveries"
-                  : "Viewing as Company Admin — your company's deliveries"}
+                : "Viewing as Company Admin — your company's deliveries"}
           </span>
         </div>
 
