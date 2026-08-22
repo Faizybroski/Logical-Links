@@ -172,9 +172,6 @@ export function TrackingTimeline({ loadId, events, canCreate, canEdit, canDelete
                             rounded="full"
                           />
                           {event.profiles.full_name}
-                          <span className="capitalize text-muted-light">
-                            ({event.created_by_role.replace("_", " ")})
-                          </span>
                         </span>
                       )}
                     </div>

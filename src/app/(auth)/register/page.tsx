@@ -89,7 +89,7 @@ export default function RegisterPage() {
         accessToken: string;
         refreshToken: string;
         expiresIn: number;
-        user: { id: string; email: string; role: "admin" | "shipper" | "residential"; companyRole: "company_admin" | "employee" | null; adminRole: string | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
+        user: { id: string; email: string; role: "admin" | "corporate" | "residential"; companyRole: "company_admin" | "employee" | null; adminRole: string | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
       }>>('/api/v1/auth/register', {
         accountType: result.data.accountType,
         email: result.data.email,
@@ -180,7 +180,7 @@ export default function RegisterPage() {
                     : "border-card-border text-muted hover:text-foreground"
                 }`}
               >
-                Corporate (Shipper)
+                Corporate
               </button>
             </div>
 

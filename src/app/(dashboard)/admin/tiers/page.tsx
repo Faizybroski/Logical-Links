@@ -128,7 +128,7 @@ export default function AdminTiersPage() {
             Partner Tiers
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Manage the delivery thresholds and benefits shippers unlock at each tier.
+            Manage the delivery thresholds and benefits corporate customers unlock at each tier.
           </p>
         </div>
 

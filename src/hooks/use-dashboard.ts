@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, type ApiResponse } from "@/lib/api";
-import type { ShipmentStatus } from "@/types/api.types";
+import type { DeliveryStatus } from "@/types/api.types";
 
 export interface TrendPoint {
   date:  string  // YYYY-MM-DD
@@ -8,13 +8,13 @@ export interface TrendPoint {
 }
 
 export interface DashboardStats {
-  byStatus:          Record<ShipmentStatus, number>
+  byStatus:          Record<DeliveryStatus, number>
   total:             number
-  activeLoads:       number
+  activeDeliveries:       number
   trend:             TrendPoint[]
   prevPeriodTotal:   number
-  // Admin-only (undefined for shippers)
-  totalShippers?:    number
+  // Admin-only (undefined for corporates)
+  totalCorporates?:    number
   pendingApprovals?: number
   invoicesDue?:      number
 }

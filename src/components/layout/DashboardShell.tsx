@@ -2,10 +2,10 @@
 
 import { useState, type CSSProperties } from 'react'
 import AdminSidebar from '@/components/admin/AdminSidebar'
-import ShipperSidebar from '@/components/shipper/ShipperSidebar'
+import CorporateSidebar from '@/components/corporate/CorporateSidebar'
 import ResidentialSidebar from '@/components/residential/ResidentialSidebar'
 import AdminHeader from '@/components/admin/AdminHeader'
-import ShipperHeader from '@/components/shipper/ShipperHeader'
+import CorporateHeader from '@/components/corporate/CorporateHeader'
 import ResidentialHeader from '@/components/residential/ResidentialHeader'
 import { Toaster } from '@/components/ui/sonner'
 import { useAuthStore } from '@/store/auth.store'
@@ -43,7 +43,7 @@ export default function DashboardShell({ children }: Props) {
       ) : isResidential ? (
         <ResidentialSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       ) : (
-        <ShipperSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <CorporateSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
 
       {/* Main Layout */}
@@ -64,7 +64,7 @@ export default function DashboardShell({ children }: Props) {
         ) : isResidential ? (
           <ResidentialHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
         ) : (
-          <ShipperHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
+          <CorporateHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
         )}
 
         <main className="flex-1 overflow-y-auto bg-background px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">

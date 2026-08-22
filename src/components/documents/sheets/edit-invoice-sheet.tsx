@@ -49,7 +49,11 @@ export function EditInvoiceSheet({ open, onClose, invoiceId }: EditInvoiceSheetP
             </div>
           ) : (
             <div className="px-6 py-6">
+              {/* Keyed by invoice id+updated_at — see the identical comment
+                  on edit-quotation-sheet.tsx; same Sheet-never-unmounts,
+                  defaultValues-only-once staleness issue. */}
               <InvoiceEditor
+                key={`${invoice.id}-${invoice.updated_at}`}
                 profileId={user.id}
                 invoice={invoice}
                 isAdmin={isAdmin}

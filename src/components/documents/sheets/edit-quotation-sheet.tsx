@@ -49,7 +49,15 @@ export function EditQuotationSheet({ open, onClose, quotationId }: EditQuotation
             </div>
           ) : (
             <div className="px-6 py-6">
+              {/* Keyed by quotation id: this Sheet's children stay mounted
+                  in the DOM even while closed, so without a key change here
+                  the editor's form (and its line items) would lock in
+                  whichever quotation was loaded the first time it ever
+                  mounted — stale for every quotation edited afterward in
+                  the same session, since react-hook-form's defaultValues
+                  and useState's lazy initializer both only apply once. */}
               <QuotationEditor
+                key={`${quotation.id}-${quotation.updated_at}`}
                 profileId={user.id}
                 quotation={quotation}
                 isAdmin={isAdmin}

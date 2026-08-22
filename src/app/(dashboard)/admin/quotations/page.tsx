@@ -4,7 +4,7 @@ import { useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FileText, CheckCircle2, Clock, AlertTriangle, Inbox } from "lucide-react";
-import { KpiCard } from "@/components/loads/kpi-card";
+import { KpiCard } from "@/components/deliveries/kpi-card";
 import { QuotationsList } from "@/components/documents/documents-list";
 import { TableFilters } from "@/components/ui/table-filters";
 import type { FilterDef } from "@/components/ui/table-filters";

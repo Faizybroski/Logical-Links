@@ -31,7 +31,7 @@ export default function About() {
           {/* At the core of our business is a strong commitment to delivering
           logistics and courier solutions that are both reliable and tailored to
           your unique needs. What sets us apart is our combination of advanced
-          technology, industry expertise, and genuine care for every shipment we
+          technology, industry expertise, and genuine care for every delivery we
           manage. We prioritize clear communication, on-time delivery, and
           precise execution, ensuring a smooth and efficient experience from
           start to finish. */}

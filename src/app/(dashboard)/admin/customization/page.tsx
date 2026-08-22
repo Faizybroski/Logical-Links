@@ -162,7 +162,7 @@ function DeleteStatusDialog({ open, onClose, status }: { open: boolean; onClose:
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Delete Status</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted">Delete <strong>{status?.name}</strong>? This cannot be undone. Statuses in use by active loads cannot be deleted.</p>
+        <p className="text-sm text-muted">Delete <strong>{status?.name}</strong>? This cannot be undone. Statuses in use by active deliveries cannot be deleted.</p>
         <div className="flex gap-2 pt-2">
           <Button type="button" variant="outline" className="flex-1 rounded-lg" onClick={onClose}>Cancel</Button>
           <Button type="button" className="flex-1 rounded-lg bg-danger text-white hover:bg-danger/85" disabled={deleteMut.isPending} onClick={handleDelete}>
@@ -231,7 +231,7 @@ function LocationsTab() {
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted">Manage Canadian cities and provinces used in tracking events and load forms.</p>
+        <p className="text-sm text-muted">Manage Canadian cities and provinces used in tracking events and delivery forms.</p>
         {canCreate && (
           <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
             <Plus className="mr-1.5 h-4 w-4" />New Location
@@ -396,7 +396,7 @@ function StatusesTab() {
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted">Manage load statuses. System statuses are protected. Custom statuses are fully editable.</p>
+        <p className="text-sm text-muted">Manage delivery statuses. System statuses are protected. Custom statuses are fully editable.</p>
         {canCreate && (
           <Button type="button" onClick={() => setCreateOpen(true)} className="h-9 rounded-xl bg-primary px-4 text-sm text-sidebar hover:bg-primary/85">
             <Plus className="mr-1.5 h-4 w-4" />New Status

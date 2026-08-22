@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const SESSION_COOKIE = "ll-session";
 
-const PROTECTED_PREFIXES = ["/admin", "/shipper", "/driver"];
+const PROTECTED_PREFIXES = ["/admin", "/corporate", "/driver"];
 
 const AUTH_ONLY_PATHS = new Set([
   "/",
@@ -22,7 +22,7 @@ const AUTH_ONLY_PATHS = new Set([
 
 function getDashboard(role: string | undefined): string {
   if (role === "admin") return "/admin/dashboard";
-  if (role === "shipper") return "/shipper/dashboard";
+  if (role === "corporate") return "/corporate/dashboard";
   return "/admin/dashboard";
 }
 

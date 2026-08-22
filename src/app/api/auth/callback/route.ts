@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         .from('profiles').select('role').eq('id', user.id).single()
       const role = (profile as { role?: string } | null)?.role
       if (role === 'admin') return NextResponse.redirect(`${origin}/admin/dashboard`)
-      if (role === 'shipper')      return NextResponse.redirect(`${origin}/shipper/dashboard`)
+      if (role === 'corporate')      return NextResponse.redirect(`${origin}/corporate/dashboard`)
     }
     return NextResponse.redirect(`${origin}${next}`)
   }

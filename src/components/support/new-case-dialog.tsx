@@ -73,7 +73,7 @@ export function NewCaseDialog({ open, onClose, onCreated }: NewCaseDialogProps) 
               rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Give us as much detail as you can — what happened, which load/invoice it relates to, and what you need."
+              placeholder="Give us as much detail as you can — what happened, which delivery/invoice it relates to, and what you need."
               className={`${inputClass} resize-none`}
             />
           </div>

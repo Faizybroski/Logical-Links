@@ -7,17 +7,17 @@ import { ArrowLeft, Mail, Phone, Calendar, Truck, LifeBuoy } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/loads/loads-table";
+import { DataTable } from "@/components/deliveries/deliveries-table";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { StatusBadge } from "@/components/loads/status-badge";
+import { StatusBadge } from "@/components/deliveries/status-badge";
 import { SupportCaseStatusBadge } from "@/components/documents/document-status-badge";
 import { CaseDetailsSheet } from "@/components/support/case-details-sheet";
-import { LoadDetailsSheet } from "@/components/loads/sheets/load-details-sheet";
+import { DeliveryDetailsSheet } from "@/components/deliveries/sheets/delivery-details-sheet";
 
 import { useUser } from "@/hooks/use-users";
-import { useShipments } from "@/hooks/use-shipments";
+import { useDeliveries } from "@/hooks/use-deliveries";
 import { useSupportCases } from "@/hooks/use-support";
-import type { Shipment, SupportCase } from "@/types/api.types";
+import type { Delivery, SupportCase } from "@/types/api.types";
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-AU", {
@@ -35,22 +35,22 @@ export default function ResidentialCustomerDetailPage() {
   const { data: userRes, isLoading: userLoading } = useUser(customerId);
   const customer = userRes?.data;
 
-  const { data: shipmentsRes, isLoading: shipmentsLoading } = useShipments(
+  const { data: deliveriesRes, isLoading: deliveriesLoading } = useDeliveries(
     { customerId, limit: 20, sortBy: "created_at", sortDir: "desc" },
     { enabled: !!customerId },
   );
-  const shipments = shipmentsRes?.data ?? [];
+  const deliveries = deliveriesRes?.data ?? [];
 
   const { data: casesRes, isLoading: casesLoading } = useSupportCases({ userId: customerId, limit: 20 });
   const cases = casesRes?.data ?? [];
 
-  const [openLoadId, setOpenLoadId] = useState<string | null>(null);
+  const [openDeliveryId, setOpenDeliveryId] = useState<string | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
 
-  const loadColumns: ColumnDef<Shipment>[] = [
+  const loadColumns: ColumnDef<Delivery>[] = [
     {
       id: "load_number",
-      header: "Load #",
+      header: "Delivery #",
       cell: ({ row }) => <span className="text-sm font-semibold text-primary">{row.original.load_number}</span>,
     },
     {
@@ -154,11 +154,11 @@ export default function ResidentialCustomerDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <DataTable<Shipment>
+                <DataTable<Delivery>
                   columns={loadColumns}
-                  data={shipments}
-                  isLoading={shipmentsLoading}
-                  onRowClick={(s) => setOpenLoadId(s.shipment_id)}
+                  data={deliveries}
+                  isLoading={deliveriesLoading}
+                  onRowClick={(s) => setOpenDeliveryId(s.shipment_id)}
                   emptyState={<span className="text-sm text-muted">No deliveries yet.</span>}
                 />
               </CardContent>
@@ -186,11 +186,11 @@ export default function ResidentialCustomerDetailPage() {
         )}
       </div>
 
-      <LoadDetailsSheet
-        open={!!openLoadId}
-        onClose={() => setOpenLoadId(null)}
-        loadId={openLoadId ?? ""}
-        onEditClick={() => router.push(`/admin/loads?edit=${openLoadId}`)}
+      <DeliveryDetailsSheet
+        open={!!openDeliveryId}
+        onClose={() => setOpenDeliveryId(null)}
+        loadId={openDeliveryId ?? ""}
+        onEditClick={() => router.push(`/admin/deliveries?edit=${openDeliveryId}`)}
       />
       <CaseDetailsSheet
         open={!!openCaseId}

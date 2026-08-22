@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const HERO_TAGLINES = [
   "End-to-end logistics solutions designed to deliver efficiency, visibility, and control",
-  "Real-time shipment tracking that keeps your team and customers informed at every step",
+  "Real-time delivery tracking that keeps your team and customers informed at every step",
   "Streamlined freight management built to cut costs and eliminate delays",
   "Reliable nationwide delivery networks powered by smart route optimization",
   "Dedicated support and transparent reporting for total supply chain confidence",

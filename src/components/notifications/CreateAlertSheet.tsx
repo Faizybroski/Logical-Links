@@ -64,7 +64,7 @@ export function CreateAlertSheet({ open, onClose }: Props) {
       return;
     }
     if (!sendToAll && !accountId) {
-      toast.error("Select a shipper or choose Send to All");
+      toast.error("Select a corporate customer or choose Send to All");
       return;
     }
 
@@ -78,7 +78,7 @@ export function CreateAlertSheet({ open, onClose }: Props) {
         accountId: sendToAll ? undefined : accountId,
       });
       const sent = (res as any)?.data?.sent ?? 0;
-      toast.success(`Alert sent to ${sent} shipper${sent === 1 ? "" : "s"}`);
+      toast.success(`Alert sent to ${sent} corporate${sent === 1 ? "" : "s"}`);
       handleClose();
     } catch (err) {
       toast.error((err as Error).message);
@@ -165,7 +165,7 @@ export function CreateAlertSheet({ open, onClose }: Props) {
               }`}
             >
               <Send className="h-4 w-4" />
-              {sendToAll ? "Sending to All Shippers" : "Send to All Shippers"}
+              {sendToAll ? "Sending to All Corporates" : "Send to All Corporates"}
             </Button>
 
             {!sendToAll && (
@@ -173,7 +173,7 @@ export function CreateAlertSheet({ open, onClose }: Props) {
                 value={accountId}
                 onValueChange={setAccountId}
                 options={companyOptions}
-                placeholder="Select a shipper…"
+                placeholder="Select a corporate customer…"
                 searchPlaceholder="Search shipping companies…"
                 emptyText="No active shipping companies"
               />

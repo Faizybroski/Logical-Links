@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Phone, Mail, LifeBuoy, ChevronDown, ChevronUp } from "lucide-react";
-import { DataTable } from "@/components/loads/loads-table";
+import { DataTable } from "@/components/deliveries/deliveries-table";
 import { SupportCaseStatusBadge } from "@/components/documents/document-status-badge";
 import { NewCaseDialog } from "@/components/support/new-case-dialog";
 import { CaseDetailsSheet } from "@/components/support/case-details-sheet";

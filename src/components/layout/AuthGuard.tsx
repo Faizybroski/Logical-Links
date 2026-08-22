@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
 
 type Props = {
-  allowedRoles?: ("admin" | "shipper" | "residential")[];
+  allowedRoles?: ("admin" | "corporate" | "residential")[];
   children: React.ReactNode;
 };
 

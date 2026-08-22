@@ -6,10 +6,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { UserCircle2, Mail, Phone, Calendar, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { KpiCard } from "@/components/loads/kpi-card";
-import { DataTable } from "@/components/loads/loads-table";
+import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DataTable } from "@/components/deliveries/deliveries-table";
 import { useTableFilters } from "@/hooks/use-table-filters";
-import { CreateLoadSheet } from "@/components/loads/sheets/create-load-sheet";
+import { CreateDeliverySheet } from "@/components/deliveries/sheets/create-delivery-sheet";
 
 import { useUsers } from "@/hooks/use-users";
 import { usePermission } from "@/hooks/use-permission";
@@ -153,7 +153,7 @@ export default function ResidentialCustomersPage() {
         />
       </div>
 
-      <CreateLoadSheet open={createOpen} onClose={() => setCreateOpen(false)} context="residential" />
+      <CreateDeliverySheet open={createOpen} onClose={() => setCreateOpen(false)} context="residential" />
     </div>
   );
 }

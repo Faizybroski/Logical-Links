@@ -11,7 +11,7 @@ const hubLinks = [
   {
     icon: LogIn,
     title: "Sign In",
-    description: "Access your dashboard to manage shipments, quotations, and invoices.",
+    description: "Access your dashboard to manage deliveries, quotations, and invoices.",
     href: "/login",
     cta: "Log In",
   },
@@ -24,10 +24,10 @@ const hubLinks = [
   },
   {
     icon: Truck,
-    title: "Track a Shipment",
-    description: "Sign in to view real-time status and delivery updates on your loads.",
+    title: "Track a Delivery",
+    description: "Sign in to view real-time status and delivery updates on your deliveries.",
     href: "/register",
-    cta: "Track Shipment",
+    cta: "Track Delivery",
   },
   {
     icon: HeadphonesIcon,
@@ -61,7 +61,7 @@ export default function AccessHubPage() {
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="text-base sm:text-xl font-medium text-gray-600 max-w-xl"
           >
-            Your single entry point to sign in, manage shipments, and get
+            Your single entry point to sign in, manage deliveries, and get
             support - all in one place.
           </motion.p>
         </section>

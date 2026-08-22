@@ -46,7 +46,7 @@ export default function UpdatePasswordPage() {
 
       const role = (profile as { role?: string } | null)?.role
       if (role === 'admin') { router.push('/admin/dashboard'); return }
-      if (role === 'shipper')      { router.push('/shipper/dashboard'); return }
+      if (role === 'corporate')      { router.push('/corporate/dashboard'); return }
     }
 
     router.push('/')

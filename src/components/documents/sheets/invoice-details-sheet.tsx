@@ -56,7 +56,7 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
   const router   = useRouter();
   const pathname = usePathname();
   const { user } = useAuthStore();
-  const isShipper = user?.role === "shipper";
+  const isCorporate = user?.role === "corporate";
 
   const { data: res, isLoading } = useInvoice(invoiceId);
   const invoice = res?.data;
@@ -64,7 +64,7 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
   const duplicateMut = useDuplicateInvoice();
   const pdfMut       = useGenerateInvoicePdf(invoiceId);
 
-  const quotationBasePath = pathname.startsWith("/admin") ? "/admin/quotations" : "/shipper/quotations";
+  const quotationBasePath = pathname.startsWith("/admin") ? "/admin/quotations" : "/corporate/quotations";
 
   async function handleDuplicate() {
     try {
@@ -100,7 +100,7 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
             {invoice && <InvoiceStatusBadge status={invoice.status} />}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-            {!isShipper && (
+            {!isCorporate && (
               <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
                 className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
                 <Copy className="h-3.5 w-3.5" />
@@ -112,7 +112,7 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
               {pdfMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{invoice?.pdf_url ? "Regen PDF" : "Gen PDF"}</span>
             </Button>
-            {!isShipper && (
+            {!isCorporate && (
               <Button size="sm" onClick={() => invoice && onEditClick(invoice.id)}
                 disabled={!invoice}
                 className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1">
@@ -161,7 +161,17 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
                 </div>
                 <div className="grid gap-3 p-4 sm:grid-cols-2">
                   <InfoTile icon={<User className="h-4 w-4" />} label="Name" value={invoice.customer_name} />
-                  <InfoTile icon={<Building2 className="h-4 w-4" />} label="Company" value={invoice.customer_company} />
+                  <InfoTile
+                    icon={<Building2 className="h-4 w-4" />}
+                    label="Customer Type"
+                    value={
+                      invoice.profiles?.role === "residential"
+                        ? "Residential"
+                        : invoice.customer_company
+                          ? `Corporate — ${invoice.customer_company}`
+                          : "Corporate"
+                    }
+                  />
                   <InfoTile icon={<Mail className="h-4 w-4" />} label="Email" value={invoice.customer_email} />
                   <InfoTile icon={<Phone className="h-4 w-4" />} label="Phone" value={invoice.customer_phone} />
                   {invoice.billing_address && (
@@ -175,7 +185,9 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
               {/* Line items */}
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Line Items</h3>
-                <LineItemsTable items={items} onChange={() => {}} readOnly />
+                {/* Keyed by id+updated_at — see the identical comment on
+                    quotation-details-sheet.tsx's LineItemsTable. */}
+                <LineItemsTable key={`${invoice.id}-${invoice.updated_at}`} items={items} onChange={() => {}} readOnly />
               </div>
 
               {/* Payment instructions */}
@@ -252,11 +264,11 @@ export function InvoiceDetailsSheet({ open, onClose, invoiceId, onEditClick }: I
                 </div>
               </div>
 
-              {/* Load reference */}
+              {/* Delivery reference */}
               {invoice.shipments && (
                 <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
                   <div className="border-b border-card-border px-5 py-4">
-                    <h3 className="text-sm font-semibold text-foreground">Load Reference</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Delivery Reference</h3>
                   </div>
                   <div className="space-y-3 p-4">
                     <InfoTile

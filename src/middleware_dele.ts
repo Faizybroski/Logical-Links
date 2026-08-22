@@ -3,12 +3,12 @@ import type { NextRequest } from "next/server";
 
 // ── Session hint cookie ───────────────────────────────────────────────────────
 // Set by the client-side auth store (auth.store.ts) on login/rehydration.
-// Value is the user's role ("admin" | "shipper"). Contains no token data.
+// Value is the user's role ("admin" | "corporate"). Contains no token data.
 // Used only as a fast routing hint — real token validation happens client-side.
 const SESSION_COOKIE = "ll-session";
 
 // Routes that require authentication — redirect to /login if no session cookie.
-const PROTECTED_PREFIXES = ["/admin", "/shipper", "/driver"];
+const PROTECTED_PREFIXES = ["/admin", "/corporate", "/driver"];
 
 // Routes that authenticated users should not reach — redirect to their dashboard.
 const AUTH_ONLY_PATHS = new Set(["/", "/login", "/register", "/forgot-password"]);
@@ -16,7 +16,7 @@ const AUTH_ONLY_PATHS = new Set(["/", "/login", "/register", "/forgot-password"]
 function getDashboard(role: string | undefined): string {
   if (role === "admin")       return "/admin/dashboard";
   if (role === "residential") return "/residential/dashboard";
-  if (role === "shipper")     return "/shipper/dashboard";
+  if (role === "corporate")     return "/corporate/dashboard";
   return "/admin/dashboard"; // safe fallback
 }
 

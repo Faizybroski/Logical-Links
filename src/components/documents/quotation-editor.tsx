@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, FileDown, FileOutput, Copy, Send, Loader2, X, Truck, Route as RouteIcon } from "lucide-react";
+import { Save, FileDown, FileOutput, Copy, Send, Loader2, X, Truck, Route as RouteIcon, Package, Weight, Calendar, ClipboardList, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +24,7 @@ import { LineItemsTable, type LineItemsTableHandle } from "./line-items-table";
 import { PricingSummary } from "./pricing-summary";
 import { QuotationStatusBadge } from "./document-status-badge";
 import { DatePicker } from "./date-picker";
-import { PricingCalculatorDialog } from "@/components/loads/dialogs/pricing-calculator-dialog";
+import { PricingCalculatorDialog } from "@/components/deliveries/dialogs/pricing-calculator-dialog";
 import { Calculator } from "lucide-react";
 import type {
   Quotation,
@@ -42,9 +42,12 @@ import {
 } from "@/hooks/use-quotations";
 import { useConvertQuotationToInvoice } from "@/hooks/use-invoices";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useAdditionalCharges } from "@/hooks/use-additional-charges";
+import { useCalculatePrice } from "@/hooks/use-pricing";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { geocodeAddress, haversineDistanceKm, type AddressSuggestion, type Coordinates } from "@/lib/utils/geocode";
+import { LAST_MILE_SERVICE_TYPE_LABELS } from "@/components/deliveries/sheets/delivery-form-fields";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -93,7 +96,7 @@ type QuotationFormValues = z.infer<typeof quotationFormSchema>;
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 // Admin can only ever move a quotation between Draft and Sent — Accepted/Declined
-// are recorded exclusively by the shipper via the accept/decline workflow.
+// are recorded exclusively by the corporate via the accept/decline workflow.
 const QUOTATION_STATUSES: { value: QuotationStatus; label: string }[] = [
   { value: "draft", label: "Draft" },
   { value: "sent",  label: "Sent"  },
@@ -127,9 +130,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 const fieldLabelCls = "text-[11px] font-semibold uppercase tracking-wide text-muted";
 
+function RequestTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-card-border bg-background p-3">
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</p>
+        <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
-export interface LoadPrefill {
+export interface DeliveryPrefill {
   loadNumber:       string;
   originCity:       string;
   originState:      string;
@@ -145,7 +162,7 @@ interface Props {
   redirectTo?:  string;
   isAdmin?:     boolean;
   loadId?:      string | null;
-  loadPrefill?: LoadPrefill;
+  loadPrefill?: DeliveryPrefill;
 }
 
 // ── Editor ────────────────────────────────────────────────────────────────────
@@ -154,19 +171,24 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
   const router = useRouter();
   const isEdit = !!quotation;
 
-  // Shipper picker — only relevant when an admin is creating a brand-new,
-  // standalone quotation. Selecting a shipper sets who the quotation belongs
-  // to (profile_id) and autofills the customer fields from that company.
+  // Corporate customer picker — only relevant when an admin is creating a
+  // brand-new, standalone quotation. Selecting one sets who the quotation
+  // belongs to (profile_id) and autofills the customer fields from that company.
   const { data: accountsRes } = useAccounts(
     { limit: 100, isActive: "true" },
     { enabled: !!isAdmin && !isEdit },
   );
-  const shipperAccounts = accountsRes?.data ?? [];
+  const corporateAccounts = accountsRes?.data ?? [];
   const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined);
   const [selectedProfileId, setSelectedProfileId] = useState<string | undefined>(undefined);
 
-  function handleShipperSelect(accountId: string) {
-    const account = shipperAccounts.find((a) => a.account_id === accountId);
+  // Resolves the customer's requested_additional_charge_keys wishlist (a
+  // manual quote request, before it's priced) to display labels.
+  const { data: chargesRes } = useAdditionalCharges();
+  const chargeLabel = (key: string) => chargesRes?.data?.find((c) => c.key === key)?.label ?? key;
+
+  function handleCorporateSelect(accountId: string) {
+    const account = corporateAccounts.find((a) => a.account_id === accountId);
     if (!account) return;
     const admin = account.profiles?.find((p) => p.company_role === "company_admin") ?? account.profiles?.[0];
     setSelectedAccountId(accountId);
@@ -198,8 +220,8 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
     }
     if (loadPrefill && !quotation) {
       return [
-        { description: "Freight Charge", category: "freight_charge" as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 0 },
-        { description: "Fuel Surcharge",  category: "fuel_surcharge"  as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 1 },
+        { description: "Freight Charge", category: "freight_charge" as const, quantity: 1, unit: "delivery", unit_price: 0, amount: 0, sort_order: 0 },
+        { description: "Fuel Surcharge",  category: "fuel_surcharge"  as const, quantity: 1, unit: "delivery", unit_price: 0, amount: 0, sort_order: 1 },
       ];
     }
     return [];
@@ -219,7 +241,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
 
   // City/state/postcode aren't geocodable from a blurred free-text address —
   // only captured when the user picks a suggestion. Needed so an accepted
-  // quotation has everything createShipment requires.
+  // quotation has everything createDelivery requires.
   const [originParts, setOriginParts] = useState({
     city: quotation?.origin_city ?? "", state: quotation?.origin_state ?? "", postcode: quotation?.origin_postcode ?? "",
   });
@@ -289,8 +311,12 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
   const lineItemsRef = useRef<LineItemsTableHandle>(null);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
 
-  function handleApplyPricing(breakdown: PriceBreakdown) {
-    const nextItems: FormItem[] = [
+  // Mirrors decideAutoQuote's item-building on the backend (the auto/instant
+  // quote path) exactly, so a quotation reads the same regardless of which
+  // path priced it: base delivery charge, then weight surcharge if any,
+  // then every additional charge the customer or admin selected.
+  function buildPricedItems(breakdown: PriceBreakdown): FormItem[] {
+    return [
       {
         description: `${breakdown.label} Delivery`,
         category:    "freight_charge",
@@ -300,6 +326,15 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
         amount:      breakdown.deliveryCharge,
         sort_order:  0,
       },
+      ...(breakdown.weightCharge > 0 ? [{
+        description: `Weight Surcharge (${breakdown.weightKg} kg × $${breakdown.weightPerKgRate.toFixed(2)}/kg)`,
+        category:    "accessorial" as const,
+        quantity:    1,
+        unit:        "charge",
+        unit_price:  breakdown.weightCharge,
+        amount:      breakdown.weightCharge,
+        sort_order:  1,
+      }] : []),
       ...breakdown.additionalCharges.map((c, idx) => ({
         description: c.label,
         category:    "accessorial" as const,
@@ -307,16 +342,63 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
         unit:        "charge",
         unit_price:  c.amount,
         amount:      c.amount,
-        sort_order:  idx + 1,
+        sort_order:  idx + 2,
       })),
     ];
-    setItems(nextItems);
+  }
+
+  function handleApplyPricing(breakdown: PriceBreakdown) {
+    const nextItems = buildPricedItems(breakdown);
+    // Imperative — pushes the new rows into the table directly, which then
+    // flows the change back up to our own `items` state through the
+    // table's normal watch→onChange pipeline. Calling setItems() here
+    // ourselves too would just be a second, redundant write racing the
+    // first (see LineItemsTable.setItems for why a reactive prop-diff
+    // approach here caused a render loop).
+    lineItemsRef.current?.setItems(nextItems);
     toast.success("Pricing applied — review the line items below");
   }
 
+  const calculateMut = useCalculatePrice();
+
+  // Auto-price a manual quote request the moment admin opens it, instead of
+  // requiring them to separately open the calculator, re-tick the same
+  // additional-charge boxes the customer already picked, and click Apply.
+  // That extra manual step was the actual bug behind "additional options
+  // show as requested but never end up in the real line items" — it's easy
+  // to forget, or to apply and then edit away by accident, and nothing ever
+  // reconciled the two. Runs once per quotation (only while it still has no
+  // items — admin's own edits afterward are never touched), so what the
+  // customer asked for always becomes real priced line items automatically.
+  useEffect(() => {
+    if (!quotation || quotation.status !== "requested") return;
+    if (items.length > 0) return;
+    if (!quotation.service_type || !quotation.service_level || distanceKm == null) return;
+
+    calculateMut
+      .mutateAsync({
+        serviceType:          quotation.service_type,
+        serviceLevel:         quotation.service_level,
+        distanceKm,
+        weightKg:             quotation.weight_kg ?? undefined,
+        additionalChargeKeys: quotation.requested_additional_charge_keys ?? [],
+      })
+      .then((res) => {
+        lineItemsRef.current?.setItems(buildPricedItems(res.data));
+        toast.success("Priced from the customer's request — review before sending");
+      })
+      .catch(() => {
+        // Silent — admin can still price it manually via the calculator;
+        // no need to block opening the quotation over this.
+      });
+    // Deliberately keyed only on the quotation id — must run once per
+    // quotation, not re-run as distanceKm/items change during editing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotation?.id]);
+
   async function onSubmit(values: QuotationFormValues) {
     if (isAdmin && !isEdit && !selectedProfileId) {
-      toast.error("Please select the shipper this quotation is for");
+      toast.error("Please select the corporate customer this quotation is for");
       return;
     }
 
@@ -380,12 +462,12 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
     } catch (err) { toast.error((err as Error).message); }
   }
 
-  async function handleSendToShipper() {
+  async function handleSendToCorporate() {
     if (!quotation?.id) return;
     try {
       await updateMut.mutateAsync({ status: "sent" } as UpdateQuotationDto);
       form.setValue("status", "sent");
-      toast.success("Quotation sent to shipper");
+      toast.success("Quotation sent to corporate");
     } catch (err) { toast.error((err as Error).message); }
   }
 
@@ -394,7 +476,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
     try {
       await duplicateMut.mutateAsync(quotation.id);
       toast.success("Quotation duplicated");
-      router.push(isAdmin ? "/admin/quotations" : "/shipper/quotations");
+      router.push(isAdmin ? "/admin/quotations" : "/corporate/quotations");
     } catch (err) { toast.error((err as Error).message); }
   }
 
@@ -404,11 +486,11 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
       const res = await convertMut.mutateAsync(quotation.id);
       const newId = (res as any)?.data?.id;
       toast.success("Invoice created from quotation");
-      if (newId) router.push(`${isAdmin ? "/admin" : "/shipper"}/invoices/${newId}`);
+      if (newId) router.push(`${isAdmin ? "/admin" : "/corporate"}/invoices/${newId}`);
     } catch (err) { toast.error((err as Error).message); }
   }
 
-  const backPath   = isAdmin ? "/admin/quotations" : "/shipper/quotations";
+  const backPath   = isAdmin ? "/admin/quotations" : "/corporate/quotations";
   const handleSave = form.handleSubmit(onSubmit);
 
   return (
@@ -425,9 +507,9 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
             {isEdit && (
               <>
                 {quotation?.status === "draft" && (
-                  <Button variant="outline" size="sm" onClick={handleSendToShipper} disabled={updateMut.isPending}
+                  <Button variant="outline" size="sm" onClick={handleSendToCorporate} disabled={updateMut.isPending}
                     className="h-8 rounded-lg border-primary/30 px-3 text-xs gap-1.5 text-primary">
-                    <Send className="h-3.5 w-3.5" /> Send to Shipper
+                    <Send className="h-3.5 w-3.5" /> Send to Corporate
                   </Button>
                 )}
                 <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
@@ -462,14 +544,14 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
           </div>
         </div>
 
-        {/* ── Linked load banner (mobile; sidebar shows on desktop) ── */}
+        {/* ── Linked delivery banner (mobile; sidebar shows on desktop) ── */}
         {(loadPrefill || quotation?.shipments) && (
           <div className="lg:hidden flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Truck className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Linked Load</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Linked Delivery</p>
               <p className="text-sm font-semibold text-foreground">
                 {quotation?.shipments?.load_number ?? loadPrefill?.loadNumber}
               </p>
@@ -482,10 +564,10 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
             </div>
             {(loadId || quotation?.load_id) && (
               <Link
-                href={`/${isAdmin ? "admin" : "shipper"}/loads/${quotation?.load_id ?? loadId}`}
+                href={`/${isAdmin ? "admin" : "corporate"}/deliveries/${quotation?.load_id ?? loadId}`}
                 className="shrink-0 text-xs font-medium text-primary hover:underline"
               >
-                View Load
+                View Delivery
               </Link>
             )}
           </div>
@@ -561,7 +643,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                       ) : (
                         <div className="flex h-10 items-center gap-2">
                           <QuotationStatusBadge status={field.value} />
-                          <span className="text-xs text-muted">Set by the shipper</span>
+                          <span className="text-xs text-muted">Set by the corporate customer</span>
                         </div>
                       )}
                       <FormMessage className="text-xs" />
@@ -577,21 +659,21 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                 {isAdmin && !isEdit && (
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className={fieldLabelCls}>
-                      Shipper <span className="text-destructive">*</span>
+                      Corporate <span className="text-destructive">*</span>
                     </label>
                     <SearchableSelect
                       value={selectedAccountId ?? ""}
-                      onValueChange={handleShipperSelect}
-                      options={shipperAccounts.map((a) => ({
+                      onValueChange={handleCorporateSelect}
+                      options={corporateAccounts.map((a) => ({
                         value: a.account_id,
                         label: a.account_name,
                         icon: <CompanyLogo name={a.account_name} logoUrl={a.logo_url} size="xs" rounded="lg" />,
                       }))}
-                      placeholder="Select the shipper this quotation is for…"
+                      placeholder="Select the corporate customer this quotation is for…"
                       searchPlaceholder="Search shipping companies…"
                       emptyText="No active shipping companies"
                     />
-                    <p className="text-xs text-muted">Selecting a shipper fills in the fields below and links the quotation to them.</p>
+                    <p className="text-xs text-muted">Selecting a corporate customer fills in the fields below and links the quotation to them.</p>
                   </div>
                 )}
 
@@ -701,6 +783,53 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                 />
               </div>
             </Section>
+
+            {/* What the customer requested — read-only, only shown for a manual
+                request that isn't linked to a delivery yet (quote.shipments is
+                only ever set once one exists). Without this, admin had to
+                switch to the read-only details view to see the customer's
+                cargo/weight/pieces/service level before pricing it here. */}
+            {(() => {
+              if (!quotation || quotation.shipments || loadPrefill) return null;
+              const requestedCharges = quotation.requested_additional_charge_keys ?? [];
+              if (!quotation.service_type && !quotation.cargo_description && requestedCharges.length === 0) return null;
+
+              return (
+                <Section title="Customer Requested">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {quotation.service_type && (
+                      <RequestTile icon={<Truck className="h-4 w-4" />} label="Service Type" value={LAST_MILE_SERVICE_TYPE_LABELS[quotation.service_type] ?? quotation.service_type} />
+                    )}
+                    {quotation.service_level && (
+                      <RequestTile icon={<ClipboardList className="h-4 w-4" />} label="Service Level" value={quotation.service_level} />
+                    )}
+                    {quotation.cargo_description && (
+                      <div className="sm:col-span-2">
+                        <RequestTile icon={<Package className="h-4 w-4" />} label="Delivery Description" value={quotation.cargo_description} />
+                      </div>
+                    )}
+                    {quotation.pieces != null && (
+                      <RequestTile icon={<Package className="h-4 w-4" />} label="Number of Packages" value={String(quotation.pieces)} />
+                    )}
+                    {quotation.weight_kg != null && (
+                      <RequestTile icon={<Weight className="h-4 w-4" />} label="Weight" value={`${quotation.weight_kg} kg`} />
+                    )}
+                    {quotation.preferred_delivery_date && (
+                      <RequestTile icon={<Calendar className="h-4 w-4" />} label="Preferred Delivery Date" value={new Date(quotation.preferred_delivery_date).toLocaleDateString("en-CA", { day: "2-digit", month: "short", year: "numeric" })} />
+                    )}
+                    {requestedCharges.length > 0 && (
+                      <div className="sm:col-span-2">
+                        <RequestTile
+                          icon={<Gift className="h-4 w-4" />}
+                          label="Requested Additional Options"
+                          value={requestedCharges.map(chargeLabel).join(", ")}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Section>
+              );
+            })()}
 
             {/* Origin & Destination */}
             <Section title="Origin & Destination">
@@ -852,11 +981,11 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
               onTaxRateChange={(v) => form.setValue("taxRate", v, { shouldValidate: true, shouldDirty: true })}
             />
 
-            {/* Load reference */}
+            {/* Delivery reference */}
             {(quotation?.shipments || loadPrefill) && (
               <div className="overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 shadow-sm">
                 <div className="border-b border-primary/15 px-5 py-4">
-                  <h3 className="text-sm font-semibold text-foreground">Linked Load</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Linked Delivery</h3>
                 </div>
                 <div className="px-5 py-4 text-sm">
                   <p className="font-semibold text-foreground">
@@ -870,10 +999,10 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
                   </p>
                   {(loadId || quotation?.load_id) && (
                     <Link
-                      href={`/${isAdmin ? "admin" : "shipper"}/loads/${quotation?.load_id ?? loadId}`}
+                      href={`/${isAdmin ? "admin" : "corporate"}/deliveries/${quotation?.load_id ?? loadId}`}
                       className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
                     >
-                      View Load →
+                      View Delivery →
                     </Link>
                   )}
                 </div>
@@ -927,6 +1056,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loa
         pickupAddress={form.watch("originAddress") ?? undefined}
         deliveryAddress={form.watch("destinationAddress") ?? undefined}
         onApply={handleApplyPricing}
+        initialSelectedChargeKeys={quotation?.requested_additional_charge_keys}
       />
     </Form>
   );

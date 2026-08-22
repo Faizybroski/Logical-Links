@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { CreateLoadSheet } from "@/components/loads/sheets/create-load-sheet";
+import { CreateDeliverySheet } from "@/components/deliveries/sheets/create-delivery-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +26,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { KpiCard } from "@/components/loads/kpi-card";
-import { DataTable } from "@/components/loads/loads-table";
+import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DataTable } from "@/components/deliveries/deliveries-table";
 import { TableSortHeader } from "@/components/ui/table-sort-header";
 import { TableFilters } from "@/components/ui/table-filters";
 import type { FilterDef } from "@/components/ui/table-filters";
@@ -225,7 +225,7 @@ export default function CorporateCustomersPage() {
   const totalCount  = (res as any)?.meta?.total ?? 0;
 
   const canEditCustomers = usePermission("customers.edit");
-  const canCreateLoad = usePermission("deliveries.create");
+  const canCreateDelivery = usePermission("deliveries.create");
   const [createOpen, setCreateOpen] = useState(false);
 
   function handleSort(key: string, dir: SortDir) {
@@ -358,10 +358,10 @@ export default function CorporateCustomersPage() {
           }
           headerActions={
             <div className="flex items-center gap-2">
-              {canCreateLoad && (
+              {canCreateDelivery && (
                 <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
                   <Plus className="h-4 w-4" />
-                  Create a Load
+                  Create a Delivery
                 </Button>
               )}
               <TableFilters
@@ -377,7 +377,7 @@ export default function CorporateCustomersPage() {
         />
       </div>
 
-      <CreateLoadSheet open={createOpen} onClose={() => setCreateOpen(false)} context="corporate" />
+      <CreateDeliverySheet open={createOpen} onClose={() => setCreateOpen(false)} context="corporate" />
     </div>
   );
 }

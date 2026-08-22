@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 const steps = [
   {
     number: 1,
-    title: "Book Your Shipment",
+    title: "Book Your Delivery",
     description:
       "Simple online booking with instant quotes and flexible scheduling options to fit your timeline.",
     icon: ClipboardList,
@@ -16,14 +16,14 @@ const steps = [
     number: 2,
     title: "We Pick Up",
     description:
-      "Professional drivers collect your shipment with real-time GPS tracking from pickup to delivery.",
+      "Professional drivers collect your delivery with real-time GPS tracking from pickup to delivery.",
     icon: Truck,
   },
   {
     number: 3,
     title: "Delivered with Care",
     description:
-      "Secure delivery with proof of delivery confirmation and end-to-end shipment visibility.",
+      "Secure delivery with proof of delivery confirmation and end-to-end delivery visibility.",
     icon: Package,
   },
 ];
@@ -105,7 +105,7 @@ export default function HowItWorks() {
             href="/register"
             className="px-10 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
-            Start Your Shipment
+            Start Your Delivery
           </Link> */}
         </motion.div>
       </div>

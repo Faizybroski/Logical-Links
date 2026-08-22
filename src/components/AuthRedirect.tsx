@@ -11,7 +11,7 @@ export default function AuthRedirect() {
   useEffect(() => {
     if (!isAuthenticated || !user) return
     if (user.role === 'admin') router.push('/admin/dashboard')
-    else if (user.role === 'shipper') router.push('/shipper/dashboard')
+    else if (user.role === 'corporate') router.push('/corporate/dashboard')
   }, [isAuthenticated, user, router])
 
   return null

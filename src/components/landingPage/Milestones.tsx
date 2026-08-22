@@ -15,12 +15,12 @@ const milestones = [
     number: "02",
     title: "Smart Road Logistics Pioneer",
     description:
-      "Among the first to deploy AI route planning, live GPS tracking, ePOD, and automated dispatch for over-the-road shipments.",
+      "Among the first to deploy AI route planning, live GPS tracking, ePOD, and automated dispatch for over-the-road deliveries.",
     featured: true,
   },
   {
     number: "03",
-    title: "Thousands+ Road Shipments Managed Annually",
+    title: "Thousands+ Road Deliveries Managed Annually",
     description:
       "Safely moving palletized and parcel freight across cities and regions with strong service reliability.",
   },
@@ -28,7 +28,7 @@ const milestones = [
     number: "04",
     title: "Sustainability & Fleet Efficiency",
     description:
-      "Cutting emissions through optimized routing, consolidated loads, modern vehicles, and idle-reduction practices.",
+      "Cutting emissions through optimized routing, consolidated deliveries, modern vehicles, and idle-reduction practices.",
   },
 ];
 
@@ -109,10 +109,10 @@ function FeaturedCard() {
           </p>
           <p className="mb-5 sm:mb-8 text-xs sm:text-base text-white/90 font-light">
             At Logical Links, technology isn&apos;t an add-on—it&apos;s how we deliver
-            faster, safer road shipments.
+            faster, safer road deliveries.
           </p>
           <div className="space-y-2 sm:space-y-3">
-            <FeatureItem icon={<Route className="w-4 h-4 sm:w-5 sm:h-5" />} text="AI-powered route & load optimization." />
+            <FeatureItem icon={<Route className="w-4 h-4 sm:w-5 sm:h-5" />} text="AI-powered route & delivery optimization." />
             <FeatureItem icon={<MapPinned className="w-4 h-4 sm:w-5 sm:h-5" />} text="Real-time GPS tracking & ePOD." />
             <FeatureItem icon={<Truck className="w-4 h-4 sm:w-5 sm:h-5" />} text="Smart dock & yard scheduling." />
             <FeatureItem icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />} text="Predictive ETAs & demand forecasting." />

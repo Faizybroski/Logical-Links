@@ -125,7 +125,7 @@ const fieldLabelCls = "text-[11px] font-semibold uppercase tracking-wide text-mu
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
-export interface LoadPrefill {
+export interface DeliveryPrefill {
   loadNumber:       string;
   originCity:       string;
   originState:      string;
@@ -141,7 +141,7 @@ interface Props {
   redirectTo?:  string;
   isAdmin?:     boolean;
   loadId?:      string | null;
-  loadPrefill?: LoadPrefill;
+  loadPrefill?: DeliveryPrefill;
 }
 
 // ── Editor ────────────────────────────────────────────────────────────────────
@@ -166,8 +166,8 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
     }
     if (loadPrefill && !invoice) {
       return [
-        { description: "Freight Charge", category: "freight_charge" as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 0 },
-        { description: "Fuel Surcharge",  category: "fuel_surcharge"  as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 1 },
+        { description: "Freight Charge", category: "freight_charge" as const, quantity: 1, unit: "delivery", unit_price: 0, amount: 0, sort_order: 0 },
+        { description: "Fuel Surcharge",  category: "fuel_surcharge"  as const, quantity: 1, unit: "delivery", unit_price: 0, amount: 0, sort_order: 1 },
       ];
     }
     return [];
@@ -267,14 +267,14 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
     try {
       await duplicateMut.mutateAsync(invoice.id);
       toast.success("Invoice duplicated");
-      router.push(isAdmin ? "/admin/invoices" : "/shipper/invoices");
+      router.push(isAdmin ? "/admin/invoices" : "/corporate/invoices");
     } catch (err) { toast.error((err as Error).message); }
   }
 
   const fmtCurrency = (n: number) =>
     new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(n);
 
-  const backPath = isAdmin ? "/admin/invoices" : "/shipper/invoices";
+  const backPath = isAdmin ? "/admin/invoices" : "/corporate/invoices";
 
   const handleSave = form.handleSubmit(onSubmit);
 
@@ -319,14 +319,14 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
           </div>
         </div>
 
-        {/* ── Linked load banner (all screens — sidebar duplicate hidden via lg:hidden) ── */}
+        {/* ── Linked delivery banner (all screens — sidebar duplicate hidden via lg:hidden) ── */}
         {(loadPrefill || invoice?.shipments) && (
           <div className="lg:hidden flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Truck className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Linked Load</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Linked Delivery</p>
               <p className="text-sm font-semibold text-foreground">
                 {invoice?.shipments?.load_number ?? loadPrefill?.loadNumber}
               </p>
@@ -339,10 +339,10 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
             </div>
             {(loadId || invoice?.load_id) && (
               <Link
-                href={`/${isAdmin ? "admin" : "shipper"}/loads/${invoice?.load_id ?? loadId}`}
+                href={`/${isAdmin ? "admin" : "corporate"}/deliveries/${invoice?.load_id ?? loadId}`}
                 className="shrink-0 text-xs font-medium text-primary hover:underline"
               >
-                View Load
+                View Delivery
               </Link>
             )}
           </div>
@@ -656,11 +656,11 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
               onAmountPaidChange={(v) => form.setValue("amountPaid", v, { shouldValidate: true, shouldDirty: true })}
             />
 
-            {/* Load reference */}
+            {/* Delivery reference */}
             {(invoice?.shipments || loadPrefill) && (
               <div className="overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 shadow-sm">
                 <div className="border-b border-primary/15 px-5 py-4">
-                  <h3 className="text-sm font-semibold text-foreground">Linked Load</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Linked Delivery</h3>
                 </div>
                 <div className="px-5 py-4 text-sm">
                   <p className="font-semibold text-foreground">
@@ -674,10 +674,10 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
                   </p>
                   {(loadId || invoice?.load_id) && (
                     <Link
-                      href={`/${isAdmin ? "admin" : "shipper"}/loads/${invoice?.load_id ?? loadId}`}
+                      href={`/${isAdmin ? "admin" : "corporate"}/deliveries/${invoice?.load_id ?? loadId}`}
                       className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
                     >
-                      View Load →
+                      View Delivery →
                     </Link>
                   )}
                 </div>

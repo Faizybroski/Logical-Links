@@ -24,7 +24,7 @@ export default function LandingPage() {
       <ScrollToHash />
       <div className="text-center bg-primary text-white py-2 text-xs">
         <span className="underline">Important Note:</span>{" "}
-        <span>if you completely feel secure then transfer your shipment.</span>
+        <span>if you completely feel secure then transfer your delivery.</span>
       </div>
       <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
         <Header />

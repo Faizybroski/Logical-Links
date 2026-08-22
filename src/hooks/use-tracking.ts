@@ -9,7 +9,7 @@ import type {
 
 const KEYS = {
   all:       ["tracking"] as const,
-  byLoad:    (loadId: string, q: ListTrackingEventsQuery) => ["tracking", "load", loadId, q] as const,
+  byDelivery:    (loadId: string, q: ListTrackingEventsQuery) => ["tracking", "delivery", loadId, q] as const,
   detail:    (id: string)    => ["tracking", id] as const,
 };
 
@@ -23,10 +23,10 @@ function buildQuery(params: ListTrackingEventsQuery): string {
 
 export function useTrackingEvents(loadId: string, query: ListTrackingEventsQuery = {}) {
   return useQuery({
-    queryKey: KEYS.byLoad(loadId, query),
+    queryKey: KEYS.byDelivery(loadId, query),
     queryFn:  () =>
       api.get<PaginatedResponse<TrackingEvent>>(
-        `/api/v1/tracking/loads/${loadId}/events${buildQuery(query)}`,
+        `/api/v1/tracking/deliveries/${loadId}/events${buildQuery(query)}`,
       ),
     enabled:   !!loadId,
     staleTime: 30_000,
@@ -49,8 +49,8 @@ export function useCreateTrackingEvent() {
       api.post<ApiResponse<TrackingEvent>>("/api/v1/tracking", dto),
     onSuccess: (_, dto) => {
       qc.invalidateQueries({ queryKey: KEYS.all });
-      // Also invalidate the shipment detail so timeline refreshes
-      qc.invalidateQueries({ queryKey: ["shipments", dto.loadId] });
+      // Also invalidate the delivery detail so timeline refreshes
+      qc.invalidateQueries({ queryKey: ["deliveries", dto.loadId] });
     },
   });
 }

@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { useAccount } from "@/hooks/use-accounts";
 import { useApproveUser } from "@/hooks/use-users";
 import { usePermission } from "@/hooks/use-permission";
-import { ShipperNotesSection } from "@/components/admin/ShipperNotesSection";
+import { CorporateNotesSection } from "@/components/admin/CorporateNotesSection";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { Account, AccountProfile } from "@/types/api.types";
@@ -379,7 +379,7 @@ export default function AdminCorporateCustomerDetailPage({
           </div>
 
           {/* ── Internal Notes ── */}
-          <ShipperNotesSection shipperId={id} />
+          <CorporateNotesSection corporateId={id} />
 
         </div>
       </div>

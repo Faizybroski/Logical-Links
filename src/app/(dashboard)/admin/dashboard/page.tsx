@@ -4,14 +4,14 @@ import Link from 'next/link'
 import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, ShieldAlert, Receipt } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { usePermission } from '@/hooks/use-permission'
-import { useShipments } from '@/hooks/use-shipments'
+import { useDeliveries } from '@/hooks/use-deliveries'
 import {
   useDashboardStats,
   trendToSparkline,
   periodGrowth,
 } from '@/hooks/use-dashboard'
-import { StatusBadge } from '@/components/loads/status-badge'
-import { KpiCard } from '@/components/loads/kpi-card'
+import { StatusBadge } from '@/components/deliveries/status-badge'
+import { KpiCard } from '@/components/deliveries/kpi-card'
 import { CompanyLogo } from '@/components/ui/company-logo'
 
 export default function AdminDashboard() {
@@ -22,14 +22,14 @@ export default function AdminDashboard() {
   const canViewCustomers = usePermission('customers.view')
 
   const { data: statsRes, isLoading: statsLoading } = useDashboardStats({ enabled: canViewReports })
-  const { data: recentRes, isLoading: recentLoading } = useShipments({ limit: 5 }, { enabled: canViewDeliveries })
+  const { data: recentRes, isLoading: recentLoading } = useDeliveries({ limit: 5 }, { enabled: canViewDeliveries })
 
   const stats   = statsRes?.data
   const recent  = recentRes?.data ?? []
 
   const byStatus        = stats?.byStatus
-  const totalLoads      = stats?.total           ?? 0
-  const activeLoads     = stats?.activeLoads     ?? 0
+  const totalDeliveries      = stats?.total           ?? 0
+  const activeDeliveries     = stats?.activeDeliveries     ?? 0
   const invoicesDue     = stats?.invoicesDue     ?? 0
   const pendingApprovals = stats?.pendingApprovals ?? 0
   const trend           = stats?.trend           ?? []
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
   const kpis = [
     {
       title:      'Total Deliveries',
-      value:      totalLoads,
+      value:      totalDeliveries,
       icon:       Package,
       chartColor: '#C89B3C',
       data:       sparkline,
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
     },
     {
       title:      'Active Deliveries',
-      value:      activeLoads,
+      value:      activeDeliveries,
       icon:       Truck,
       chartColor: '#3B82F6',
     },
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
               Welcome back, {user?.fullName ?? 'Admin'}
             </h1>
             <p className="mt-1 text-sm text-muted">
-              Logistics overview &amp; shipment performance.
+              Logistics overview &amp; delivery performance.
             </p>
           </div>
           <div className="rounded-2xl border border-card-border bg-card px-4 py-2.5">
@@ -118,8 +118,8 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-5 py-3">
                 <Clock3 className="h-5 w-5 shrink-0 text-warning" />
                 <p className="text-sm text-foreground">
-                  <strong>{pending}</strong> shipment{pending !== 1 ? 's' : ''} awaiting action.{' '}
-                  <Link href="/admin/loads" className="underline font-medium text-warning">
+                  <strong>{pending}</strong> delivery{pending !== 1 ? 's' : ''} awaiting action.{' '}
+                  <Link href="/admin/deliveries" className="underline font-medium text-warning">
                     Review now
                   </Link>
                 </p>
@@ -147,16 +147,16 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Recent Shipments */}
+        {/* Recent Deliveries */}
         {canViewDeliveries && (
         <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-card-border px-5 py-4">
             <div>
-              <h3 className="text-base font-semibold text-foreground">Recent Shipments</h3>
+              <h3 className="text-base font-semibold text-foreground">Recent Deliveries</h3>
               <p className="mt-0.5 text-xs text-muted">Latest freight activity across all accounts</p>
             </div>
             <Link
-              href="/admin/loads"
+              href="/admin/deliveries"
               className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
             >
               View All
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
             <table className="w-full">
               <thead className="bg-primary">
                 <tr>
-                  {['Load #', 'Company', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
+                  {['Delivery #', 'Company', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
                     <th
                       key={h}
                       className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
@@ -188,14 +188,14 @@ export default function AdminDashboard() {
                 ) : recent.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-10 text-center text-sm text-muted">
-                      No shipments yet.
+                      No deliveries yet.
                     </td>
                   </tr>
                 ) : (
                   recent.map((s) => (
                     <tr key={s.shipment_id} className="border-t border-card-border transition-colors hover:bg-primary/5">
                       <td className="px-5 py-4 text-sm font-semibold text-primary">
-                        <Link href={`/admin/loads/${s.shipment_id}`} className="hover:underline">
+                        <Link href={`/admin/deliveries/${s.shipment_id}`} className="hover:underline">
                           {s.load_number}
                         </Link>
                       </td>

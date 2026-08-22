@@ -7,7 +7,7 @@ import type {
   ListQuotationsQuery,
   QuotationStats,
   AcceptQuotationDto,
-  ResidentialQuoteRequestDto,
+  DecideAutoQuoteDto,
   CorporateQuoteRequestDto,
 } from "@/types/api.types";
 
@@ -61,11 +61,23 @@ export function useCreateQuotation() {
   });
 }
 
-export function useCreateResidentialQuote() {
+// Self-service instant quote — the quotation is only created once the
+// customer decides (dto.decision), directly at its final status. The price
+// preview itself is a separate, non-persisting call: useCalculatePrice.
+export function useDecideResidentialQuote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (dto: ResidentialQuoteRequestDto) =>
-      api.post<ApiResponse<Quotation>>("/api/v1/quotations/residential-quote", dto),
+    mutationFn: (dto: DecideAutoQuoteDto) =>
+      api.post<ApiResponse<Quotation>>("/api/v1/quotations/residential-quote/decide", dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+export function useDecideCorporateQuote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: DecideAutoQuoteDto) =>
+      api.post<ApiResponse<Quotation>>("/api/v1/quotations/corporate-quote/decide", dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   });
 }

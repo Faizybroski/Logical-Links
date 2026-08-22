@@ -109,7 +109,7 @@ export function TrackingEventForm({ loadId, event, open, onClose, onSuccess }: P
               id="tracking-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Shipment departed sorting facility"
+              placeholder="e.g. Delivery departed sorting facility"
               rows={3}
               className="resize-none rounded-lg text-sm"
               maxLength={1000}

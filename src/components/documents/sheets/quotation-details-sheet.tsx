@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   X, Pencil, Copy, Send, FileDown, Loader2,
   User, Building2, Mail, Phone, MapPin, DollarSign, Truck,
-  CheckCircle2, XCircle, ShieldCheck, Calendar,
+  CheckCircle2, XCircle, Calendar,
   Package, Weight, ClipboardList, Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { LineItemsTable } from "@/components/documents/line-items-table";
 import { PricingSummary } from "@/components/documents/pricing-summary";
 import { PdfActionsCard } from "@/components/documents/pdf-actions-card";
 import { TermsAcceptanceModal, TERMS_VERSION } from "@/components/documents/terms-acceptance-modal";
-import { LAST_MILE_SERVICE_TYPE_LABELS } from "@/components/loads/sheets/load-form-fields";
+import { LAST_MILE_SERVICE_TYPE_LABELS } from "@/components/deliveries/sheets/delivery-form-fields";
 import {
   useQuotation,
   useDuplicateQuotation,
@@ -29,6 +29,7 @@ import {
 } from "@/hooks/use-quotations";
 import { useConvertQuotationToInvoice } from "@/hooks/use-invoices";
 import { useRewardsCreditBalance, useApplyRewardsCredit } from "@/hooks/use-rewards-credit";
+import { useAdditionalCharges } from "@/hooks/use-additional-charges";
 import { useAuthStore } from "@/store/auth.store";
 import type { LineItem } from "@/types/api.types";
 
@@ -66,11 +67,16 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
   const router   = useRouter();
   const pathname = usePathname();
   const { user } = useAuthStore();
-  const isShipper = user?.role === "shipper";
+  const isCorporate = user?.role === "corporate";
   const isResidential = user?.role === "residential";
 
   const { data: res, isLoading } = useQuotation(quotationId);
   const quotation = res?.data;
+
+  // Resolves requested_additional_charge_keys (the customer's wishlist on a
+  // manual quote request, before it's priced) to their display labels.
+  const { data: chargesRes } = useAdditionalCharges({ enabled: open });
+  const chargeLabel = (key: string) => chargesRes?.data?.find((c) => c.key === key)?.label ?? key;
 
   const duplicateMut = useDuplicateQuotation();
   const pdfMut       = useGenerateQuotationPdf(quotationId);
@@ -80,7 +86,7 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
 
   const [termsOpen, setTermsOpen] = useState(false);
 
-  const invoiceBasePath = pathname.startsWith("/admin") ? "/admin/invoices" : "/shipper/invoices";
+  const invoiceBasePath = pathname.startsWith("/admin") ? "/admin/invoices" : "/corporate/invoices";
 
   async function handleDuplicate() {
     try {
@@ -122,8 +128,7 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
     } catch (e) { toast.error((e as Error).message); }
   }
 
-  const acceptance = quotation?.quotation_acceptances?.[0];
-  const canActOnQuotation = (isShipper || isResidential) && quotation?.status === "sent";
+  const canActOnQuotation = (isCorporate || isResidential) && quotation?.status === "sent";
 
   const rewardsBalanceQuery = useRewardsCreditBalance({ enabled: isResidential && open });
   const rewardsBalance = rewardsBalanceQuery.data?.data.balance ?? 0;
@@ -161,19 +166,19 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-card-border px-6 py-4 flex-shrink-0">
           <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-            <h2 className="text-lg font-bold text-foreground truncate">
+            <h2 className="text-lg font-bold text-foreground">
               {quotation?.quotation_number ?? "Quotation"}
             </h2>
             {quotation && <QuotationStatusBadge status={quotation.status} />}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-            {!isShipper && (
+            {!isCorporate && !isResidential && (
               <>
-                <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
+                {/* <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateMut.isPending}
                   className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
                   <Copy className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Duplicate</span>
-                </Button>
+                </Button> */}
                 <Button variant="outline" size="sm" onClick={handleConvert} disabled={convertMut.isPending}
                   className="h-8 rounded-lg border-card-border px-2.5 text-xs gap-1">
                   <Send className="h-3.5 w-3.5" />
@@ -186,7 +191,7 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
               {pdfMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{quotation?.pdf_url ? "Regen PDF" : "Gen PDF"}</span>
             </Button>
-            {!isShipper && (
+            {!isCorporate && !isResidential && (
               <Button size="sm" onClick={() => quotation && onEditClick(quotation.id)}
                 disabled={!quotation}
                 className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1">
@@ -235,7 +240,17 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                 </div>
                 <div className="grid gap-3 p-4 sm:grid-cols-2">
                   <InfoTile icon={<User className="h-4 w-4" />} label="Name" value={quotation.customer_name} />
-                  <InfoTile icon={<Building2 className="h-4 w-4" />} label="Company" value={quotation.customer_company} />
+                  <InfoTile
+                    icon={<Building2 className="h-4 w-4" />}
+                    label="Customer Type"
+                    value={
+                      quotation.profiles?.role === "residential"
+                        ? "Residential"
+                        : quotation.customer_company
+                          ? `Corporate — ${quotation.customer_company}`
+                          : "Corporate"
+                    }
+                  />
                   <InfoTile icon={<Mail className="h-4 w-4" />} label="Email" value={quotation.customer_email} />
                   <InfoTile icon={<Phone className="h-4 w-4" />} label="Phone" value={quotation.customer_phone} />
                   {quotation.billing_address && (
@@ -246,70 +261,99 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                 </div>
               </div>
 
-              {/* Shipment Details — pulled from the linked booking, not typed in by hand */}
-              {quotation.shipments ? (
-                <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-                  <div className="border-b border-card-border px-5 py-4">
-                    <h3 className="text-sm font-semibold text-foreground">Shipment Details</h3>
-                    <p className="mt-0.5 text-xs text-muted">What the customer requested, pulled from their booking</p>
-                  </div>
-                  <div className="grid gap-3 p-4 sm:grid-cols-2">
-                    <InfoTile
-                      icon={<Truck className="h-4 w-4" />}
-                      label="Service Type"
-                      value={quotation.shipments.service_type ? (LAST_MILE_SERVICE_TYPE_LABELS[quotation.shipments.service_type] ?? quotation.shipments.service_type) : quotation.shipments.shipment_type}
-                    />
-                    {quotation.shipments.service_level && (
-                      <InfoTile icon={<ClipboardList className="h-4 w-4" />} label="Service Level" value={quotation.shipments.service_level} />
-                    )}
-                    <InfoTile icon={<MapPin className="h-4 w-4" />} label="Pickup Address" value={quotation.shipments.origin_address} />
-                    <InfoTile icon={<MapPin className="h-4 w-4" />} label="Delivery Address" value={quotation.shipments.destination_address} />
-                    <div className="sm:col-span-2">
-                      <InfoTile icon={<Package className="h-4 w-4" />} label="Shipment Description" value={quotation.shipments.cargo_description} />
+              {/* Delivery Details — prefers the linked booking (once one exists), but
+                  a 'requested' quotation has no booking yet, so every field also
+                  falls back to what the customer captured on the quotation itself
+                  (this used to silently drop everything but the two addresses). */}
+              {(() => {
+                const s = quotation.shipments;
+                const serviceType   = s?.service_type ?? quotation.service_type;
+                const serviceLevel  = s?.service_level ?? quotation.service_level;
+                const originAddress = s?.origin_address ?? quotation.origin_address;
+                const destAddress   = s?.destination_address ?? quotation.destination_address;
+                const cargo         = s?.cargo_description ?? quotation.cargo_description;
+                const pieces        = s?.pieces ?? quotation.pieces;
+                const weightKg      = s?.weight_kg ?? quotation.weight_kg;
+                const preferredDate = s?.preferred_delivery_date ?? quotation.preferred_delivery_date;
+                const requestedCharges = quotation.requested_additional_charge_keys ?? [];
+
+                if (!serviceType && !originAddress && !destAddress && !cargo) return null;
+
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+                    <div className="border-b border-card-border px-5 py-4">
+                      <h3 className="text-sm font-semibold text-foreground">Delivery Details</h3>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {s ? "What the customer requested, pulled from their booking" : "What the customer requested"}
+                      </p>
                     </div>
-                    {quotation.shipments.pieces != null && (
-                      <InfoTile icon={<Package className="h-4 w-4" />} label="Number of Packages" value={String(quotation.shipments.pieces)} />
-                    )}
-                    {quotation.shipments.package_type && (
-                      <InfoTile icon={<Package className="h-4 w-4" />} label="Package Type" value={quotation.shipments.package_type} />
-                    )}
-                    {quotation.shipments.weight_kg != null && (
-                      <InfoTile icon={<Weight className="h-4 w-4" />} label="Weight" value={`${quotation.shipments.weight_kg} kg`} />
-                    )}
-                    {quotation.shipments.preferred_delivery_date && (
-                      <InfoTile icon={<Calendar className="h-4 w-4" />} label="Preferred Delivery Date" value={fmtDate(quotation.shipments.preferred_delivery_date)} />
-                    )}
-                    {quotation.shipments.estimated_delivery_date && (
-                      <InfoTile icon={<Calendar className="h-4 w-4" />} label="Estimated Delivery Date" value={fmtDate(quotation.shipments.estimated_delivery_date)} />
-                    )}
-                    {quotation.shipments.special_instructions && (
-                      <div className="sm:col-span-2">
-                        <InfoTile icon={<ClipboardList className="h-4 w-4" />} label="Special Instructions" value={quotation.shipments.special_instructions} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (quotation.origin_address || quotation.destination_address) && (
-                <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-                  <div className="border-b border-card-border px-5 py-4">
-                    <h3 className="text-sm font-semibold text-foreground">Origin & Destination</h3>
-                  </div>
-                  <div className="grid gap-3 p-4 sm:grid-cols-2">
-                    <InfoTile icon={<MapPin className="h-4 w-4" />} label="Origin" value={quotation.origin_address} />
-                    <InfoTile icon={<MapPin className="h-4 w-4" />} label="Destination" value={quotation.destination_address} />
-                    {quotation.distance_km != null && (
-                      <div className="sm:col-span-2">
+                    <div className="grid gap-3 p-4 sm:grid-cols-2">
+                      {serviceType && (
+                        <InfoTile
+                          icon={<Truck className="h-4 w-4" />}
+                          label="Service Type"
+                          value={LAST_MILE_SERVICE_TYPE_LABELS[serviceType] ?? serviceType}
+                        />
+                      )}
+                      {serviceLevel && (
+                        <InfoTile icon={<ClipboardList className="h-4 w-4" />} label="Service Level" value={serviceLevel} />
+                      )}
+                      {originAddress && <InfoTile icon={<MapPin className="h-4 w-4" />} label="Pickup Address" value={originAddress} />}
+                      {destAddress && <InfoTile icon={<MapPin className="h-4 w-4" />} label="Delivery Address" value={destAddress} />}
+                      {!s && quotation.distance_km != null && (
                         <InfoTile icon={<Truck className="h-4 w-4" />} label="Distance" value={`≈ ${quotation.distance_km} km`} />
-                      </div>
-                    )}
+                      )}
+                      {cargo && (
+                        <div className="sm:col-span-2">
+                          <InfoTile icon={<Package className="h-4 w-4" />} label="Delivery Description" value={cargo} />
+                        </div>
+                      )}
+                      {pieces != null && (
+                        <InfoTile icon={<Package className="h-4 w-4" />} label="Number of Packages" value={String(pieces)} />
+                      )}
+                      {s?.package_type && (
+                        <InfoTile icon={<Package className="h-4 w-4" />} label="Package Type" value={s.package_type} />
+                      )}
+                      {weightKg != null && (
+                        <InfoTile icon={<Weight className="h-4 w-4" />} label="Weight" value={`${weightKg} kg`} />
+                      )}
+                      {preferredDate && (
+                        <InfoTile icon={<Calendar className="h-4 w-4" />} label="Preferred Delivery Date" value={fmtDate(preferredDate)} />
+                      )}
+                      {s?.estimated_delivery_date && (
+                        <InfoTile icon={<Calendar className="h-4 w-4" />} label="Estimated Delivery Date" value={fmtDate(s.estimated_delivery_date)} />
+                      )}
+                      {s?.special_instructions && (
+                        <div className="sm:col-span-2">
+                          <InfoTile icon={<ClipboardList className="h-4 w-4" />} label="Special Instructions" value={s.special_instructions} />
+                        </div>
+                      )}
+                      {requestedCharges.length > 0 && (
+                        <div className="sm:col-span-2">
+                          <InfoTile
+                            icon={<Gift className="h-4 w-4" />}
+                            label="Requested Additional Options"
+                            value={requestedCharges.map(chargeLabel).join(", ")}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Line items */}
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Line Items</h3>
-                <LineItemsTable items={items} onChange={() => {}} readOnly />
+                {/* Keyed by id+updated_at: the Sheet this lives in never
+                    unmounts (its children stay in the DOM even while
+                    closed), so without a key change here this table would
+                    lock in whichever quotation's items were loaded the
+                    first time it ever mounted — stale for every quotation
+                    viewed afterward, including this same one after a save
+                    elsewhere refetches it. Read-only, so a full remount on
+                    every data change is safe (nothing to lose). */}
+                <LineItemsTable key={`${quotation.id}-${quotation.updated_at}`} items={items} onChange={() => {}} readOnly />
               </div>
 
               {/* Notes & Terms */}
@@ -390,11 +434,11 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
               {/* PDF card */}
               <PdfActionsCard pdfUrl={quotation.pdf_url ?? null} filename={`quotation-${quotation.quotation_number}.pdf`} />
 
-              {/* Load reference */}
+              {/* Delivery reference */}
               {quotation.shipments && (
                 <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
                   <div className="border-b border-card-border px-5 py-4">
-                    <h3 className="text-sm font-semibold text-foreground">Load Reference</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Delivery Reference</h3>
                   </div>
                   <div className="space-y-3 p-4">
                     <InfoTile
@@ -416,33 +460,6 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                         value={quotation.shipments.profiles.full_name ?? "—"}
                       />
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* Acceptance / decline record — read-only once the decision is made */}
-              {quotation.status === "accepted" && acceptance && (
-                <div className="overflow-hidden rounded-2xl border border-green-200 bg-green-50/60 shadow-sm dark:border-green-800 dark:bg-green-950/40">
-                  <div className="flex items-center gap-2 border-b border-green-200 px-5 py-4 dark:border-green-800">
-                    <CheckCircle2 className="h-4 w-4 text-green-700 dark:text-green-400" />
-                    <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">Quotation Accepted</h3>
-                  </div>
-                  <div className="grid gap-3 p-4 sm:grid-cols-2">
-                    <InfoTile icon={<User className="h-4 w-4" />} label="Accepted By" value={acceptance.full_name ?? "—"} />
-                    <InfoTile icon={<Building2 className="h-4 w-4" />} label="Company" value={acceptance.company_name ?? "—"} />
-                    <InfoTile icon={<Calendar className="h-4 w-4" />} label="Accepted At" value={fmtDate(acceptance.accepted_at)} />
-                    <InfoTile icon={<ShieldCheck className="h-4 w-4" />} label="Terms Version" value={acceptance.terms_version} />
-                  </div>
-                </div>
-              )}
-
-              {quotation.status === "rejected" && (
-                <div className="overflow-hidden rounded-2xl border border-red-200 bg-red-50/60 shadow-sm dark:border-red-800 dark:bg-red-950/40">
-                  <div className="flex items-center gap-2 px-5 py-4">
-                    <XCircle className="h-4 w-4 text-red-700 dark:text-red-400" />
-                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">
-                      Quotation Declined{quotation.declined_at ? ` — ${fmtDate(quotation.declined_at)}` : ""}
-                    </h3>
                   </div>
                 </div>
               )}

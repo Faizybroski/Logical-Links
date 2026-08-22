@@ -27,7 +27,7 @@ const services = [
     title: "RUSH Delivery Solutions",
     items: ["Last-Mile Delivery", "E-Commerce Delivery", "Courier Services"],
     description:
-      "Same-day and last-mile delivery solutions for time-sensitive retail, e-commerce, and healthcare shipments.",
+      "Same-day and last-mile delivery solutions for time-sensitive retail, e-commerce, and healthcare deliveries.",
     image: "/service3.svg",
   },
 ];

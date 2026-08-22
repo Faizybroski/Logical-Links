@@ -12,7 +12,7 @@ const values = [
     icon: ShieldCheck,
     title: "Reliability",
     description:
-      "Every shipment is managed with precision, transparency, and care from pickup to final delivery.",
+      "Every delivery is managed with precision, transparency, and care from pickup to final delivery.",
   },
   {
     icon: Target,
@@ -41,7 +41,7 @@ const pillars = [
     image: "/mission.jpg",
     paragraphs: [
       "Our mission is to redefine logistics and transport by delivering solutions that go beyond movement—building trust through reliability, innovation, and precision. We serve businesses and individuals with services that span freight, courier, medical deliveries, personal shopping, and premium transport.",
-      "With every shipment, every mile, and every client interaction, we are committed to setting new standards of excellence, ensuring safety, speed, and peace of mind always.",
+      "With every delivery, every mile, and every client interaction, we are committed to setting new standards of excellence, ensuring safety, speed, and peace of mind always.",
     ],
   },
   {
@@ -110,14 +110,14 @@ export default function LLCPage() {
           </p>
           <p className="text-gray-600 leading-relaxed mb-4">
             From managing complex logistics and time-sensitive courier
-            shipments to transporting passengers in luxury, delivering
+            deliveries to transporting passengers in luxury, delivering
             life-saving medical supplies, or providing seamless shopping and
             delivery solutions, our promise is simple: we get it
             done—safely, efficiently, and without compromise.
           </p>
           <p className="text-gray-600 leading-relaxed mb-4">
             What makes us different is not only the breadth of our services
-            but the depth of our dedication. Every shipment, every ride, and
+            but the depth of our dedication. Every delivery, every ride, and
             every delivery is managed with precision and care, supported by
             real-time visibility, customized solutions, and a team that
             operates around the clock to meet your needs without excuses.

@@ -20,7 +20,7 @@ const offerStatements = [
   },
   {
     label: "Last-Mile Delivery Focus",
-    text: "Fast and dependable last-mile delivery solutions designed to ensure timely and accurate final-mile fulfilment for every shipment.",
+    text: "Fast and dependable last-mile delivery solutions designed to ensure timely and accurate final-mile fulfilment for every delivery.",
   },
   {
     label: "End-to-End Logistics Coordination",
@@ -32,7 +32,7 @@ const offerStatements = [
   },
   {
     label: "Real-Time Tracking & Transparency",
-    text: "Advanced tracking systems that provide real-time visibility, improved communication, and full shipment transparency from start to finish.",
+    text: "Advanced tracking systems that provide real-time visibility, improved communication, and full delivery transparency from start to finish.",
   },
 ];
 
@@ -156,7 +156,7 @@ export default function Offerings() {
             <p className="mt-6 text-lg leading-relaxed text-muted">
               Our services include logistics coordination, last-mile delivery,
               and specialized transportation solutions tailored to a wide
-              range of operational needs. Every shipment is managed with
+              range of operational needs. Every delivery is managed with
               precision, transparency, and care to ensure consistency and
               dependability across the supply chain.
             </p>

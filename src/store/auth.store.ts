@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware";
 export type AuthUser = {
   id:          string;
   email:       string;
-  role:        "admin" | "shipper" | "residential";
+  role:        "admin" | "corporate" | "residential";
   companyRole: "company_admin" | "employee" | null;
   // Admin roles are DB-driven — see AdminRoleDef in api.types.ts.
   adminRole:   string | null;
@@ -118,7 +118,7 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // Re-sync the session cookie from persisted state on page load.
+        // Re-sync the session cookie from persisted state on page delivery.
         // This ensures the middleware hint stays in sync after a browser restart
         // where the cookie was cleared but localStorage still has valid tokens.
         if (state?.isAuthenticated && state.user) {

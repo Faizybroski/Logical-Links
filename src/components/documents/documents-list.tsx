@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DataTable } from "@/components/loads/loads-table";
+import { DataTable } from "@/components/deliveries/deliveries-table";
 import { TableSortHeader } from "@/components/ui/table-sort-header";
 import {
   QuotationStatusBadge,

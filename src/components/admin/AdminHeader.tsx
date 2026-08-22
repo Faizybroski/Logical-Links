@@ -103,7 +103,7 @@ export default function AdminHeader({
               sm:block
             "
           >
-            Manage shipments, shippers &amp; loads
+            Manage deliveries, corporate customers &amp; deliveries
           </p>
         </div>
       </div>

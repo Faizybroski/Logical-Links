@@ -19,7 +19,7 @@ export default function LandingAuthRedirect() {
   useEffect(() => {
     if (!_hasHydrated) return;
     if (isAuthenticated && user) {
-      const dest = user.role === "admin" ? "/admin/dashboard" : "/shipper/dashboard";
+      const dest = user.role === "admin" ? "/admin/dashboard" : "/corporate/dashboard";
       router.replace(dest);
     }
   }, [isAuthenticated, user, _hasHydrated, router]);

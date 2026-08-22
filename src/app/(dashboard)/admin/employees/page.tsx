@@ -26,8 +26,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { KpiCard } from "@/components/loads/kpi-card";
-import { DataTable } from "@/components/loads/loads-table";
+import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DataTable } from "@/components/deliveries/deliveries-table";
 
 import { useAdminEmployees, useUpdateAdminEmployee } from "@/hooks/use-admin-employees";
 import { useAdminRoles } from "@/hooks/use-admin-role-permissions";

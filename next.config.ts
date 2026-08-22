@@ -30,6 +30,24 @@ const nextConfig: NextConfig = {
   // Strict mode catches subtle React bugs early
   reactStrictMode: true,
 
+  // The "shipper" role/portal was renamed to "corporate", and "loads" was
+  // renamed to "deliveries" — keep any bookmarked or shared old links
+  // working instead of 404ing.
+  async redirects() {
+    return [
+      {
+        source: '/shipper/:path*',
+        destination: '/corporate/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:portal(admin|corporate|residential)/loads/:path*',
+        destination: '/:portal/deliveries/:path*',
+        permanent: true,
+      },
+    ]
+  },
+
   // Standalone output for Docker / EC2 deployment if needed
   // output: 'standalone',
 }

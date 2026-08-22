@@ -37,7 +37,7 @@ import { ADMIN_ROLE_LABELS } from "@/types/api.types";
 
 const baseNavigation = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: null },
-  { label: "Deliveries", href: "/admin/loads", icon: Truck, permission: "deliveries.view" },
+  { label: "Deliveries", href: "/admin/deliveries", icon: Truck, permission: "deliveries.view" },
   { label: "Residential Customers", href: "/admin/residential", icon: UserCircle2, permission: "customers.view" },
   { label: "Corporate Customers", href: "/admin/corporate-customers", icon: Building2, permission: "customers.view" },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion, permission: "quotations.view" },

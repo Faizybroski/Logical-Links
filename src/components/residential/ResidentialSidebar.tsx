@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 
 const NAVIGATION = [
   { label: "Dashboard", href: "/residential/dashboard", icon: LayoutDashboard },
-  { label: "My Deliveries", href: "/residential/loads", icon: Truck },
+  { label: "My Deliveries", href: "/residential/deliveries", icon: Truck },
   { label: "Get a Quote", href: "/residential/quotations", icon: FileQuestion },
   { label: "Alerts", href: "/residential/notifications", icon: Bell },
   { label: "Support", href: "/residential/support", icon: LifeBuoy },

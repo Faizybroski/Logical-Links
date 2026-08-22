@@ -1,6 +1,6 @@
 // ── Shared ────────────────────────────────────────────────────────────────────
 
-export type UserRole    = "admin" | "shipper" | "residential";
+export type UserRole    = "admin" | "corporate" | "residential";
 export type CompanyRole = "company_admin" | "employee" | null;
 // Admin roles are DB-driven (admin_roles table) — CEO/VP/Manager/Assistant/Driver
 // ship as seeded system rows, but the CEO can add arbitrary custom roles from the
@@ -36,13 +36,13 @@ export type MfaChallengeRequired = {
 
 export type LoginResult = AuthTokens | MfaChallengeRequired;
 
-// ── Accounts (Shippers) ───────────────────────────────────────────────────────
+// ── Accounts (Corporates) ───────────────────────────────────────────────────────
 
 export type AccountProfile = {
   id: string;
   full_name: string | null;
   phone: string | null;
-  role?: "admin" | "shipper";
+  role?: "admin" | "corporate";
   company_role: "company_admin" | "employee" | null;
   is_active?: boolean;
   is_approved: boolean;
@@ -227,9 +227,9 @@ export type PermissionsMatrixResponse = {
   roles:       AdminRoleDef[];
 };
 
-// ── Shipments (Loads) ─────────────────────────────────────────────────────────
+// ── Deliveries (Deliveries) ─────────────────────────────────────────────────────────
 
-export type ShipmentStatus =
+export type DeliveryStatus =
   | "pending"
   | "confirmed"
   | "assigned"
@@ -239,9 +239,9 @@ export type ShipmentStatus =
   | "delivered"
   | "cancelled";
 
-export type ShipmentType = "freight" | "last_mile";
+export type DeliveryType = "freight" | "last_mile";
 
-export const SHIPMENT_STATUS_LABELS: Record<ShipmentStatus, string> = {
+export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
   pending:          "Pending",
   confirmed:        "Confirmed",
   assigned:         "Assigned",
@@ -252,7 +252,7 @@ export const SHIPMENT_STATUS_LABELS: Record<ShipmentStatus, string> = {
   cancelled:        "Cancelled",
 };
 
-export const SHIPMENT_STATUS_COLORS: Record<ShipmentStatus, string> = {
+export const DELIVERY_STATUS_COLORS: Record<DeliveryStatus, string> = {
   pending:          "bg-yellow-50 text-yellow-700 border-yellow-200",
   confirmed:        "bg-blue-50 text-blue-700 border-blue-200",
   assigned:         "bg-violet-50 text-violet-700 border-violet-200",
@@ -263,10 +263,10 @@ export const SHIPMENT_STATUS_COLORS: Record<ShipmentStatus, string> = {
   cancelled:        "bg-red-50 text-red-700 border-red-200",
 };
 
-export type Shipment = {
+export type Delivery = {
   shipment_id:          string;
   load_number:          string;
-  shipment_type:        ShipmentType;
+  shipment_type:        DeliveryType;
   /** Specific last-mile service (courier/medical/grocery/etc) when shipment_type is 'last_mile'. */
   service_type:         string | null;
   /** e.g. Standard/Express/Same-Day/Priority — distinct from service_type. */
@@ -275,8 +275,7 @@ export type Shipment = {
   /** The customer's requested delivery date — distinct from estimated_delivery_date (the ops estimate). */
   preferred_delivery_date: string | null;
   account_id:           string | null;
-  assigned_employee_id: string | null;
-  status:               ShipmentStatus;
+  status:               DeliveryStatus;
 
   origin_address: string;
   origin_city: string;
@@ -310,26 +309,26 @@ export type Shipment = {
   reference_number: string | null;
 
   created_by: string;
-  /** 'shipper' = created by a shipper user; assignment is permanently locked. null = pre-migration row (treated as admin-created). */
-  created_by_role: 'admin' | 'shipper' | null;
+  /** 'corporate' = created by a corporate user; assignment is permanently locked. null = pre-migration row (treated as admin-created). */
+  created_by_role: 'admin' | 'corporate' | null;
   created_at: string;
   updated_at: string;
 
   // Joined (Supabase uses the table name as the relation key)
   accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null; logo_url?: string | null };
-  /** Profile of the user who created this load (joined via profiles!created_by). */
-  profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper'; avatar_url?: string | null } | null;
-  /** Profile of the assigned driver (joined via profiles!assigned_employee_id) — corporate customers have no employees of their own, so this is always a Logical Links driver. */
-  employee?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
+  /** Profile of the user who created this delivery (joined via profiles!created_by). */
+  profiles?: { id: string; full_name: string | null; role: 'admin' | 'corporate'; avatar_url?: string | null } | null;
+  /** Everyone currently assigned to this delivery (many-to-many — e.g. a driver AND a dispatcher at once). Always Logical Links staff; corporate customers never operate a delivery themselves. */
+  assignments?: { employee_id: string; assigned_at: string; employee: { id: string; full_name: string | null; avatar_url?: string | null; admin_role?: string | null } }[];
   /** UUID of the residential customer this delivery belongs to (mutually exclusive with account_id). */
   customer_id?: string | null;
   /** Profile of the residential customer (joined via profiles!customer_id). */
   customer?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
 };
 
-export type CreateShipmentDto = {
-  shipmentType?: ShipmentType;
-  /** Specific last-mile service (courier/medical/grocery/etc) when shipmentType is 'last_mile'. */
+export type CreateDeliveryDto = {
+  deliveryType?: DeliveryType;
+  /** Specific last-mile service (courier/medical/grocery/etc) when deliveryType is 'last_mile'. */
   serviceType?: string;
   /** e.g. Standard/Express/Same-Day/Priority — distinct from serviceType. */
   serviceLevel?: string;
@@ -364,35 +363,32 @@ export type CreateShipmentDto = {
   // Confirmation number is auto-generated (LLC-####) by the DB — not accepted on create.
 };
 
-export type UpdateShipmentDto = Partial<Omit<CreateShipmentDto, "shipmentType" | "accountId">> & {
+export type UpdateDeliveryDto = Partial<Omit<CreateDeliveryDto, "deliveryType" | "accountId">> & {
   /** Confirmation number can be corrected post-creation. */
   referenceNumber?: string;
 };
 
-export type UpdateShipmentStatusDto = {
-  // Not narrowed to ShipmentStatus — the backend schema (and the
+export type UpdateDeliveryStatusDto = {
+  // Not narrowed to DeliveryStatus — the backend schema (and the
   // StatusCombobox UI this feeds) intentionally accept any custom status
   // slug, not just the fixed lifecycle enum.
   status: string;
   reason?: string;
 };
 
-// Admin assigns a load to a Shipping Company by accountId.
-export type AssignShipmentDto = {
-  accountId: string;
+// Admin assigns a delivery internally to one or more Logical Links staff at
+// once (any active employee, not role-restricted) — replaces the whole
+// assignee set; pass an empty array to unassign everyone.
+export type AssignEmployeesDto = {
+  employeeIds: string[];
 };
 
-// Platform admin assigns (or unassigns) a delivery to a Logical Links driver.
-export type AssignEmployeeDto = {
-  employeeId: string | null;
-};
-
-export type ListShipmentsQuery = {
+export type ListDeliveriesQuery = {
   page?:          number;
   limit?:         number;
   status?:        string;
   statuses?:      string; // comma-separated list, takes precedence over status
-  shipmentType?:  ShipmentType;
+  deliveryType?:  DeliveryType;
   accountId?:     string;
   customerId?:    string;
   search?:        string;
@@ -404,11 +400,11 @@ export type ListShipmentsQuery = {
   sortDir?:       "asc" | "desc";
 };
 
-// ── Shipper Notes (internal / admin-only) ─────────────────────────────────────
+// ── Corporate Notes (internal / admin-only) ─────────────────────────────────────
 
-export type ShipperNote = {
+export type CorporateNote = {
   note_id: string;
-  entity_type: "shipper" | "account";
+  entity_type: "corporate" | "account";
   entity_id: string;
   content: string;
   is_internal: boolean;
@@ -420,11 +416,11 @@ export type ShipperNote = {
   profiles: { id: string; full_name: string | null; avatar_url?: string | null } | null;
 };
 
-export type CreateShipperNoteDto = {
+export type CreateCorporateNoteDto = {
   content: string;
 };
 
-export type UpdateShipperNoteDto = {
+export type UpdateCorporateNoteDto = {
   content: string;
 };
 
@@ -554,6 +550,8 @@ export type Quotation = {
   weight_kg:           number | null;
   pieces:              number | null;
   preferred_delivery_date: string | null;
+  /** Corporate manual-request wishlist — additional charges the customer asked for; admin pre-ticks these when pricing. */
+  requested_additional_charge_keys: string[];
   pdf_url:          string | null;
   accepted_at:      string | null;
   declined_at:      string | null;
@@ -561,7 +559,7 @@ export type Quotation = {
   created_at:       string;
   updated_at:       string;
   deleted_at:       string | null;
-  profiles?:        { id: string; full_name: string | null; email: string; avatar_url?: string | null } | null;
+  profiles?:        { id: string; full_name: string | null; email: string; avatar_url?: string | null; role?: "admin" | "corporate" | "residential" } | null;
   shipments?: {
     shipment_id: string;
     load_number: string;
@@ -569,7 +567,7 @@ export type Quotation = {
     destination_city: string;
     account_id: string | null;
     assigned_employee_id: string | null;
-    shipment_type: ShipmentType;
+    shipment_type: DeliveryType;
     service_type: string | null;
     service_level: string | null;
     origin_address: string;
@@ -672,12 +670,28 @@ type QuoteRequestCommonFields = {
   notes?:             string | null;
 };
 
-export type ResidentialQuoteRequestDto = QuoteRequestCommonFields & {
+// Shared by both self-service "instant quote" flows (residential — always;
+// corporate — the "same as residential" option instead of requesting a
+// manual quote). The price-preview step is just POST /pricing/calculate
+// (no DB write) — this shape is only posted once the customer decides.
+export type AutoQuoteRequestFields = QuoteRequestCommonFields & {
   distanceKm:           number;
   additionalChargeKeys?: string[];
 };
 
-export type CorporateQuoteRequestDto = QuoteRequestCommonFields;
+export type ResidentialQuoteRequestDto = AutoQuoteRequestFields;
+
+export type DecideAutoQuoteDto = AutoQuoteRequestFields & {
+  decision:     "accept" | "decline";
+  termsVersion?: string;
+  acknowledged?: boolean;
+};
+
+// Corporate manual quote request — no price yet; admin prices it
+// afterward. additionalChargeKeys is a wishlist only, pre-ticked for admin.
+export type CorporateQuoteRequestDto = QuoteRequestCommonFields & {
+  additionalChargeKeys?: string[];
+};
 
 export type ListQuotationsQuery = {
   page?:           number;
@@ -749,7 +763,7 @@ export type Invoice = {
   created_at:            string;
   updated_at:            string;
   deleted_at:            string | null;
-  profiles?:             { id: string; full_name: string | null; email: string; avatar_url?: string | null } | null;
+  profiles?:             { id: string; full_name: string | null; email: string; avatar_url?: string | null; role?: "admin" | "corporate" | "residential" } | null;
   shipments?: {
     shipment_id: string;
     load_number: string;
@@ -1060,7 +1074,7 @@ export type ListStatusesQuery = {
   sortDir?:  "asc" | "desc";
 };
 
-// ── Load Tracking Events ──────────────────────────────────────────────────────
+// ── Delivery Tracking Events ──────────────────────────────────────────────────────
 
 export type TrackingStatus =
   | "created"

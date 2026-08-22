@@ -67,7 +67,7 @@ const formSchema = z.object({
 });
 
 type FormSchema = z.infer<typeof formSchema>;
-type FormItem   = Omit<LineItem, "id" | "created_at" | "updated_at">;
+export type FormItem = Omit<LineItem, "id" | "created_at" | "updated_at">;
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -148,17 +148,16 @@ function SortableRow({
       <div className="px-4 py-3">
         {/* ── Row 1: drag handle · description · actions ── */}
         <div className="flex items-start gap-2">
-          <span
-            {...(readOnly ? {} : { ...attributes, ...listeners })}
-            className={cn(
-              "mt-2.5 flex shrink-0 items-center justify-center",
-              readOnly
-                ? "cursor-default text-muted-light/20"
-                : "cursor-grab active:cursor-grabbing text-muted-light hover:text-primary",
-            )}
-          >
-            <GripVertical className="h-4 w-4" />
-          </span>
+          {/* No drag handle in read-only view — nothing to reorder there. */}
+          {!readOnly && (
+            <span
+              {...attributes}
+              {...listeners}
+              className="mt-2.5 flex shrink-0 cursor-grab items-center justify-center text-muted-light hover:text-primary active:cursor-grabbing"
+            >
+              <GripVertical className="h-4 w-4" />
+            </span>
+          )}
 
           {/* Description */}
           <div className="flex-1 min-w-0">
@@ -210,7 +209,7 @@ function SortableRow({
         </div>
 
         {/* ── Row 2: category · qty · unit · unit price · amount ── */}
-        <div className={cn(readOnly ? "" : "mt-2 ml-6 grid grid-cols-2 gap-2 min-w-0 sm:flex sm:flex-wrap", "col-span-2 sm:col-span-1")}>
+        <div className={cn("mt-2 grid grid-cols-2 gap-2 min-w-0 sm:flex sm:flex-wrap", !readOnly && "ml-6")}>
 
           {/* Category */}
           {readOnly ? (
@@ -365,6 +364,19 @@ export interface LineItemsTableHandle {
   validate: () => Promise<boolean>;
   /** Focuses and scrolls to the first invalid field after a failed validate() call. */
   focusFirstError: () => void;
+  /**
+   * Imperatively replaces every row — for a caller that needs to push a
+   * fresh set of items in from outside (e.g. the Pricing Calculator's
+   * "Apply to Quotation"). The table's own internal react-hook-form state
+   * is the source of truth for what's rendered, and it only reads the
+   * `items` prop once at mount (react-hook-form `defaultValues` semantics),
+   * so changing the prop after mount does nothing on its own — this is the
+   * supported way to force new rows in from outside. Deliberately NOT a
+   * reactive "diff the items prop and reset" effect: that fights with this
+   * form's own watch→onChange→parent-setState→prop-changes loop and can
+   * blow up into "Maximum update depth exceeded" (confirmed the hard way).
+   */
+  setItems: (items: FormItem[]) => void;
 }
 
 export interface LineItemsTableProps {
@@ -392,6 +404,7 @@ export const LineItemsTable = forwardRef<LineItemsTableHandle, LineItemsTablePro
 
     useImperativeHandle(ref, () => ({
       validate: () => form.trigger("items"),
+      setItems: (next) => form.reset({ items: next }),
       focusFirstError: () => {
         const errors = form.formState.errors.items;
         if (!errors) return;
@@ -424,7 +437,11 @@ export const LineItemsTable = forwardRef<LineItemsTableHandle, LineItemsTablePro
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
 
-    // Sync form state up to the parent (for subtotal calculations)
+    // Sync form state up to the parent (for subtotal calculations). This
+    // also fires on the imperative setItems()'s form.reset() above, since
+    // reset() notifies watchers same as any other change — so pushing new
+    // rows in via the ref naturally flows back up to the parent's items
+    // state through this one pipeline, no separate down-sync needed.
     useEffect(() => {
       const subscription = form.watch((values) => {
         onChangeRef.current((values.items as FormItem[]) ?? []);

@@ -5,7 +5,18 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-2xl border border-transparent bg-clip-padding text-sm  whitespace-nowrap transition-all outline-none select-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 font-semibold text-sidebar duration-200  disabled:cursor-not-allowed disabled:opacity-60",
+  // text-foreground (not text-sidebar) as the base — text-sidebar is a fixed
+  // dark navy that stays dark in both themes, correct only for buttons sat
+  // on the fixed-gold `primary` background (see the `default` variant
+  // below, and the many call sites that explicitly pair `bg-primary
+  // text-sidebar` for their own primary actions). Every other variant
+  // (outline, ghost, ...) sits on a background that DOES flip with the
+  // theme, so its text needs to flip too — text-foreground already does
+  // that (see globals.css). Leaving text-sidebar as the base meant
+  // outline/ghost buttons — used throughout sheet headers — silently
+  // inherited a near-black navy in dark mode, nearly invisible against the
+  // dark background.
+  "group/button inline-flex shrink-0 items-center justify-center rounded-2xl border border-transparent bg-clip-padding text-sm  whitespace-nowrap transition-all outline-none select-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 font-semibold text-foreground duration-200  disabled:cursor-not-allowed disabled:opacity-60",
   {
     variants: {
       variant: {

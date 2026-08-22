@@ -3,23 +3,23 @@
 import Link from 'next/link'
 import { ArrowUpRight, Package, Truck, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
-import { useShipments } from '@/hooks/use-shipments'
+import { useDeliveries } from '@/hooks/use-deliveries'
 import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
-import { StatusBadge } from '@/components/loads/status-badge'
-import { KpiCard } from '@/components/loads/kpi-card'
+import { StatusBadge } from '@/components/deliveries/status-badge'
+import { KpiCard } from '@/components/deliveries/kpi-card'
 
 export default function ResidentialDashboard() {
   const user = useAuthStore((s) => s.user)
 
   const { data: statsRes, isLoading: statsLoading } = useDashboardStats()
-  const { data: recentRes, isLoading: recentLoading } = useShipments({ limit: 5 })
+  const { data: recentRes, isLoading: recentLoading } = useDeliveries({ limit: 5 })
 
   const stats  = statsRes?.data
   const recent = recentRes?.data ?? []
 
   const byStatus    = stats?.byStatus
-  const totalLoads  = stats?.total       ?? 0
-  const activeLoads = stats?.activeLoads ?? 0
+  const totalDeliveries  = stats?.total       ?? 0
+  const activeDeliveries = stats?.activeDeliveries ?? 0
   const delivered   = byStatus?.delivered ?? 0
   const cancelled   = byStatus?.cancelled ?? 0
   const trend       = stats?.trend ?? []
@@ -29,7 +29,7 @@ export default function ResidentialDashboard() {
   const kpis = [
     {
       title:      'Total Deliveries',
-      value:      totalLoads,
+      value:      totalDeliveries,
       icon:       Package,
       chartColor: '#C89B3C',
       data:       sparkline,
@@ -40,7 +40,7 @@ export default function ResidentialDashboard() {
     },
     {
       title:      'Active',
-      value:      activeLoads,
+      value:      activeDeliveries,
       icon:       Truck,
       chartColor: '#3B82F6',
       isLoading:  statsLoading,
@@ -96,7 +96,7 @@ export default function ResidentialDashboard() {
               <p className="mt-0.5 text-xs text-muted">Your latest delivery activity</p>
             </div>
             <Link
-              href="/residential/loads"
+              href="/residential/deliveries"
               className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
             >
               View All
@@ -108,7 +108,7 @@ export default function ResidentialDashboard() {
             <table className="w-full">
               <thead className="bg-primary">
                 <tr>
-                  {['Load #', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
+                  {['Delivery #', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
                     <th
                       key={h}
                       className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
@@ -168,7 +168,7 @@ export default function ResidentialDashboard() {
             <AlertTriangle className="h-5 w-5 shrink-0 text-danger" />
             <p className="text-sm text-danger">
               You have <strong>{cancelled}</strong> cancelled {cancelled !== 1 ? 'deliveries' : 'delivery'}.{' '}
-              <Link href="/residential/loads" className="underline">
+              <Link href="/residential/deliveries" className="underline">
                 Review them
               </Link>
             </p>

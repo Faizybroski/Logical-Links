@@ -9,18 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { TermsAcceptanceModal, TERMS_VERSION } from "@/components/documents/terms-acceptance-modal";
 import { QuotationStatusBadge } from "@/components/documents/document-status-badge";
+import { QuotationDetailsSheet } from "@/components/documents/sheets/quotation-details-sheet";
 
 import { geocodeAddressFull, haversineDistanceKm, type AddressSuggestion, type Coordinates } from "@/lib/utils/geocode";
 import { dateInputValueToIso } from "@/lib/utils/format-date";
 import { useDeliveryRates } from "@/hooks/use-delivery-rates";
 import { useServiceLevels } from "@/hooks/use-service-levels";
+import { useAdditionalCharges } from "@/hooks/use-additional-charges";
+import { useCalculatePrice } from "@/hooks/use-pricing";
 import { useMe } from "@/hooks/use-users";
-import { useCreateResidentialQuote, useAcceptQuotation, useQuotations } from "@/hooks/use-quotations";
-import type { Quotation, ResidentialQuoteRequestDto } from "@/types/api.types";
+import { useDecideResidentialQuote, useQuotations } from "@/hooks/use-quotations";
+import type { DecideAutoQuoteDto, PriceBreakdown } from "@/types/api.types";
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-CA", { day: "2-digit", month: "short", year: "numeric" });
@@ -46,6 +50,8 @@ export default function ResidentialQuotationsPage() {
   const rates = (ratesRes?.data ?? []).filter((r) => r.is_active);
   const { data: levelsRes } = useServiceLevels();
   const levels = (levelsRes?.data ?? []).filter((l) => l.is_active);
+  const { data: chargesRes } = useAdditionalCharges();
+  const charges = (chargesRes?.data ?? []).filter((c) => c.is_active);
 
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -59,13 +65,18 @@ export default function ResidentialQuotationsPage() {
   const [weightKg, setWeightKg] = useState("");
   const [preferredDeliveryDate, setPreferredDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedCharges, setSelectedCharges] = useState<Set<string>>(new Set());
   const [geocoding, setGeocoding] = useState<"origin" | "destination" | null>(null);
 
-  const [quote, setQuote] = useState<Quotation | null>(null);
+  // Nothing is persisted until the customer decides — this is just the
+  // calculated price preview (POST /pricing/calculate, no DB write).
+  const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
+  const [decidedStatus, setDecidedStatus] = useState<"accepted" | "rejected" | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
 
-  const createMut = useCreateResidentialQuote();
-  const acceptMut = useAcceptQuotation(quote?.id ?? "");
+  const calculateMut = useCalculatePrice();
+  const decideMut = useDecideResidentialQuote();
   const { data: pastQuotesRes, isLoading: pastQuotesLoading } = useQuotations({ sortBy: "created_at", sortDir: "desc", limit: 10 });
   const pastQuotes = pastQuotesRes?.data ?? [];
 
@@ -116,6 +127,16 @@ export default function ResidentialQuotationsPage() {
     });
   }
 
+  function toggleCharge(key: string) {
+    setSelectedCharges((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+    setBreakdown(null);
+  }
+
   // Plain-language reasons the button is disabled — shown to the user instead
   // of a silently greyed-out button with no explanation.
   const missingReasons: string[] = [];
@@ -146,39 +167,59 @@ export default function ResidentialQuotationsPage() {
 
   async function handleGetQuote() {
     if (!canSubmit || distanceKm == null) return;
-    const dto: ResidentialQuoteRequestDto = {
-      customerName: customerName.trim(), customerEmail: customerEmail.trim(), customerPhone: customerPhone.trim(),
-      originAddress: origin.address, originLat: origin.coords!.lat, originLng: origin.coords!.lng,
-      originCity: origin.city, originState: origin.state, originPostcode: origin.postcode,
-      destinationAddress: destination.address, destinationLat: destination.coords!.lat, destinationLng: destination.coords!.lng,
-      destinationCity: destination.city, destinationState: destination.state, destinationPostcode: destination.postcode,
-      distanceKm, serviceType, serviceLevel, cargoDescription: cargoDescription.trim(),
-      pieces: Number(pieces), weightKg: Number(weightKg),
-      preferredDeliveryDate: dateInputValueToIso(preferredDeliveryDate)!,
-      notes: notes.trim() || null,
-    };
     try {
-      const res = await createMut.mutateAsync(dto);
-      setQuote(res.data);
-      toast.success("Here's your quote");
+      const res = await calculateMut.mutateAsync({
+        serviceType, serviceLevel, distanceKm, weightKg: Number(weightKg),
+        additionalChargeKeys: Array.from(selectedCharges),
+      });
+      setBreakdown(res.data);
+      setDecidedStatus(null);
     } catch (err) {
       toast.error((err as Error).message);
     }
   }
 
+  function buildDecideDto(decision: "accept" | "decline"): DecideAutoQuoteDto {
+    return {
+      customerName: customerName.trim(), customerEmail: customerEmail.trim(), customerPhone: customerPhone.trim(),
+      originAddress: origin.address, originLat: origin.coords!.lat, originLng: origin.coords!.lng,
+      originCity: origin.city, originState: origin.state, originPostcode: origin.postcode,
+      destinationAddress: destination.address, destinationLat: destination.coords!.lat, destinationLng: destination.coords!.lng,
+      destinationCity: destination.city, destinationState: destination.state, destinationPostcode: destination.postcode,
+      distanceKm: distanceKm as number, serviceType, serviceLevel, cargoDescription: cargoDescription.trim(),
+      pieces: Number(pieces), weightKg: Number(weightKg),
+      preferredDeliveryDate: dateInputValueToIso(preferredDeliveryDate)!,
+      notes: notes.trim() || null,
+      additionalChargeKeys: Array.from(selectedCharges),
+      decision,
+      ...(decision === "accept" ? { termsVersion: TERMS_VERSION, acknowledged: true } : {}),
+    };
+  }
+
   async function handleConfirmAccept() {
     try {
-      await acceptMut.mutateAsync({ termsVersion: TERMS_VERSION, acknowledged: true });
+      await decideMut.mutateAsync(buildDecideDto("accept"));
       toast.success("Quote accepted — your delivery has been created");
       setTermsOpen(false);
-      router.push("/residential/loads");
+      router.push("/residential/deliveries");
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  async function handleDecline() {
+    try {
+      await decideMut.mutateAsync(buildDecideDto("decline"));
+      toast.success("Quote declined");
+      setDecidedStatus("rejected");
     } catch (err) {
       toast.error((err as Error).message);
     }
   }
 
   function startOver() {
-    setQuote(null);
+    setBreakdown(null);
+    setDecidedStatus(null);
     setOrigin(EMPTY_ADDRESS);
     setDestination(EMPTY_ADDRESS);
     setServiceType("");
@@ -187,11 +228,16 @@ export default function ResidentialQuotationsPage() {
     setWeightKg("");
     setPreferredDeliveryDate("");
     setNotes("");
+    setSelectedCharges(new Set());
   }
 
   // Zero-amount lines (e.g. a weight surcharge that priced to $0) are omitted —
   // they add noise without adding information for the customer.
-  const priceItems = (quote?.quotation_items ?? []).filter((item) => item.amount !== 0);
+  const priceItems = breakdown ? [
+    { key: "delivery", label: `${breakdown.label} Delivery (${breakdown.serviceLevelLabel})`, amount: breakdown.deliveryCharge },
+    ...(breakdown.weightCharge > 0 ? [{ key: "weight", label: `Weight Surcharge (${breakdown.weightKg} kg × $${breakdown.weightPerKgRate.toFixed(2)}/kg)`, amount: breakdown.weightCharge }] : []),
+    ...breakdown.additionalCharges.map((c) => ({ key: c.key, label: c.label, amount: c.amount })),
+  ].filter((item) => item.amount !== 0) : [];
 
   return (
     <div className="min-h-screen bg-background p-6 lg:p-2">
@@ -266,7 +312,7 @@ export default function ResidentialQuotationsPage() {
                 <Label>Service Type</Label>
                 <SearchableSelect
                   value={serviceType}
-                  onValueChange={setServiceType}
+                  onValueChange={(v) => { setServiceType(v); setBreakdown(null); }}
                   options={rates.map((r) => ({ value: r.service_type, label: r.label }))}
                   placeholder="What kind of delivery is this?"
                   searchPlaceholder="Search…"
@@ -276,7 +322,7 @@ export default function ResidentialQuotationsPage() {
                 <Label>Service Level</Label>
                 <SearchableSelect
                   value={serviceLevel}
-                  onValueChange={setServiceLevel}
+                  onValueChange={(v) => { setServiceLevel(v); setBreakdown(null); }}
                   options={levels.map((l) => ({ value: l.slug, label: l.label }))}
                   placeholder="How fast do you need it?"
                   searchPlaceholder="Search…"
@@ -298,11 +344,11 @@ export default function ResidentialQuotationsPage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label>Number of Packages</Label>
-                <Input type="number" min={1} step={1} value={pieces} onChange={(e) => setPieces(e.target.value)} className="rounded-lg" />
+                <Input type="number" min={1} step={1} value={pieces} onChange={(e) => { setPieces(e.target.value); setBreakdown(null); }} className="rounded-lg" />
               </div>
               <div className="space-y-1.5">
                 <Label>Weight (kg)</Label>
-                <Input type="number" min={0.1} step={0.1} value={weightKg} onChange={(e) => setWeightKg(e.target.value)} className="rounded-lg" />
+                <Input type="number" min={0.1} step={0.1} value={weightKg} onChange={(e) => { setWeightKg(e.target.value); setBreakdown(null); }} className="rounded-lg" />
               </div>
               <div className="space-y-1.5">
                 <Label>Preferred Delivery Date</Label>
@@ -319,6 +365,26 @@ export default function ResidentialQuotationsPage() {
                 rows={2}
                 className="resize-none"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Additional Options</Label>
+              <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-card-border p-3">
+                {charges.map((c) => (
+                  <label key={c.key} className="flex items-center gap-2 text-sm text-foreground">
+                    <Checkbox
+                      checked={selectedCharges.has(c.key)}
+                      onCheckedChange={() => toggleCharge(c.key)}
+                      disabled={c.amount == null}
+                    />
+                    <span className="flex-1">{c.label}</span>
+                    <span className="text-xs text-muted">
+                      {c.amount != null ? `$${c.amount.toFixed(2)}` : "priced separately"}
+                    </span>
+                  </label>
+                ))}
+                {charges.length === 0 && <p className="text-xs italic text-muted">No optional extras available.</p>}
+              </div>
             </div>
 
             {missingReasons.length > 0 && (
@@ -338,16 +404,16 @@ export default function ResidentialQuotationsPage() {
             <Button
               type="button"
               onClick={handleGetQuote}
-              disabled={!canSubmit || createMut.isPending}
+              disabled={!canSubmit || calculateMut.isPending}
               className="w-full rounded-lg bg-primary text-sidebar hover:bg-primary/85"
             >
-              {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : quote ? "Get Another Quote" : "Get Instant Quote"}
+              {calculateMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : breakdown ? "Recalculate" : "Get Instant Quote"}
             </Button>
           </div>
 
           {/* ── Price panel — appears alongside the form, form stays put ──────── */}
           <div className="space-y-5 lg:sticky lg:top-6">
-            {quote ? (
+            {breakdown ? (
               <>
                 <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
                   <div className="flex items-center gap-3 border-b border-card-border px-5 py-4">
@@ -355,40 +421,42 @@ export default function ResidentialQuotationsPage() {
                       <FileQuestion className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <h2 className="text-sm font-semibold text-foreground">{quote.quotation_number}</h2>
-                      <p className="truncate text-xs text-muted">{quote.origin_address} → {quote.destination_address}</p>
+                      <h2 className="text-sm font-semibold text-foreground">Your Price</h2>
+                      <p className="truncate text-xs text-muted">{origin.address} → {destination.address}</p>
                     </div>
                   </div>
                   <div className="space-y-1.5 p-5 text-sm">
                     {priceItems.length > 0 ? (
-                      priceItems.map((item) => (
-                        <Row key={item.id ?? item.description} label={item.description} value={item.amount} />
-                      ))
+                      priceItems.map((item) => <Row key={item.key} label={item.label} value={item.amount} />)
                     ) : (
                       <p className="text-xs text-muted">No charges on this quote.</p>
                     )}
                     <div className="border-t border-card-border pt-1.5">
-                      <Row label="Total" value={quote.total} bold />
+                      <Row label="Total" value={breakdown.subtotal} bold />
                     </div>
                   </div>
                 </div>
 
-                {quote.status !== "accepted" ? (
+                {decidedStatus === "rejected" ? (
+                  <div className="rounded-2xl border border-card-border bg-card/50 p-3 text-center text-xs font-medium text-muted">
+                    You declined this quote.
+                  </div>
+                ) : (
                   <div className="flex gap-3">
-                    <Button type="button" variant="outline" className="flex-1 rounded-lg" onClick={startOver}>
+                    <Button type="button" variant="outline" className="flex-1 rounded-lg" onClick={startOver} disabled={decideMut.isPending}>
                       Start Over
+                    </Button>
+                    <Button type="button" variant="outline" className="flex-1 rounded-lg border-red-200 text-red-600 hover:bg-red-50" onClick={handleDecline} disabled={decideMut.isPending}>
+                      {decideMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Decline"}
                     </Button>
                     <Button
                       type="button"
                       onClick={() => setTermsOpen(true)}
+                      disabled={decideMut.isPending}
                       className="flex-1 rounded-lg bg-primary text-sidebar hover:bg-primary/85"
                     >
-                      Accept &amp; Book Delivery
+                      Accept &amp; Book
                     </Button>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-3 text-center text-xs font-medium text-green-700 dark:text-green-400">
-                    This quote has already been accepted.
                   </div>
                 )}
               </>
@@ -402,7 +470,7 @@ export default function ResidentialQuotationsPage() {
 
             <div className="flex items-start gap-2 rounded-2xl border border-card-border bg-card p-4 text-xs text-muted">
               <PackageSearch className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <p>Prices are calculated instantly from our published delivery rates, service level, and weight. Accepting creates your delivery right away.</p>
+              <p>Prices are calculated instantly from our published delivery rates, service level, weight, and any options you select. Nothing is saved until you accept or decline — accepting creates your delivery right away.</p>
             </div>
           </div>
         </div>
@@ -422,7 +490,7 @@ export default function ResidentialQuotationsPage() {
               <div className="flex flex-col items-center gap-2 p-8 text-center">
                 <FileQuestion className="h-8 w-8 text-muted-light" />
                 <p className="text-sm font-medium text-muted">No quotations yet</p>
-                <p className="text-xs text-muted-light">Quotes you request will show up here.</p>
+                <p className="text-xs text-muted-light">Quotes you accept or decline will show up here.</p>
               </div>
             ) : (
               <ul className="divide-y divide-card-border">
@@ -430,7 +498,7 @@ export default function ResidentialQuotationsPage() {
                   <li key={q.id}>
                     <button
                       type="button"
-                      onClick={() => { setQuote(q); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      onClick={() => setDetailsId(q.id)}
                       className="flex w-full items-center justify-between gap-3 px-5 py-3 text-left text-sm transition-colors hover:bg-primary/5"
                     >
                       <div className="min-w-0">
@@ -456,7 +524,14 @@ export default function ResidentialQuotationsPage() {
         open={termsOpen}
         onClose={() => setTermsOpen(false)}
         onAccept={handleConfirmAccept}
-        loading={acceptMut.isPending}
+        loading={decideMut.isPending}
+      />
+
+      <QuotationDetailsSheet
+        open={!!detailsId}
+        onClose={() => setDetailsId(null)}
+        quotationId={detailsId ?? ""}
+        onEditClick={() => {}}
       />
     </div>
   );
