@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  
 
   // Strict mode catches subtle React bugs early
   reactStrictMode: true,
