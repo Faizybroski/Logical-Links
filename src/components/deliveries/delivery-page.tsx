@@ -27,9 +27,9 @@ import {
   useDeleteDelivery,
   useUpdateDeliveryStatus,
   useAssignEmployees,
+  useAssignableEmployees,
 } from "@/hooks/use-deliveries";
 import { useAccounts } from "@/hooks/use-accounts";
-import { useAdminEmployees } from "@/hooks/use-admin-employees";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import type { SortDir } from "@/hooks/use-table-filters";
 import type {
@@ -201,7 +201,7 @@ export default function DeliveriesPage() {
 
   const { data: deliveriesRes, isLoading } = useDeliveries(deliveriesQuery);
   const { data: companiesRes } = useAccounts({ limit: 100 }, { enabled: isAdmin });
-  const { data: employeesRes } = useAdminEmployees({ limit: 200 }, { enabled: isAdmin });
+  const { data: employeesRes } = useAssignableEmployees({ enabled: isAdmin });
 
   const deliveries  = deliveriesRes?.data ?? [];
   const totalCount = (deliveriesRes as any)?.meta?.total ?? 0;

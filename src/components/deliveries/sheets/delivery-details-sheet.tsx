@@ -28,6 +28,7 @@ import {
   Calculator,
   ClipboardList,
   Gift,
+  CalendarClock,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { StatusChangeDialog } from "@/components/deliveries/dialogs/status-change-dialog";
 import { AssignDialog } from "@/components/deliveries/dialogs/assign-dialog";
+import { EtaDialog } from "@/components/deliveries/dialogs/eta-dialog";
 import { PricingCalculatorDialog } from "@/components/deliveries/dialogs/pricing-calculator-dialog";
 import { LAST_MILE_SERVICE_TYPE_LABELS } from "@/components/deliveries/sheets/delivery-form-fields";
 import { TrackingTimeline } from "@/components/tracking/tracking-timeline";
@@ -52,8 +54,9 @@ import {
   useDelivery,
   useUpdateDeliveryStatus,
   useAssignEmployees,
+  useAssignableEmployees,
+  useUpdateEta,
 } from "@/hooks/use-deliveries";
-import { useAdminEmployees } from "@/hooks/use-admin-employees";
 import { useInvoices } from "@/hooks/use-invoices";
 import { useQuotations } from "@/hooks/use-quotations";
 import { useTrackingEvents } from "@/hooks/use-tracking";
@@ -183,7 +186,10 @@ function InfoTile({
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">
           {label}
         </p>
-        <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
+        {/* div, not p — `value` can contain block-level children (e.g. the
+            "Assigned To" tile embeds UserAvatar, which renders a <div>), and
+            <div> inside <p> is invalid HTML that breaks hydration. */}
+        <div className="mt-0.5 text-sm font-medium text-foreground">{value}</div>
       </div>
     </div>
   );
@@ -214,12 +220,10 @@ export function DeliveryDetailsSheet({
   const [statusOpen, setStatusOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [pricingCalcOpen, setPricingCalcOpen] = useState(false);
+  const [etaOpen, setEtaOpen] = useState(false);
 
   const { data, isLoading } = useDelivery(loadId);
-  const { data: employeesRes } = useAdminEmployees(
-    { limit: 200 },
-    { enabled: isAdmin && open },
-  );
+  const { data: employeesRes } = useAssignableEmployees({ enabled: isAdmin && open });
   const { data: invoicesRes } = useInvoices(
     { loadId: loadId || undefined },
     { enabled: !!loadId && open },
@@ -254,6 +258,7 @@ export function DeliveryDetailsSheet({
 
   const statusMut = useUpdateDeliveryStatus(loadId);
   const assignMut = useAssignEmployees(loadId);
+  const etaMut    = useUpdateEta(loadId);
 
   async function handleStatusChange(status: string, reason?: string) {
     try {
@@ -275,6 +280,16 @@ export function DeliveryDetailsSheet({
     }
   }
 
+  async function handleEta(estimatedDeliveryDate: string | null) {
+    try {
+      await etaMut.mutateAsync({ estimatedDeliveryDate });
+      toast.success("ETA updated");
+      setEtaOpen(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
   const canEditPerm = usePermission("deliveries.edit");
   const canAssignPerm = usePermission("deliveries.assign");
   const canUpdateStatusPerm = usePermission("deliveries.update_status");
@@ -288,6 +303,9 @@ export function DeliveryDetailsSheet({
   const canChangeStatus =
     isAdmin && canUpdateStatusPerm &&
     delivery && (STATUS_TRANSITIONS[delivery.status] ?? []).length > 0;
+  // Any internal (Logical Links) user can set the ETA — same as Tracking
+  // Update below, no dedicated permission, and not gated behind full edit access.
+  const canSetEta = isAdmin && delivery && !["delivered", "cancelled"].includes(delivery.status);
 
   return (
     <Sheet open={open} onClose={onClose} size="xl">
@@ -341,6 +359,19 @@ export function DeliveryDetailsSheet({
                   >
                     <Calculator className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Calculate Price</span>
+                  </Button>
+                )}
+
+                {canSetEta && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEtaOpen(true)}
+                    className="h-8 gap-1 rounded-lg border-card-border px-2.5 text-xs text-foreground"
+                  >
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Set ETA</span>
                   </Button>
                 )}
 
@@ -562,6 +593,37 @@ export function DeliveryDetailsSheet({
                           value={formatDate(delivery.preferred_delivery_date)}
                         />
                       )}
+                      {/* ETA sits right after Preferred Delivery Date so the two land in
+                          the same row of this 2-col grid — customer's ask vs. ops's estimate. */}
+                      {(() => {
+                        const eta = getEtaInfo(delivery);
+                        if (eta.kind === "none") return null;
+                        const tone =
+                          eta.kind === "overdue"
+                            ? "text-red-600"
+                            : eta.kind === "delivered"
+                              ? "text-green-700"
+                              : "text-foreground";
+                        return (
+                          <InfoTile
+                            icon={
+                              eta.kind === "delivered" ? (
+                                <PackageCheck className="h-4 w-4" />
+                              ) : (
+                                <Clock className="h-4 w-4" />
+                              )
+                            }
+                            label={
+                              eta.kind === "delivered"
+                                ? "Delivered"
+                                : eta.kind === "overdue"
+                                  ? "ETA (Overdue)"
+                                  : "Estimated Delivery"
+                            }
+                            value={<span className={tone}>{formatDate(eta.date)}</span>}
+                          />
+                        );
+                      })()}
                       {delivery.special_instructions && (
                         <div className="sm:col-span-2">
                           <InfoTile
@@ -601,35 +663,6 @@ export function DeliveryDetailsSheet({
                           value={formatDate(delivery.estimated_pickup_date)}
                         />
                       )}
-                      {(() => {
-                        const eta = getEtaInfo(delivery);
-                        if (eta.kind === "none") return null;
-                        const tone =
-                          eta.kind === "overdue"
-                            ? "text-red-600"
-                            : eta.kind === "delivered"
-                              ? "text-green-700"
-                              : "text-foreground";
-                        return (
-                          <InfoTile
-                            icon={
-                              eta.kind === "delivered" ? (
-                                <PackageCheck className="h-4 w-4" />
-                              ) : (
-                                <Clock className="h-4 w-4" />
-                              )
-                            }
-                            label={
-                              eta.kind === "delivered"
-                                ? "Delivered"
-                                : eta.kind === "overdue"
-                                  ? "ETA (Overdue)"
-                                  : "Estimated Delivery"
-                            }
-                            value={<span className={tone}>{formatDate(eta.date)}</span>}
-                          />
-                        );
-                      })()}
                       {delivery.actual_pickup_date && (
                         <InfoTile
                           icon={<Calendar className="h-4 w-4" />}
@@ -875,6 +908,16 @@ export function DeliveryDetailsSheet({
           onClose={() => setAssignOpen(false)}
           onConfirm={handleAssign}
           loading={assignMut.isPending}
+        />
+      )}
+
+      {delivery && canSetEta && (
+        <EtaDialog
+          delivery={delivery}
+          open={etaOpen}
+          onClose={() => setEtaOpen(false)}
+          onConfirm={handleEta}
+          loading={etaMut.isPending}
         />
       )}
 

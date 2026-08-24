@@ -28,7 +28,7 @@ import {
   useDeclineQuotation,
 } from "@/hooks/use-quotations";
 import { useConvertQuotationToInvoice } from "@/hooks/use-invoices";
-import { useRewardsCreditBalance, useApplyRewardsCredit } from "@/hooks/use-rewards-credit";
+import { useRewardsCreditSummary, useApplyRewardsCredit } from "@/hooks/use-rewards-credit";
 import { useAdditionalCharges } from "@/hooks/use-additional-charges";
 import { useAuthStore } from "@/store/auth.store";
 import type { LineItem } from "@/types/api.types";
@@ -130,8 +130,9 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
 
   const canActOnQuotation = (isCorporate || isResidential) && quotation?.status === "sent";
 
-  const rewardsBalanceQuery = useRewardsCreditBalance({ enabled: isResidential && open });
-  const rewardsBalance = rewardsBalanceQuery.data?.data.balance ?? 0;
+  const rewardsSummaryQuery = useRewardsCreditSummary({ enabled: isResidential && open });
+  const rewardsPoints    = rewardsSummaryQuery.data?.data.points ?? 0;
+  const rewardsCredit    = rewardsSummaryQuery.data?.data.creditAvailable ?? 0;
   const applyRewardsMut = useApplyRewardsCredit(quotationId);
   const [applyRewards, setApplyRewards] = useState(false);
   const rewardsAlreadyApplied = (quotation?.rewards_credit_applied ?? 0) > 0;
@@ -146,7 +147,7 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
     if (!checked || rewardsAlreadyApplied) return;
     try {
       await applyRewardsMut.mutateAsync();
-      toast.success("Rewards Credit applied");
+      toast.success("Rewards points applied");
     } catch (e) {
       toast.error((e as Error).message);
       setApplyRewards(false);
@@ -380,17 +381,18 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
               )}
 
               {/* Rewards Credit — residential customers only */}
-              {isResidential && (rewardsBalance > 0 || rewardsAlreadyApplied) && quotation.status !== "draft" && (
+              {isResidential && (rewardsPoints > 0 || rewardsAlreadyApplied) && quotation.status !== "draft" && (
                 <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
                   <div className="border-b border-card-border px-5 py-4">
                     <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                       <Gift className="h-4 w-4 text-primary" />
-                      Rewards Credit
+                      Rewards Points
                     </h3>
                   </div>
                   <div className="space-y-3 p-4">
                     <p className="text-sm text-foreground">
-                      Rewards Credit Available: <span className="font-semibold">${rewardsBalance.toFixed(2)}</span>
+                      Available: <span className="font-semibold">{rewardsPoints.toLocaleString()} points</span>{" "}
+                      <span className="text-muted">(${rewardsCredit.toFixed(2)} delivery credit)</span>
                     </p>
                     <label className="flex items-center gap-2 text-sm text-foreground">
                       <Checkbox
@@ -398,7 +400,7 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                         disabled={rewardsAlreadyApplied || applyRewardsMut.isPending || quotation.status !== "sent"}
                         onCheckedChange={(checked) => handleApplyRewardsToggle(checked === true)}
                       />
-                      Apply My Rewards Credit
+                      Apply My Rewards Points
                     </label>
                     {rewardsAlreadyApplied && (
                       <div className="space-y-1 rounded-lg border border-card-border bg-background p-3 text-sm">

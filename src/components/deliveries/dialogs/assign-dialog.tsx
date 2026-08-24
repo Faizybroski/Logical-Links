@@ -15,11 +15,11 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ADMIN_ROLE_LABELS } from "@/types/api.types";
-import type { Delivery, AdminEmployee, AssignEmployeesDto } from "@/types/api.types";
+import type { Delivery, AssignableEmployee, AssignEmployeesDto } from "@/types/api.types";
 
 interface Props {
   delivery:  Delivery;
-  employees: AdminEmployee[];
+  employees: AssignableEmployee[];
   open:      boolean;
   onClose:   () => void;
   onConfirm: (dto: AssignEmployeesDto) => void;
@@ -53,10 +53,12 @@ export function AssignDialog({ delivery, employees, open, onClose, onConfirm, lo
     onConfirm({ employeeIds: Array.from(selected) });
   }
 
-  const eligible = employees.filter((e) => e.is_active);
+  // Every active internal employee is eligible — driver, dispatcher,
+  // assistant, whatever admin_role — not filtered to a fixed subset. The
+  // API already returns active employees only (see useAssignableEmployees).
   const filtered = search.trim()
-    ? eligible.filter((e) => e.full_name?.toLowerCase().includes(search.toLowerCase()))
-    : eligible;
+    ? employees.filter((e) => e.full_name?.toLowerCase().includes(search.toLowerCase()))
+    : employees;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

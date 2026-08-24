@@ -147,6 +147,8 @@ export type UserProfile = {
   avatarUrl:   string | null;
   accountId:   string | null;
   isApproved:  boolean;
+  /** YYYY-MM-DD. Residential-only — powers the Rewards birthday bonus. */
+  dateOfBirth: string | null;
   createdAt:   string;
 };
 
@@ -381,6 +383,22 @@ export type UpdateDeliveryStatusDto = {
 // assignee set; pass an empty array to unassign everyone.
 export type AssignEmployeesDto = {
   employeeIds: string[];
+};
+
+// Lean roster for the Assign picker (GET /deliveries/assignable-employees) —
+// every active internal employee regardless of admin_role, not just a fixed
+// "driver/cleaner"-style subset. Deliberately missing email/phone/etc. —
+// this endpoint is reachable with only 'deliveries.assign', not the
+// 'employees.view' (HR) permission AdminEmployee's endpoint requires.
+export type AssignableEmployee = {
+  id:         string;
+  full_name:  string | null;
+  avatar_url: string | null;
+  admin_role: AdminRoleValue | null;
+};
+
+export type UpdateEtaDto = {
+  estimatedDeliveryDate: string | null;
 };
 
 export type ListDeliveriesQuery = {
@@ -876,7 +894,10 @@ export type RewardsRule = {
   title:       string;
   description: string;
   value:       number | null;
-  unit:        "usd" | "percent" | null;
+  // Not a fixed literal union — "usd" and "percent" get special number
+  // formatting (formatRewardsRuleDescription), any other unit (e.g.
+  // "points", "points_per_usd") just interpolates the raw value.
+  unit:        string | null;
   is_editable: boolean;
   created_at:  string;
   updated_at:  string;
@@ -986,13 +1007,28 @@ export type CalculatePriceDto = {
   additionalChargeKeys: string[];
 };
 
-export type RewardsCreditBalance = {
-  balance: number;
+export type RewardsCreditSummary = {
+  points:          number;
+  creditAvailable: number;
+  /** Points required per $1 of delivery credit — e.g. 100 means 500 points = $5. */
+  conversionRate:  number;
+};
+
+export type RewardsCreditHistoryEntry = {
+  ledger_id:     string;
+  points:        number;
+  amount:        number;
+  type:          "earn" | "redeem" | "birthday_bonus";
+  note:          string | null;
+  created_at:    string;
+  shipment_id:   string | null;
+  quotation_id:  string | null;
 };
 
 export type ApplyRewardsCreditResult = {
   quotation:        Quotation;
   applied:          number;
+  appliedPoints:    number;
   remainingBalance: number;
 };
 

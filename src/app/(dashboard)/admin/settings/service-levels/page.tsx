@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   useServiceLevels,
   useCreateServiceLevel,
@@ -140,6 +139,56 @@ function LevelFormDialog({
   );
 }
 
+function LevelRow({
+  level,
+  canEdit,
+  onEdit,
+  onDelete,
+}: {
+  level: ServiceLevel;
+  canEdit: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const updateMut = useUpdateServiceLevel(level.level_id);
+
+  async function handleToggle(checked: boolean) {
+    try {
+      await updateMut.mutateAsync({ isActive: checked });
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-4 px-6 py-4">
+      <div className="flex items-start gap-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Gauge className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{level.label}</p>
+          <p className="text-xs text-muted">× {level.multiplier}</p>
+          <p className="mt-0.5 text-xs text-muted-light">{level.slug}</p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <Switch checked={level.is_active} disabled={!canEdit || updateMut.isPending} onCheckedChange={handleToggle} />
+        {canEdit && (
+          <>
+            <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={onEdit}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-lg text-danger hover:bg-red-50" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ServiceLevelsPage() {
   const canEdit = usePermission("pricing.edit");
   const { data, isLoading } = useServiceLevels();
@@ -191,22 +240,10 @@ export default function ServiceLevelsPage() {
           <div className="h-64 animate-pulse rounded-2xl bg-card-border" />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Service Level</TableHead>
-                    <TableHead>Multiplier</TableHead>
-                    <TableHead>Active</TableHead>
-                    {canEdit && <TableHead className="text-right">Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {levels.map((level) => (
-                    <LevelRow key={level.level_id} level={level} canEdit={canEdit} onEdit={() => setFormTarget(level)} onDelete={() => handleDelete(level)} />
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="divide-y divide-card-border">
+              {levels.map((level) => (
+                <LevelRow key={level.level_id} level={level} canEdit={canEdit} onEdit={() => setFormTarget(level)} onDelete={() => handleDelete(level)} />
+              ))}
             </div>
           </div>
         )}
@@ -216,55 +253,5 @@ export default function ServiceLevelsPage() {
         <LevelFormDialog level={formTarget === "new" ? null : formTarget} onClose={() => setFormTarget(null)} />
       )}
     </div>
-  );
-}
-
-function LevelRow({
-  level,
-  canEdit,
-  onEdit,
-  onDelete,
-}: {
-  level: ServiceLevel;
-  canEdit: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  const updateMut = useUpdateServiceLevel(level.level_id);
-
-  async function handleToggle(checked: boolean) {
-    try {
-      await updateMut.mutateAsync({ isActive: checked });
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  }
-
-  return (
-    <TableRow>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <Gauge className="h-3.5 w-3.5 text-muted" />
-          <span className="font-medium text-foreground">{level.label}</span>
-        </div>
-        <span className="text-xs text-muted">{level.slug}</span>
-      </TableCell>
-      <TableCell>× {level.multiplier}</TableCell>
-      <TableCell>
-        <Switch checked={level.is_active} disabled={!canEdit || updateMut.isPending} onCheckedChange={handleToggle} />
-      </TableCell>
-      {canEdit && (
-        <TableCell className="text-right">
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={onEdit}>
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-lg text-danger hover:bg-red-50" onClick={onDelete}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </TableCell>
-      )}
-    </TableRow>
   );
 }

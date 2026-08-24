@@ -7,6 +7,7 @@ import { useDeliveries } from '@/hooks/use-deliveries'
 import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/deliveries/status-badge'
 import { KpiCard } from '@/components/deliveries/kpi-card'
+import { RewardsMemberCard } from '@/components/rewards/rewards-member-card'
 
 export default function ResidentialDashboard() {
   const user = useAuthStore((s) => s.user)
@@ -71,7 +72,7 @@ export default function ResidentialDashboard() {
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 gap-5 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
           {kpis.map((kpi) => (
             <KpiCard
               key={kpi.title}
@@ -86,6 +87,7 @@ export default function ResidentialDashboard() {
               subtitle={kpi.subtitle}
             />
           ))}
+          <RewardsMemberCard />
         </div>
 
         {/* Recent Deliveries */}

@@ -15,6 +15,7 @@ import {
   X,
   LifeBuoy,
   FileQuestion,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
@@ -28,6 +29,7 @@ const NAVIGATION = [
   { label: "Dashboard", href: "/residential/dashboard", icon: LayoutDashboard },
   { label: "My Deliveries", href: "/residential/deliveries", icon: Truck },
   { label: "Get a Quote", href: "/residential/quotations", icon: FileQuestion },
+  { label: "Rewards", href: "/residential/rewards", icon: Gift },
   { label: "Alerts", href: "/residential/notifications", icon: Bell },
   { label: "Support", href: "/residential/support", icon: LifeBuoy },
   { label: "My Profile", href: "/residential/profile", icon: User },

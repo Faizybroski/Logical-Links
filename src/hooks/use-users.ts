@@ -49,7 +49,7 @@ export function useMe() {
 export function useUpdateMe() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { fullName?: string; phone?: string; avatarUrl?: string | null }) =>
+    mutationFn: (data: { fullName?: string; phone?: string; avatarUrl?: string | null; dateOfBirth?: string }) =>
       api.patch<ApiResponse<UserProfile>>("/api/v1/users/me", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.me }),
   });

@@ -5,14 +5,17 @@ import type {
   CreateDeliveryDto,
   UpdateDeliveryDto,
   UpdateDeliveryStatusDto,
+  UpdateEtaDto,
   AssignEmployeesDto,
+  AssignableEmployee,
   ListDeliveriesQuery,
 } from "@/types/api.types";
 
 const KEYS = {
-  all:    ["deliveries"] as const,
-  list:   (q: ListDeliveriesQuery) => ["deliveries", "list", q] as const,
-  detail: (id: string) => ["deliveries", id] as const,
+  all:        ["deliveries"] as const,
+  list:       (q: ListDeliveriesQuery) => ["deliveries", "list", q] as const,
+  detail:     (id: string) => ["deliveries", id] as const,
+  assignable: ["deliveries", "assignable-employees"] as const,
 };
 
 function buildQuery(params: ListDeliveriesQuery): string {
@@ -89,6 +92,30 @@ export function useUpdateDeliveryStatus(id: string) {
   return useMutation({
     mutationFn: (dto: UpdateDeliveryStatusDto) =>
       api.patch<ApiResponse<Delivery>>(`/api/v1/deliveries/${id}/status`, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+    },
+  });
+}
+
+// Lean roster for the Assign dialog — reachable with just 'deliveries.assign',
+// not the 'employees.view' (HR) permission the full employee-management list
+// requires. See deliveries.routes.ts.
+export function useAssignableEmployees(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: KEYS.assignable,
+    queryFn:  () => api.get<ApiResponse<AssignableEmployee[]>>("/api/v1/deliveries/assignable-employees"),
+    enabled:  options?.enabled ?? true,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateEta(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: UpdateEtaDto) =>
+      api.patch<ApiResponse<Delivery>>(`/api/v1/deliveries/${id}/eta`, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all });
       qc.invalidateQueries({ queryKey: KEYS.detail(id) });

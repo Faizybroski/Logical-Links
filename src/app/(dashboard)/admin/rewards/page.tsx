@@ -10,13 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRewardsRules, useUpdateRewardsRule } from "@/hooks/use-rewards";
 import { usePermission } from "@/hooks/use-permission";
+import { formatRewardsRuleDescription } from "@/lib/utils/format-rewards-rule";
 import type { RewardsRule } from "@/types/api.types";
-
-function formatDescription(rule: RewardsRule): string {
-  if (rule.value == null) return rule.description;
-  const formattedValue = rule.unit === "usd" ? rule.value.toFixed(2).replace(/\.00$/, "") : String(rule.value);
-  return rule.description.replace("{value}", formattedValue);
-}
 
 function EditRewardsRuleDialog({ open, onClose, rule }: { open: boolean; onClose: () => void; rule: RewardsRule }) {
   const [value, setValue] = useState(rule.value ?? 0);
@@ -109,7 +104,7 @@ export default function AdminRewardsPage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">{rule.title}</h3>
-                      <p className="mt-0.5 text-sm text-muted">{formatDescription(rule)}</p>
+                      <p className="mt-0.5 text-sm text-muted">{formatRewardsRuleDescription(rule)}</p>
                     </div>
                   </div>
 

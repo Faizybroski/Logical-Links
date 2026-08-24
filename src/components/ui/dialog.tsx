@@ -65,6 +65,15 @@ function DialogContent({
           "max-h-[90vh] overflow-y-auto",
           className
         )}
+        // Radix's modal scroll-lock (react-remove-scroll) listens for wheel/touch
+        // events on `document` to stop the page behind the dialog from scrolling,
+        // and its heuristic doesn't reliably recognize a scrollable region nested
+        // a level or two inside DialogContent (any dialog with an inner
+        // overflow-y-auto wrapper, e.g. AssignDialog's employee list) — it ends up
+        // swallowing the wheel event instead of letting it scroll that inner div.
+        // Stopping propagation here keeps the event local to the dialog, where
+        // native scrolling just works, without touching the outside-page lock.
+        onWheel={(e) => e.stopPropagation()}
         {...props}
       >
         {children}

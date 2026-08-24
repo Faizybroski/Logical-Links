@@ -18,19 +18,21 @@ export default function ResidentialProfilePage() {
 
   const [fullName, setFullName] = useState('')
   const [phone, setPhone]       = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (profile) {
       setFullName(profile.fullName ?? '')
       setPhone(profile.phone ?? '')
+      setDateOfBirth(profile.dateOfBirth ?? '')
     }
   }, [profile])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     updateMe.mutate(
-      { fullName: fullName || undefined, phone: phone || undefined },
+      { fullName: fullName || undefined, phone: phone || undefined, dateOfBirth: dateOfBirth || undefined },
       {
         onSuccess: (res) => {
           toast.success('Profile updated')
@@ -181,6 +183,24 @@ export default function ResidentialProfilePage() {
                   className="w-full rounded-xl border border-card-border bg-background py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground" htmlFor="dateOfBirth">
+                Date of Birth
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                <input
+                  id="dateOfBirth"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  className="w-full rounded-xl border border-card-border bg-background py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <p className="text-xs text-muted">Get a 250-point Rewards bonus on your birthday, once every 12 months.</p>
             </div>
 
             <button
