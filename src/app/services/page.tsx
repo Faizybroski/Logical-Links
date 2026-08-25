@@ -393,7 +393,7 @@ export default function ServicesPage() {
                   initial={{ x: "-100%", opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: "-100%", opacity: 0 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full rounded-2xl bg-white p-6 shadow-md lg:rounded-l-none lg:pl-12"
                 >
                   <h2 className="text-xl sm:text-2xl font-bold text-primary mb-6">

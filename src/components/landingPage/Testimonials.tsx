@@ -1,41 +1,73 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Quote, Star, User } from "lucide-react";
+import {
+  Monitor,
+  CheckCircle2,
+  ScanSearch,
+  Network,
+  Globe,
+  Truck,
+  Users,
+  Route,
+  Zap,
+  Search,
+  type LucideIcon,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
-const testimonials = [
-  {
-    content:
-      "Logical Links transformed our delivery operations. Their tracking system and reliability have been game-changing for our business.",
-    name: "Sarah Chen",
-    role: "Operations Manager",
-    company: "TechFlow Solutions",
-  },
-  {
-    content:
-      "The integration with our platform was seamless. Customer satisfaction with deliveries has increased by 40% since partnering with them.",
-    name: "Michael Rodriguez",
-    role: "E-commerce Director",
-    company: "Urban Marketplace",
-  },
-  {
-    content:
-      "From same-day delivery to freight shipping, they handle everything with precision. Truly a comprehensive logistics partner.",
-    name: "Emily Watson",
-    role: "Supply Chain Lead",
-    company: "Northern Distributors",
-  },
+const intelligence: {
+  icon: LucideIcon;
+  label: string;
+  status: string;
+}[] = [
+  { icon: Monitor, label: "Live Shipment Visibility", status: "Active" },
+  { icon: CheckCircle2, label: "Dispatch System", status: "Operational" },
+  { icon: ScanSearch, label: "Tracking System", status: "Real-Time" },
+  { icon: Network, label: "Network Coordination", status: "Enabled" },
 ];
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delay: i * 0.12, ease: "easeOut" },
-  }),
-};
+const services: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}[] = [
+  {
+    icon: Globe,
+    title: "Freight Brokerage",
+    description:
+      "Connecting businesses with the right capacity through our trusted carrier network.",
+  },
+  {
+    icon: Truck,
+    title: "Transport Execution",
+    description:
+      "Reliable transportation solutions executed with precision and efficiency.",
+  },
+  {
+    icon: Users,
+    title: "Logistics Coordination",
+    description:
+      "End-to-end coordination that ensures smooth movement across the supply chain.",
+  },
+  {
+    icon: Route,
+    title: "Dispatch & Route Management",
+    description:
+      "Optimized dispatching and routing for faster deliveries and reduced operational costs.",
+  },
+  {
+    icon: Zap,
+    title: "Last-Mile Delivery",
+    description:
+      "Seamless last-mile delivery solutions built for speed and customer satisfaction.",
+  },
+  {
+    icon: Search,
+    title: "Real-Time Shipment Tracking",
+    description:
+      "Complete visibility into shipments with real-time updates at every stage.",
+  },
+];
 
 export default function Testimonials() {
   return (
@@ -52,96 +84,79 @@ export default function Testimonials() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="text-center mb-16"
         >
-          <h2 className="font-bold text-4xl sm:text-6xl leading-none text-primary">
-            <span className="display-font">Trusted by</span>{" "}
-            <span className="display-font">Industry Leaders</span>
+          <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
+            Built for Operations
           </h2>
-          <p className="mt-6 text-muted text-lg">
-            Don&apos;t just take our word for it. See what our clients say about our
-            logistics solutions.
+          <p className="text-lg text-muted">
+            The systems and services running behind every delivery we manage.
           </p>
         </motion.div>
 
-        {/* Testimonials */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((item, i) => (
-            <motion.div
-              key={item.name}
-              custom={i}
-              // variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              <TestimonialCard {...item} />
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Stats */}
+        {/* Operational Intelligence */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="mt-14 rounded-xl border border-primary/20 p-8"
+          className="rounded-xs border border-primary bg-white p-8 sm:p-10"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
-            <Stat number="500+" label="Happy Clients" />
-            <Stat number="4.9/5" label="Average Rating" />
-            <Stat number="99%" label="Satisfaction Rate" />
-            <Stat number="24/7" label="Support Available" />
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function TestimonialCard({
-  content,
-  name,
-  role,
-  company,
-}: {
-  content: string;
-  name: string;
-  role: string;
-  company: string;
-}) {
-  return (
-    <Card className="group relative overflow-hidden ring-0 border border-primary-light/20 shadow-none h-full">
-      <div className="absolute -bottom-12 -right-12 h-40 w-40 rounded-full bg-primary/5" />
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-5">
-          <Quote className="h-6 w-6 text-primary" />
-          <div className="flex gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="h-3 w-3 fill-primary text-primary" />
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-primary/20">
+            {intelligence.map(({ icon: Icon, label, status }) => (
+              <div
+                key={label}
+                className="flex items-center gap-4 lg:pl-8 lg:first:pl-0"
+              >
+                <div className="p-4 rounded-sm bg-primary-light/10 flex items-center justify-center shrink-0">
+                  <Icon className="h-7 w-7 text-primary" strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="text-primary font-medium leading-snug">
+                    {label}
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-sm text-muted">{status}</span>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-        <p className="text-muted leading-relaxed text-sm mb-5">{content}</p>
-        <div className="flex items-center gap-4">
-          <div className="flex p-3 items-center justify-center rounded-full bg-primary-light text-muted">
-            <User className="h-5 w-5 fill-muted" />
-          </div>
-          <div>
-            <p className="font-normal text-muted text-sm">{name}</p>
-            <p className="text-primary text-xs">{role}</p>
-            <p className="text-muted text-xs">{company}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+        </motion.div>
 
-function Stat({ number, label }: { number: string; label: string }) {
-  return (
-    <div>
-      <div className="text-3xl font-light text-primary">{number}</div>
-      <p className="mt-2 text-muted text-lg">{label}</p>
-    </div>
+        {/* Core Services */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="text-center mt-24 mb-16"
+        >
+          <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
+            Core Services
+          </h2>
+          <p className="text-lg text-muted">
+            The full range of logistics capabilities we deliver, end to end.
+          </p>
+        </motion.div>
+
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map(({ icon: Icon, title, description }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
+              className="flex flex-col h-full border border-primary rounded-xs bg-white py-8 px-4 text-center"
+            >
+              <div className="p-5 rounded-sm bg-primary-light/10 flex items-center justify-center mx-auto mb-10">
+                <Icon className="h-8 w-8 text-primary" strokeWidth={2} />
+              </div>
+              <h3 className="text-xl text-primary mb-6">{title}</h3>
+              <p className="text-muted text-sm">{description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
