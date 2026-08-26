@@ -46,7 +46,7 @@ export default function MilestonesSection() {
           <h2 className="display-font text-4xl font-bold sm:text-5xl md:text-6xl">
             <span className="text-primary">Our Milestones</span>
             <br />
-            <span className="text-neutral-900">
+            <span className="text-black">
               <span className="mr-3 text-primary">—</span>&amp; Achievements
             </span>
           </h2>
@@ -66,7 +66,7 @@ export default function MilestonesSection() {
                   <span className="text-3xl font-semibold text-primary">{item.number}</span>
                 </div>
                 <p className="text-2xl font-semibold text-primary">{item.title}</p>
-                <p className="max-w-xl text-neutral-700">{item.description}</p>
+                <p className="max-w-xl text-black">{item.description}</p>
                 {item.featured && (
                   <div className="flex items-start justify-end">
                     <button

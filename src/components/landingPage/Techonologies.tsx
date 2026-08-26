@@ -59,7 +59,7 @@ export default function Techonologies() {
             <span className="block display-font text-primary font-bold text-4xl sm:text-6xl">
               Technology That
             </span>
-            <span className="block display-font text-foreground font-bold text-4xl sm:text-6xl">
+            <span className="block display-font text-black font-bold text-4xl sm:text-6xl">
               Transforms
             </span>
           </motion.h2>
@@ -69,7 +69,7 @@ export default function Techonologies() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="mt-8 max-w-lg text-lg leading-relaxed text-muted"
+            className="mt-8 max-w-lg text-lg leading-relaxed text-black"
           >
             Advanced tracking and analytics powered by cutting-edge technology
             to give you complete visibility into your logistics operations.

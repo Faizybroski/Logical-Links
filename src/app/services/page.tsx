@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -33,7 +33,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Faster Transit, Fewer Stops", description: "Direct routes mean quicker deliveries with less risk of delays." },
       { title: "Maximum Control", description: "Your freight stays sealed, untouched, and secure from start to finish." },
       { title: "Scalable Capacity", description: "Whether it's a single truck or a fleet rollout, we deliver without limits." },
-      { title: "Powerful Efficiency", description: "One pickup, one delivery—streamlined, straightforward, and cost-effective for larger volumes." },
+      { title: "Powerful Efficiency", description: "One pickup, one deliveryâ€”streamlined, straightforward, and cost-effective for larger volumes." },
       { title: "Risk-Free Movement", description: "Minimized handling reduces the chance of damage, ensuring pristine delivery." },
       { title: "Cross-Border Excellence", description: "Smooth, uninterrupted service across Canada, the U.S., and Mexico." },
       { title: "Technology-Driven Visibility", description: "Track every mile in real time with complete delivery transparency." },
@@ -57,7 +57,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "No Space Wasted", description: "We maximize truck efficiency, so you pay only for what you need, never more." },
       { title: "Speed in Small Packages", description: "Our LTL moves are designed to hit tight delivery windows without compromise." },
       { title: "Smart Consolidation", description: "Your freight rides with the best-matched deliveries, cutting costs while keeping transit times short." },
-      { title: "Personalized Attention", description: "Smaller deliveries mean bigger focus from our team—every detail counts." },
+      { title: "Personalized Attention", description: "Smaller deliveries mean bigger focus from our teamâ€”every detail counts." },
       { title: "Unmatched Flexibility", description: "Perfect for businesses with fluctuating volumes or seasonal spikes." },
       { title: "24/7 Watch", description: "Even a single pallet is monitored around the clock until it reaches its destination." },
       { title: "Eco-Efficient Shipping", description: "Reduce your carbon footprint with smarter delivery sharing and optimized routes." },
@@ -66,9 +66,9 @@ const SERVICES: ServiceDetail[] = [
     imageHeading: "Less Than a Delivery. More Than a Priority.",
     paragraphs: [
       "LLC delivers flexible and cost-effective Less-Than-Truckload solutions, giving businesses the ability to move smaller deliveries without paying for unused trailer space. As a freight broker, we leverage our carrier partnerships to consolidate freight, streamline routing, and secure competitive pricing tailored to your shipping volume.",
-      "Our team manages the complexities of LTL—such as multiple stops, shared capacity, and diverse freight types—so you can count on timely, damage-free deliveries. With access to a wide range of carriers across North America, we match your freight to the most efficient and reliable options available.",
+      "Our team manages the complexities of LTLâ€”such as multiple stops, shared capacity, and diverse freight typesâ€”so you can count on timely, damage-free deliveries. With access to a wide range of carriers across North America, we match your freight to the most efficient and reliable options available.",
       "Using advanced technology, we provide real-time visibility, accurate tracking, and seamless communication, ensuring your deliveries are always on schedule. Whether you ship occasionally or on a regular basis, LLC simplifies the LTL process and keeps your supply chain running smoothly.",
-      "With us, your smaller deliveries get the same level of attention, service, and reliability as a full truckload—because every delivery matters.",
+      "With us, your smaller deliveries get the same level of attention, service, and reliability as a full truckloadâ€”because every delivery matters.",
     ],
   },
   {
@@ -82,7 +82,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Borderless Movement", description: "Seamless coordination across borders eliminates delays and keeps supply chains flowing." },
       { title: "Data-Driven Precision", description: "Predictive analytics and intelligent planning keep your freight one step ahead." },
       { title: "Performance Backed by Metrics", description: "Service levels are measured, tracked, and continuously improved to exceed expectations." },
-      { title: "Always-On Commitment", description: "Freight doesn't sleep, and neither do we – your business has our attention 24/7." },
+      { title: "Always-On Commitment", description: "Freight doesn't sleep, and neither do we â€“ your business has our attention 24/7." },
       { title: "Future-Ready Solutions", description: "Built on innovation, ensuring your logistics strategy grows with tomorrow's challenges." },
       { title: "Executive-Level Service", description: "Premium freight solutions tailored for leaders who expect nothing short of excellence." },
     ],
@@ -92,8 +92,8 @@ const SERVICES: ServiceDetail[] = [
       "LLC ensures dependable dedicated freight services built on reliability and adaptability to align with your specific operations.",
       "We understand that every delivery is critical, which is why we combine secure methods, scalable solutions, and advanced technology to deliver a transportation service you can rely on.",
       "Our capabilities are built on a strategically chosen carrier network serving Canada and the U.S., giving you access to consistent capacity and seamless cross-border movement. With real-time tracking and advanced system integrations, we provide complete visibility and peace of mind at every step of your supply chain.",
-      "Whether you're a growing business or a large enterprise, we customize solutions to match your operations – optimizing lanes, reducing costs, and improving transit times. With precision and expertise, our logistics team manages all deliveries, complemented by round-the-clock support that ensures consistent communication and reliable delivery.",
-      "With LLC, your dedicated freight isn't just transported – it's managed with expertise, innovation, and a commitment to keeping your business moving forward.",
+      "Whether you're a growing business or a large enterprise, we customize solutions to match your operations â€“ optimizing lanes, reducing costs, and improving transit times. With precision and expertise, our logistics team manages all deliveries, complemented by round-the-clock support that ensures consistent communication and reliable delivery.",
+      "With LLC, your dedicated freight isn't just transported â€“ it's managed with expertise, innovation, and a commitment to keeping your business moving forward.",
     ],
   },
   {
@@ -113,10 +113,10 @@ const SERVICES: ServiceDetail[] = [
     image: "/sht.jpg",
     imageHeading: "Heavy Transport. Handled with Care.",
     paragraphs: [
-      "LLC excels in transporting oversized, wide, and heavy cargo with unmatched accuracy and dependability. We handle every detail of your delivery—from planning routes and securing permits to coordinating escorts and selecting the right equipment—while strictly adhering to Canadian transport regulations.",
+      "LLC excels in transporting oversized, wide, and heavy cargo with unmatched accuracy and dependability. We handle every detail of your deliveryâ€”from planning routes and securing permits to coordinating escorts and selecting the right equipmentâ€”while strictly adhering to Canadian transport regulations.",
       "Our fleet includes multi-axle trailers, flatbeds, hydraulic platforms, and specialized rigs, each configured to safely accommodate the weight and dimensions of your freight. Supported by a network of trusted Canadian carriers, we provide consistent capacity, advanced tracking, and full visibility, always giving you complete oversight of your delivery.",
-      "No matter the size of your business, we tailor solutions to fit your operational requirements—streamlining routes, cutting unnecessary costs, and improving delivery timelines. Our skilled logistics team supervises every delivery with care and precision, while our 24/7 support ensures timely communication and smooth delivery around the clock.",
-      "With LLC, transporting heavy or specialized freight isn't just logistics—it's a carefully managed process executed with expertise, innovation, and a commitment to delivering your cargo safely and on schedule.",
+      "No matter the size of your business, we tailor solutions to fit your operational requirementsâ€”streamlining routes, cutting unnecessary costs, and improving delivery timelines. Our skilled logistics team supervises every delivery with care and precision, while our 24/7 support ensures timely communication and smooth delivery around the clock.",
+      "With LLC, transporting heavy or specialized freight isn't just logisticsâ€”it's a carefully managed process executed with expertise, innovation, and a commitment to delivering your cargo safely and on schedule.",
     ],
   },
   {
@@ -137,8 +137,8 @@ const SERVICES: ServiceDetail[] = [
     paragraphs: [
       "LLC offers comprehensive auto transport solutions that combine safety, speed, and flexibility, ensuring every vehicle arrives on time and in pristine condition. We manage single cars, multi-vehicle deliveries, dealership inventories, and fleet transfers, using open or enclosed carriers with GPS tracking and secure loading to guarantee maximum protection.",
       "Every delivery is carefully planned and executed, from route mapping and customized scheduling to loading and delivery, all in compliance with Canadian transport standards. Our fleet is equipped to handle vehicles of all types and sizes, and our network of trusted Canadian carriers provides reliable capacity and full visibility throughout the transport process.",
-      "Whether you require local transport or coordinated long-distance moves, we tailor solutions to your specific needs—optimizing routes, reducing costs, and ensuring efficiency. Our experienced logistics team oversees every vehicle with precision, and with 24/7 availability, we are ready to manage your auto hauling needs anytime, anywhere.",
-      "With LLC, vehicle transport isn't just logistics—it's a carefully managed service executed with expertise, care, and an unwavering commitment to safety, timeliness, and client satisfaction.",
+      "Whether you require local transport or coordinated long-distance moves, we tailor solutions to your specific needsâ€”optimizing routes, reducing costs, and ensuring efficiency. Our experienced logistics team oversees every vehicle with precision, and with 24/7 availability, we are ready to manage your auto hauling needs anytime, anywhere.",
+      "With LLC, vehicle transport isn't just logisticsâ€”it's a carefully managed service executed with expertise, care, and an unwavering commitment to safety, timeliness, and client satisfaction.",
     ],
   },
   {
@@ -160,7 +160,7 @@ const SERVICES: ServiceDetail[] = [
       "LLC delivers fast, secure, and fully managed courier solutions designed to keep your business moving without delay. For urgent and time-sensitive deliveries, our services provide same-day, next-day, and scheduled options, giving you the flexibility to meet any deadline with confidence.",
       "We handle parcels, documents, high-value items, and confidential deliveries with the highest level of care and reliability. Every delivery is supported by advanced tracking, real-time updates, and proof-of-delivery, ensuring full visibility and peace of mind from pickup to drop-off.",
       "Our dedicated fleet and trusted partners are equipped to manage everything from small parcels to bulk courier deliveries with precision and consistency. Whether you need a one-time urgent delivery or ongoing scheduled routes, we design solutions that optimize efficiency, reduce costs, and maintain strict reliability standards.",
-      "Always on call, our team is available day and night to coordinate, support, and execute your deliveries whenever needed. With LLC, courier service isn't just about moving items—it's a seamless, stress-free experience built on speed, security, and trust.",
+      "Always on call, our team is available day and night to coordinate, support, and execute your deliveries whenever needed. With LLC, courier service isn't just about moving itemsâ€”it's a seamless, stress-free experience built on speed, security, and trust.",
     ],
   },
   {
@@ -168,19 +168,19 @@ const SERVICES: ServiceDetail[] = [
     navLabel: "RUHSH | Tasker",
     whyHeading: "Why clients count on RUHSH | Tasker",
     bullets: [
-      { title: "Personal Shopping, Tailored with Care", description: "Skip the wait—we handle your errands with speed and precision." },
-      { title: "From Groceries to Dining", description: "Fresh pantry staples, last-minute restaurant pick-ups, or specialty items—we deliver it all, fast." },
+      { title: "Personal Shopping, Tailored with Care", description: "Skip the waitâ€”we handle your errands with speed and precision." },
+      { title: "From Groceries to Dining", description: "Fresh pantry staples, last-minute restaurant pick-ups, or specialty itemsâ€”we deliver it all, fast." },
       { title: "Trusted Accuracy", description: "Every order is double-checked, so you get exactly what you need, when you need it." },
       { title: "Priority Service", description: "Urgent requests and hard-to-find items are managed quickly and seamlessly." },
-      { title: "Effortless Convenience", description: "Shopped, picked up, and delivered—without you lifting a finger." },
+      { title: "Effortless Convenience", description: "Shopped, picked up, and deliveredâ€”without you lifting a finger." },
     ],
     image: "/tasker.png",
     imageHeading: "RUHSH Tasker. Ready When You Are.",
     paragraphs: [
-      "RUSH Tasker delivers personal shopping solutions designed for speed, precision, and reliability—ensuring every order is managed exactly the way you need it. From groceries and restaurant pick-ups to luxury goods and urgent essentials, we combine efficiency with attention to detail, so nothing is ever missed.",
-      "Whether it's a one-time request or ongoing support, every shopping experience is tailored to your schedule, preferences, and lifestyle. Our team manages everything – sourcing, pickup, and swift delivery – so you can stay focused on your priorities while we handle the rest.",
-      "With real-time tracking, status updates, and flexible scheduling, you remain in control from start to finish. We adapt to your timeline, your pace, and your requirements – delivering not only what you want, but exactly when you need it.",
-      "With RUSH Tasker, personal shopping goes beyond convenience – it's a trusted service built on speed, care, and dependability, designed to make your life simpler every step of the way.",
+      "RUSH Tasker delivers personal shopping solutions designed for speed, precision, and reliabilityâ€”ensuring every order is managed exactly the way you need it. From groceries and restaurant pick-ups to luxury goods and urgent essentials, we combine efficiency with attention to detail, so nothing is ever missed.",
+      "Whether it's a one-time request or ongoing support, every shopping experience is tailored to your schedule, preferences, and lifestyle. Our team manages everything â€“ sourcing, pickup, and swift delivery â€“ so you can stay focused on your priorities while we handle the rest.",
+      "With real-time tracking, status updates, and flexible scheduling, you remain in control from start to finish. We adapt to your timeline, your pace, and your requirements â€“ delivering not only what you want, but exactly when you need it.",
+      "With RUSH Tasker, personal shopping goes beyond convenience â€“ it's a trusted service built on speed, care, and dependability, designed to make your life simpler every step of the way.",
     ],
   },
   {
@@ -192,17 +192,17 @@ const SERVICES: ServiceDetail[] = [
       { title: "Temperature Assurance", description: "Cold-chain technology safeguards sensitive medications and biologics." },
       { title: "Sterile Standards", description: "Strict handling protocols prevent contamination or compromise." },
       { title: "Regulatory Expertise", description: "Fully compliant with healthcare transport laws and certifications." },
-      { title: "24/7 Availability", description: "Medical emergencies don't wait — neither do we." },
+      { title: "24/7 Availability", description: "Medical emergencies don't wait â€” neither do we." },
       { title: "Critical Accuracy", description: "Zero room for error, guaranteed precision from pickup to delivery." },
       { title: "Trusted by Healthcare Leaders", description: "Hospitals, labs, and clinics rely on us as their supply chain lifeline." },
     ],
     image: "/medics.jpg",
     imageHeading: "Trusted Care in Every Delivery.",
     paragraphs: [
-      "LLC delivers medical supply solutions built on precision, urgency, and trust—ensuring critical items reach their destination exactly when they're needed most. From pharmaceuticals and lab samples to hospital equipment and essential healthcare materials, we manage every delivery with the highest level of safety, security, and compliance.",
+      "LLC delivers medical supply solutions built on precision, urgency, and trustâ€”ensuring critical items reach their destination exactly when they're needed most. From pharmaceuticals and lab samples to hospital equipment and essential healthcare materials, we manage every delivery with the highest level of safety, security, and compliance.",
       "Whether it's one-time urgent deliveries or recurring scheduled deliveries, our service adapts to the specific requirements of healthcare providers, pharmacies, laboratories, and clinics. We handle pickup, secure transport, and timely drop-off, all while maintaining strict chain-of-custody standards to guarantee accuracy and reliability.",
       "Every delivery is supported by advanced tracking, real-time updates, and proof of delivery, giving you complete visibility and peace of mind. With flexible scheduling and rapid response options, we make sure your supplies are delivered on time, every time.",
-      "Our team is always ready to serve, ensuring around-the-clock availability for critical and time-sensitive needs. With LLC, medical supply delivery isn't just a service—it's a lifeline managed with care, urgency, and an unwavering commitment to supporting healthcare operations.",
+      "Our team is always ready to serve, ensuring around-the-clock availability for critical and time-sensitive needs. With LLC, medical supply delivery isn't just a serviceâ€”it's a lifeline managed with care, urgency, and an unwavering commitment to supporting healthcare operations.",
     ],
   },
   {
@@ -222,9 +222,9 @@ const SERVICES: ServiceDetail[] = [
     imageHeading: "Air Freight. Elevated.",
     paragraphs: [
       "LLC redefines air freight with a premium, executive-grade service designed to meet the demands of the aerospace and high-value industries. In a world where every hour can cost millions, we deliver time-sensitive cargo with absolute precision, unmatched reliability, and a level of control that inspires confidence at every stage.",
-      "From aircraft parts and urgent AOG (Aircraft on Ground) deliveries to delicate, high-value components, we design tailored solutions that ensure zero downtime for your operations. Our global air network, combined with priority access to leading carriers and charter services, guarantees capacity when and where you need it—without compromise.",
-      "Every detail is meticulously managed—customs clearance, regulatory compliance, cargo security, and multimodal integration—ensuring your freight moves seamlessly across borders and continents. Advanced tracking systems and live data analytics give you real-time visibility, while our command-center approach ensures proactive problem-solving before issues arise.",
-      "With LLC, you don't just book an air freight service—you secure a strategic partner dedicated to keeping your aerospace supply chain resilient, responsive, and future-ready. Our logistics experts are available day and night, providing direct access, immediate answers, and tailored solutions that move as fast as your business demands.",
+      "From aircraft parts and urgent AOG (Aircraft on Ground) deliveries to delicate, high-value components, we design tailored solutions that ensure zero downtime for your operations. Our global air network, combined with priority access to leading carriers and charter services, guarantees capacity when and where you need itâ€”without compromise.",
+      "Every detail is meticulously managedâ€”customs clearance, regulatory compliance, cargo security, and multimodal integrationâ€”ensuring your freight moves seamlessly across borders and continents. Advanced tracking systems and live data analytics give you real-time visibility, while our command-center approach ensures proactive problem-solving before issues arise.",
+      "With LLC, you don't just book an air freight serviceâ€”you secure a strategic partner dedicated to keeping your aerospace supply chain resilient, responsive, and future-ready. Our logistics experts are available day and night, providing direct access, immediate answers, and tailored solutions that move as fast as your business demands.",
       "For aerospace leaders who demand nothing less than certainty, LLC offers more than air freight. We deliver assurance, performance, and a partnership built to elevate your operations beyond industry standards.",
     ],
   },
@@ -244,10 +244,10 @@ const SERVICES: ServiceDetail[] = [
     image: "/trans.jpg",
     imageHeading: "Every Ride. Exceptional.",
     paragraphs: [
-      "LLC Chauffeur Services delivers more than transportation—we provide a premium travel experience defined by professionalism, comfort, and reliability. Whether for executives, VIPs, or personal engagements, our service is designed to meet the highest standards of safety, discretion, and convenience.",
+      "LLC Chauffeur Services delivers more than transportationâ€”we provide a premium travel experience defined by professionalism, comfort, and reliability. Whether for executives, VIPs, or personal engagements, our service is designed to meet the highest standards of safety, discretion, and convenience.",
       "From airport transfers and corporate travel to private events and long-distance journeys, we tailor each ride to your schedule and expectations. Our fleet of modern, luxury vehicles is maintained to the highest standards and equipped with the latest technology to ensure a smooth, comfortable journey every time.",
-      "Every trip is managed by skilled, courteous chauffeurs who are trained to provide both precision driving and exceptional customer service. Punctuality is our promise, and flexibility is at the core of our operations—ensuring that your travel adapts seamlessly to last-minute changes or urgent requests.",
-      "Clients receive real-time updates, professional coordination, and on-demand availability, guaranteeing peace of mind for both planned and unplanned travel needs. With LLC, chauffeur service is more than point-to-point driving—it's a trusted partnership built on consistency, care, and an unwavering commitment to excellence.",
+      "Every trip is managed by skilled, courteous chauffeurs who are trained to provide both precision driving and exceptional customer service. Punctuality is our promise, and flexibility is at the core of our operationsâ€”ensuring that your travel adapts seamlessly to last-minute changes or urgent requests.",
+      "Clients receive real-time updates, professional coordination, and on-demand availability, guaranteeing peace of mind for both planned and unplanned travel needs. With LLC, chauffeur service is more than point-to-point drivingâ€”it's a trusted partnership built on consistency, care, and an unwavering commitment to excellence.",
     ],
   },
   {
@@ -262,7 +262,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Data-Driven Decisions", description: "Insights backed by advanced analytics and real-time operational data." },
       { title: "Scalable Advice", description: "Solutions that grow with your business, supporting both small operations and large enterprises." },
       { title: "Innovation at Core", description: "We identify opportunities for process improvement, cost reduction, and operational excellence." },
-      { title: "Trusted Partnership", description: "We don't just advise—we work as an extension of your team, fully committed to your success." },
+      { title: "Trusted Partnership", description: "We don't just adviseâ€”we work as an extension of your team, fully committed to your success." },
       { title: "Flexible Availability", description: "Our experts are accessible when you need them, ready to address urgent challenges or long-term planning." },
     ],
     image: "/adv.png",
@@ -270,7 +270,7 @@ const SERVICES: ServiceDetail[] = [
     paragraphs: [
       "LLC is a full-service Logistics & Transport Solutions company, delivering tailored, reliable, and innovative services for businesses and individuals. From freight management and courier delivery to medical transport, personal shopping, and chauffeur services, we provide seamless solutions designed to keep operations moving efficiently.",
       "Building on our hands-on expertise, LLC also offers Consultancy & Advisory Services, helping clients optimize supply chains, improve delivery efficiency, manage compliance, and reduce operational costs. By combining practical logistics experience with strategic insight, we empower businesses to make smarter decisions, streamline operations, and achieve measurable results.",
-      "With flexible solutions and expert guidance, LLC is more than a service provider—it's a trusted partner committed to operational excellence, innovation, and client success.",
+      "With flexible solutions and expert guidance, LLC is more than a service providerâ€”it's a trusted partner committed to operational excellence, innovation, and client success.",
     ],
   },
 ];
@@ -319,6 +319,8 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
+
+      {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
         <Header />
 
         <section className="max-w-6xl mx-auto pt-32 pb-20 px-6 text-start">
@@ -336,7 +338,7 @@ export default function ServicesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="text-base sm:text-xl font-medium text-gray-600 max-w-xl"
+            className="text-base sm:text-xl font-medium text-black max-w-xl"
           >
             Explore our transportation and delivery solutions designed to
             support businesses of all sizes.
@@ -347,7 +349,7 @@ export default function ServicesPage() {
       <div className="max-w-7xl mx-auto px-6 py-16 w-full">
         <div className="overflow-x-clip rounded-2xl bg-[#FBF3E5] p-4 sm:p-8 lg:p-10">
           <div className="grid items-stretch gap-8 lg:grid-cols-[240px_1fr_1fr] lg:gap-10">
-            {/* Nav column — sits on top like a book cover, overlapping the
+            {/* Nav column â€” sits on top like a book cover, overlapping the
                 "why" column so its content can slide out from underneath it.
                 Its right edge is squared off (no rounding) so it sits flush
                 against the "why" column, with a clickable indicator line
@@ -366,7 +368,7 @@ export default function ServicesPage() {
                   />
                 ) : (
                   <div key={`group-${i}`} className="shrink-0 lg:shrink lg:mt-1">
-                    <p className="whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 lg:whitespace-normal">
+                    <p className="whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black lg:whitespace-normal">
                       {entry.label}
                     </p>
                     <div className="flex gap-1 lg:flex-col">
@@ -385,7 +387,7 @@ export default function ServicesPage() {
               )}
             </nav>
 
-            {/* Why column — pulled out from underneath the nav "book cover" */}
+            {/* Why column â€” pulled out from underneath the nav "book cover" */}
             <div className="relative z-10 h-full overflow-hidden rounded-2xl lg:overflow-visible lg:rounded-l-none">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -406,7 +408,7 @@ export default function ServicesPage() {
                         <p className="text-sm font-semibold text-black">
                           {bullet.title}:
                         </p>
-                        <p className="text-sm text-gray-600 leading-relaxed">
+                        <p className="text-sm text-black leading-relaxed">
                           {bullet.description}
                         </p>
                       </div>
@@ -424,7 +426,7 @@ export default function ServicesPage() {
               </AnimatePresence>
             </div>
 
-            {/* Image + description column — the card itself stays put, only its
+            {/* Image + description column â€” the card itself stays put, only its
                 content (image + copy) crossfades between services */}
             <div className="h-full rounded-2xl bg-white p-6 shadow-lg">
               <AnimatePresence mode="wait">
@@ -452,7 +454,7 @@ export default function ServicesPage() {
                     {active.paragraphs.map((paragraph, i) => (
                       <p
                         key={i}
-                        className="text-sm text-gray-600 leading-relaxed"
+                        className="text-sm text-black leading-relaxed"
                       >
                         {paragraph}
                       </p>
@@ -490,7 +492,7 @@ function NavLink({
       } ${
         active
           ? "font-semibold text-primary"
-          : "text-gray-700 hover:text-primary"
+          : "text-black hover:text-primary"
       }`}
     >
       {label}

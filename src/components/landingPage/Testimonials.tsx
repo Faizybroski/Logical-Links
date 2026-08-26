@@ -87,7 +87,7 @@ export default function Testimonials() {
           <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
             Built for Operations
           </h2>
-          <p className="text-lg text-muted">
+          <p className="text-lg text-black">
             The systems and services running behind every delivery we manage.
           </p>
         </motion.div>
@@ -114,7 +114,7 @@ export default function Testimonials() {
                   </p>
                   <div className="mt-1.5 flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="text-sm text-muted">{status}</span>
+                    <span className="text-sm text-black">{status}</span>
                   </div>
                 </div>
               </div>
@@ -133,7 +133,7 @@ export default function Testimonials() {
           <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
             Core Services
           </h2>
-          <p className="text-lg text-muted">
+          <p className="text-lg text-black">
             The full range of logistics capabilities we deliver, end to end.
           </p>
         </motion.div>
@@ -152,7 +152,7 @@ export default function Testimonials() {
                 <Icon className="h-8 w-8 text-primary" strokeWidth={2} />
               </div>
               <h3 className="text-xl text-primary mb-6">{title}</h3>
-              <p className="text-muted text-sm">{description}</p>
+              <p className="text-black text-sm">{description}</p>
             </motion.div>
           ))}
         </div>

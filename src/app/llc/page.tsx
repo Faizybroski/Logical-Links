@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -40,7 +40,7 @@ const pillars = [
     title: "Our Mission",
     image: "/mission.jpg",
     paragraphs: [
-      "Our mission is to redefine logistics and transport by delivering solutions that go beyond movement—building trust through reliability, innovation, and precision. We serve businesses and individuals with services that span freight, courier, medical deliveries, personal shopping, and premium transport.",
+      "Our mission is to redefine logistics and transport by delivering solutions that go beyond movementâ€”building trust through reliability, innovation, and precision. We serve businesses and individuals with services that span freight, courier, medical deliveries, personal shopping, and premium transport.",
       "With every delivery, every mile, and every client interaction, we are committed to setting new standards of excellence, ensuring safety, speed, and peace of mind always.",
     ],
   },
@@ -49,7 +49,7 @@ const pillars = [
     title: "Our Vision",
     image: "/vission.png",
     paragraphs: [
-      "Our vision is to set the benchmark for logistics and transport excellence—integrating innovation, precision, and sustainability to move businesses and communities forward. We aspire to be the partner of choice across freight, courier, and specialized services, recognized for redefining reliability and creating smarter, safer, and more connected supply chains.",
+      "Our vision is to set the benchmark for logistics and transport excellenceâ€”integrating innovation, precision, and sustainability to move businesses and communities forward. We aspire to be the partner of choice across freight, courier, and specialized services, recognized for redefining reliability and creating smarter, safer, and more connected supply chains.",
       "By constantly evolving and leading with purpose, we aim to transform the future of logistics into one that empowers progress, delivers certainty, and builds enduring trust worldwide.",
     ],
   },
@@ -58,7 +58,7 @@ const pillars = [
     title: "Our Values",
     image: "/values.png",
     paragraphs: [
-      "Our business is built on a foundation of integrity, reliability, and a customer-first approach. We believe in doing what we promise, delivering every service—whether logistics, courier, or personal transport—with consistency and care.",
+      "Our business is built on a foundation of integrity, reliability, and a customer-first approach. We believe in doing what we promise, delivering every serviceâ€”whether logistics, courier, or personal transportâ€”with consistency and care.",
       "Innovation drives us forward, as we continuously embrace new technologies and smarter processes to create safer, faster, and more efficient solutions. We place excellence at the center of everything we do, and we remain committed to sustainability and responsibility, ensuring our services positively impact both our clients and the communities we serve.",
     ],
   },
@@ -68,6 +68,8 @@ export default function LLCPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
+
+      {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
         <Header />
 
         <section className="max-w-6xl mx-auto pt-32 pb-20 px-6 text-start">
@@ -85,7 +87,7 @@ export default function LLCPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="text-base sm:text-xl font-medium text-gray-600 max-w-xl"
+            className="text-base sm:text-xl font-medium text-black max-w-xl"
           >
             The company behind the gold standard in Canadian logistics.
           </motion.p>
@@ -102,36 +104,36 @@ export default function LLCPage() {
           <h2 className="text-2xl sm:text-4xl font-bold text-black mb-4">
             About Us
           </h2>
-          <p className="text-gray-600 leading-relaxed mb-4">
-            At LLC, we don&apos;t just deliver services—we deliver certainty.
+          <p className="text-black leading-relaxed mb-4">
+            At LLC, we don&apos;t just deliver servicesâ€”we deliver certainty.
             In an industry where reliability defines success, we set the
             standard by combining unmatched expertise, advanced technology,
             and a relentless commitment to excellence.
           </p>
-          <p className="text-gray-600 leading-relaxed mb-4">
+          <p className="text-black leading-relaxed mb-4">
             From managing complex logistics and time-sensitive courier
             deliveries to transporting passengers in luxury, delivering
             life-saving medical supplies, or providing seamless shopping and
             delivery solutions, our promise is simple: we get it
-            done—safely, efficiently, and without compromise.
+            doneâ€”safely, efficiently, and without compromise.
           </p>
-          <p className="text-gray-600 leading-relaxed mb-4">
+          <p className="text-black leading-relaxed mb-4">
             What makes us different is not only the breadth of our services
             but the depth of our dedication. Every delivery, every ride, and
             every delivery is managed with precision and care, supported by
             real-time visibility, customized solutions, and a team that
             operates around the clock to meet your needs without excuses.
           </p>
-          <p className="text-gray-600 leading-relaxed mb-4">
+          <p className="text-black leading-relaxed mb-4">
             When others say &ldquo;good enough,&rdquo; we go
-            further—optimizing costs, accelerating timelines, and
+            furtherâ€”optimizing costs, accelerating timelines, and
             guaranteeing peace of mind at every step. With LLC, you gain more
             than a provider; you gain a strategic partner who ensures your
             business, your goods, and your lifestyle move forward without
             interruption.
           </p>
-          <p className="text-gray-600 leading-relaxed font-semibold">
-            Choose confidence. Choose innovation. Choose LLC—where
+          <p className="text-black leading-relaxed font-semibold">
+            Choose confidence. Choose innovation. Choose LLCâ€”where
             reliability is not promised, it&apos;s proven.
           </p>
 
@@ -174,7 +176,7 @@ export default function LLCPage() {
                 {pillar.paragraphs.map((paragraph, j) => (
                   <p
                     key={j}
-                    className="text-gray-600 leading-relaxed mb-4 last:mb-0"
+                    className="text-black leading-relaxed mb-4 last:mb-0"
                   >
                     {paragraph}
                   </p>
@@ -211,7 +213,7 @@ export default function LLCPage() {
                 <h3 className="text-lg font-semibold text-black mb-2">
                   {value.title}
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-black leading-relaxed">
                   {value.description}
                 </p>
               </motion.div>

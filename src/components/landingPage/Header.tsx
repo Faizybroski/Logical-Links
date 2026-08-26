@@ -97,7 +97,7 @@ export default function Header() {
         {/* Mobile hamburger */}
         <button
           type="button"
-          className="md:hidden p-2 text-gray-700"
+          className="md:hidden p-2 text-black"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -123,7 +123,7 @@ export default function Header() {
                   goToSection(n.section);
                   setOpen(false);
                 }}
-                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors text-left"
+                className="text-sm font-medium text-black hover:text-primary transition-colors text-left"
               >
                 {n.label}
               </button>
@@ -133,7 +133,7 @@ export default function Header() {
               <a
                 href="/login"
                 onClick={() => setOpen(false)}
-                className="flex-1 text-center text-sm font-medium text-gray-700 hover:text-primary transition-colors py-2"
+                className="flex-1 text-center text-sm font-medium text-black hover:text-primary transition-colors py-2"
               >
                 Log In
               </a>

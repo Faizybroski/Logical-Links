@@ -19,12 +19,12 @@ export default function Tracking() {
             <h1 className="text-4xl sm:text-6xl font-bold leading-tight">
               <span className="text-primary">Smart Logistics.</span>
               <br />
-              <span className="text-foreground">Delivered with</span>
+              <span className="text-black">Delivered with</span>
               <br />
-              <span className="text-foreground">Logic.</span>
+              <span className="text-black">Logic.</span>
             </h1>
 
-            <p className="mt-8 max-w-xl text-sm text-muted leading-relaxed">
+            <p className="mt-8 max-w-xl text-sm text-black leading-relaxed">
               Seamless courier &amp; freight solutions across Canada, powered by
               technology and tailored for modern businesses.
             </p>

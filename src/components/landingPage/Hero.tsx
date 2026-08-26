@@ -64,7 +64,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
-          className="flex gap-5 text-base sm:text-xl font-medium text-gray-600 max-w-sm mb-10"
+          className="flex gap-5 text-base sm:text-xl font-medium text-black max-w-sm mb-10"
         >
           <Image
             className="self-start"

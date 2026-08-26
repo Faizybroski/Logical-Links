@@ -101,7 +101,7 @@ export default function Offerings() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="text-sm leading-relaxed text-muted-foreground"
+                  className="text-sm leading-relaxed text-black"
                 >
                   {offerStatements[activeIndex].text}
                 </motion.p>
@@ -149,11 +149,11 @@ export default function Offerings() {
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <p className="text-lg leading-relaxed text-muted">
+            <p className="text-lg leading-relaxed text-black">
               We provide end-to-end logistics and transportation solutions
               designed to support efficient, reliable operations.
             </p>
-            <p className="mt-6 text-lg leading-relaxed text-muted">
+            <p className="mt-6 text-lg leading-relaxed text-black">
               Our services include logistics coordination, last-mile delivery,
               and specialized transportation solutions tailored to a wide
               range of operational needs. Every delivery is managed with
@@ -161,7 +161,7 @@ export default function Offerings() {
               dependability across the supply chain.
             </p>
 
-            <p className="mt-10 text-sm font-medium">
+            <p className="mt-10 text-sm font-medium text-black">
               Create experience with{" "}
               <span className="font-bold">LOGICAL LINKS</span> and efficient
               service.

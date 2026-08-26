@@ -26,7 +26,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-          className="text-lg text-gray-700 leading-relaxed"
+          className="text-lg text-black leading-relaxed"
         >
           {/* At the core of our business is a strong commitment to delivering
           logistics and courier solutions that are both reliable and tailored to
@@ -47,7 +47,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-          className="text-lg text-gray-700 leading-relaxed mb-6"
+          className="text-lg text-black leading-relaxed mb-6"
         >
           {/* Through continuous innovation and ongoing skill development, we
           position ourselves as leaders in the logistics and courier sector.

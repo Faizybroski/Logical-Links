@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Award, Check, Clock3 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -14,6 +14,8 @@ export default function TiersPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
+
+      {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
         <Header />
 
         <section className="max-w-6xl mx-auto pt-32 pb-20 px-6 text-start">
@@ -31,7 +33,7 @@ export default function TiersPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="text-base sm:text-xl font-medium text-gray-600 max-w-xl"
+            className="text-base sm:text-xl font-medium text-black max-w-xl"
           >
             The more you ship with us, the more you unlock. Every tier builds
             on the one before it.
@@ -71,14 +73,14 @@ export default function TiersPage() {
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-black">{tier.name}</h2>
-                        <p className="mt-0.5 text-sm text-gray-600">
+                        <p className="mt-0.5 text-sm text-black">
                           {previous
                             ? `Includes everything in ${previous.name}, plus:`
                             : "Baseline access for every shipping partner"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-4 py-1.5 text-xs font-semibold text-gray-700">
+                    <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-4 py-1.5 text-xs font-semibold text-black">
                       <Clock3 className="h-3.5 w-3.5" />
                       Quote turnaround: {tier.quote_turnaround}
                     </div>
@@ -86,7 +88,7 @@ export default function TiersPage() {
 
                   <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
                     {tier.benefits.map((benefit, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <li key={idx} className="flex items-start gap-2 text-sm text-black">
                         <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         {benefit}
                       </li>

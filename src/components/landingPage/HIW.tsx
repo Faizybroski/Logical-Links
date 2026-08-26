@@ -56,7 +56,7 @@ export default function HowItWorks() {
           <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
             How It Works
           </h2>
-          <p className="text-lg text-muted">
+          <p className="text-lg text-black">
             Three simple steps to streamlined logistics execution.
           </p>
         </motion.div>
@@ -86,7 +86,7 @@ export default function HowItWorks() {
                     <Icon className="h-8 w-8 text-primary" strokeWidth={2} />
                   </div>
                   <h3 className="text-xl text-primary mb-6">{step.title}</h3>
-                  <p className="text-muted text-sm">{step.description}</p>
+                  <p className="text-black text-sm">{step.description}</p>
                 </div>
               </motion.div>
             );
