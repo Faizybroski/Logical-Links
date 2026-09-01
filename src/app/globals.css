@@ -188,6 +188,25 @@ h6,
   font-family: "Playfair Display", serif;
 }
 
+/* ── Landing-page typography ─────────────────────────────────────────────────
+   Scoped to the public marketing pages via the .landing-page wrapper class.
+   Headings: EB Garamond.  Body copy: Droid Serif (Noto Serif fallback). */
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page h4,
+.landing-page h5,
+.landing-page h6,
+.landing-page .display-font {
+  font-family: "EB Garamond", var(--font-eb-garamond), Georgia, serif;
+}
+
+.landing-page p,
+.landing-page li,
+.landing-page blockquote {
+  font-family: "Droid Serif", var(--font-droid-serif), Georgia, serif;
+}
+
 img,
 video,
 svg {

@@ -12,8 +12,10 @@ interface SwatchSelection {
 interface AppearanceContextValue {
   sidebarSwatchId: SwatchSelection
   contentSwatchId: SwatchSelection
+  accentSwatchId: SwatchSelection
   setSidebarSwatch: (mode: Mode, id: string | null) => void
   setContentSwatch: (mode: Mode, id: string | null) => void
+  setAccentSwatch: (mode: Mode, id: string | null) => void
 }
 
 const STORAGE_KEYS = {
@@ -21,13 +23,17 @@ const STORAGE_KEYS = {
   sidebarDark:  'appearance:sidebar:dark',
   contentLight: 'appearance:content:light',
   contentDark:  'appearance:content:dark',
+  accentLight:  'appearance:accent:light',
+  accentDark:   'appearance:accent:dark',
 } as const
 
 const defaultValue: AppearanceContextValue = {
   sidebarSwatchId: { light: null, dark: null },
   contentSwatchId: { light: null, dark: null },
+  accentSwatchId: { light: null, dark: null },
   setSidebarSwatch: () => {},
   setContentSwatch: () => {},
+  setAccentSwatch: () => {},
 }
 
 const AppearanceContext = createContext<AppearanceContextValue>(defaultValue)
@@ -54,6 +60,7 @@ function writeStorage(key: string, value: string | null) {
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [sidebarSwatchId, setSidebarSwatchId] = useState<SwatchSelection>({ light: null, dark: null })
   const [contentSwatchId, setContentSwatchId] = useState<SwatchSelection>({ light: null, dark: null })
+  const [accentSwatchId, setAccentSwatchId] = useState<SwatchSelection>({ light: null, dark: null })
 
   useEffect(() => {
     setSidebarSwatchId({
@@ -63,6 +70,10 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     setContentSwatchId({
       light: readStorage(STORAGE_KEYS.contentLight),
       dark:  readStorage(STORAGE_KEYS.contentDark),
+    })
+    setAccentSwatchId({
+      light: readStorage(STORAGE_KEYS.accentLight),
+      dark:  readStorage(STORAGE_KEYS.accentDark),
     })
   }, [])
 
@@ -76,8 +87,22 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     setContentSwatchId((prev) => ({ ...prev, [mode]: id }))
   }
 
+  function setAccentSwatch(mode: Mode, id: string | null) {
+    writeStorage(mode === 'dark' ? STORAGE_KEYS.accentDark : STORAGE_KEYS.accentLight, id)
+    setAccentSwatchId((prev) => ({ ...prev, [mode]: id }))
+  }
+
   return (
-    <AppearanceContext.Provider value={{ sidebarSwatchId, contentSwatchId, setSidebarSwatch, setContentSwatch }}>
+    <AppearanceContext.Provider
+      value={{
+        sidebarSwatchId,
+        contentSwatchId,
+        accentSwatchId,
+        setSidebarSwatch,
+        setContentSwatch,
+        setAccentSwatch,
+      }}
+    >
       {children}
     </AppearanceContext.Provider>
   )

@@ -222,7 +222,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
 
                   active
                     ? isExpanded
-                      ? "bg-primary text-sidebar shadow-md"
+                      ? "bg-primary text-primary-foreground shadow-md"
                       : "text-primary"
                     : "text-zinc-300 hover:bg-sidebar-secondary hover:text-white",
                 )}

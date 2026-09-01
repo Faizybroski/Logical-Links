@@ -40,7 +40,7 @@ const hubLinks = [
 
 export default function AccessHubPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="landing-page min-h-screen bg-white flex flex-col">
       <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
         <Header />
 

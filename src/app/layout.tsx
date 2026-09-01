@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Inter } from 'next/font/google'
+import { Cormorant_Garamond, Inter, EB_Garamond, Noto_Serif } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import NavigationProgress from '@/components/NavigationProgress'
@@ -15,6 +15,22 @@ const inter = Inter({
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   variable: "--font-cormorant",
+  weight: ["400", "500", "600", "700"],
+});
+
+// Landing-page typography: headings use EB Garamond, body copy uses Droid Serif.
+// Droid Serif was retired from Google Fonts, so we load Noto Serif (its direct
+// successor, same designer) and keep "Droid Serif" first in the CSS stack so it
+// is used when available locally.
+const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  variable: "--font-eb-garamond",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const droidSerif = Noto_Serif({
+  subsets: ["latin"],
+  variable: "--font-droid-serif",
   weight: ["400", "500", "600", "700"],
 });
 
@@ -41,7 +57,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} ${ebGaramond.variable} ${droidSerif.variable} antialiased`}>
         <ThemeProvider>
           <AppearanceProvider>
             <NavigationProgress />

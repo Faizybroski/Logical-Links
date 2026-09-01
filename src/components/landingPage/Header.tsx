@@ -31,8 +31,9 @@ export default function Header() {
   };
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", onScroll);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -41,11 +42,18 @@ export default function Header() {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`px-6 py-4 fixed top-5 z-50 w-full transition-all duration-300 ${scrolled ? "top-0" : "top-5"}`}
+      /* Floats with breathing room at the top of the page, then on scroll the
+         top gap collapses to zero, the bar spans the full width and a solid
+         backdrop fades in — all driven by the `scrolled` flag + CSS transitions. */
+      className={`fixed left-0 right-0 z-50 w-full transition-all duration-500 ease-out ${
+        scrolled ? "top-0 px-0 py-0" : "top-10 px-6 py-4"
+      }`}
     >
       <div
-        className={`max-w-7xl mx-auto flex items-center justify-between rounded-xl px-6 py-3 transition-all duration-300 ${
-          scrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-transparent"
+        className={`mx-auto flex items-center justify-between transition-all duration-500 ease-out ${
+          scrolled
+            ? "max-w-full rounded-none px-6 py-4 lg:px-10 bg-white/95 backdrop-blur-md shadow-md"
+            : "max-w-7xl rounded-xl px-6 py-3 bg-transparent"
         }`}
       >
         <button

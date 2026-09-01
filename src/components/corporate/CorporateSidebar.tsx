@@ -194,7 +194,7 @@ export default function CorporateSidebar({ isOpen = false, onClose }: Props) {
                     ? "gap-2.5 px-3 py-2.5"
                     : "justify-center px-0 py-3",
                   active
-                    ? "bg-primary text-sidebar shadow-md"
+                    ? "bg-primary text-primary-foreground shadow-md"
                     : "text-zinc-300 hover:bg-sidebar-secondary hover:text-white",
                 )}
               >

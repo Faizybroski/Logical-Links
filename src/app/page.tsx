@@ -19,7 +19,7 @@ import Footer from "@/components/landingPage/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="landing-page min-h-screen bg-white flex flex-col">
       <LandingAuthRedirect />
       <ScrollToHash />
       <div className="text-center bg-primary text-white py-2 text-xs">

@@ -3,10 +3,29 @@
 import { Check, RotateCcw, Sun, Moon } from "lucide-react";
 import { useAppearance } from "@/components/providers/appearance-provider";
 import { useAuthStore } from "@/store/auth.store";
-import { SIDEBAR_THEMES, getSidebarTheme } from "@/lib/utils/sidebar-theme";
-import { CONTENT_SWATCHES_LIGHT, CONTENT_SWATCHES_DARK } from "@/lib/utils/content-theme";
+import {
+  SIDEBAR_THEMES_NEUTRAL,
+  SIDEBAR_THEMES_TINTED,
+  getSidebarTheme,
+} from "@/lib/utils/sidebar-theme";
+import {
+  CONTENT_SWATCHES_LIGHT_SOFT,
+  CONTENT_SWATCHES_LIGHT_BOLD,
+  CONTENT_SWATCHES_DARK_SOFT,
+  CONTENT_SWATCHES_DARK_BOLD,
+} from "@/lib/utils/content-theme";
+import {
+  ACCENT_THEMES_VIVID,
+  ACCENT_THEMES_MUTED,
+  ACCENT_DEFAULT_HEX,
+} from "@/lib/utils/accent-theme";
 
 type Mode = "light" | "dark";
+type SwatchLite = { id: string; name: string; bg: string };
+
+// The accent picker reuses ModeRow, which expects `{ id, name, bg }` swatches.
+const ACCENT_SWATCHES_VIVID: SwatchLite[] = ACCENT_THEMES_VIVID.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
+const ACCENT_SWATCHES_MUTED: SwatchLite[] = ACCENT_THEMES_MUTED.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
 
 // Picks black or white for the checkmark so it stays visible against any swatch.
 function iconColorFor(hex: string): string {
@@ -91,16 +110,66 @@ function ModeRow({
   );
 }
 
+// A named collection: a "Light" and a "Dark" row of swatches sharing one
+// selection. Same shape used by every picker (sidebar / content / accent).
+function CollectionGroup({
+  label,
+  lightSwatches,
+  darkSwatches,
+  activeId,
+  defaultLight,
+  defaultDark,
+  onSelect,
+  onReset,
+}: {
+  label: string;
+  lightSwatches: SwatchLite[];
+  darkSwatches: SwatchLite[];
+  activeId: { light: string | null; dark: string | null };
+  defaultLight: string;
+  defaultDark: string;
+  onSelect: (mode: Mode, id: string) => void;
+  onReset: (mode: Mode) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-light">
+        {label}
+      </p>
+      <ModeRow
+        mode="light"
+        swatches={lightSwatches}
+        activeId={activeId.light}
+        defaultColor={defaultLight}
+        onSelect={(id) => onSelect("light", id)}
+        onReset={() => onReset("light")}
+      />
+      <ModeRow
+        mode="dark"
+        swatches={darkSwatches}
+        activeId={activeId.dark}
+        defaultColor={defaultDark}
+        onSelect={(id) => onSelect("dark", id)}
+        onReset={() => onReset("dark")}
+      />
+    </div>
+  );
+}
+
 export function AppearanceSettings() {
   const user = useAuthStore((s) => s.user);
   const {
     sidebarSwatchId,
     contentSwatchId,
+    accentSwatchId,
     setSidebarSwatch,
     setContentSwatch,
+    setAccentSwatch,
   } = useAppearance();
 
   const defaultSidebar = getSidebarTheme(user?.id);
+  const defaultContentLight = CONTENT_SWATCHES_LIGHT_SOFT[0].bg;
+  const defaultContentDark = CONTENT_SWATCHES_DARK_SOFT[0].bg;
 
   return (
     <div className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-6">
@@ -111,43 +180,81 @@ export function AppearanceSettings() {
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h3 className="text-sm font-medium text-foreground">Sidebar Color</h3>
-        <ModeRow
-          mode="light"
-          swatches={SIDEBAR_THEMES}
-          activeId={sidebarSwatchId.light}
-          defaultColor={defaultSidebar.bg}
-          onSelect={(id) => setSidebarSwatch("light", id)}
-          onReset={() => setSidebarSwatch("light", null)}
+        <CollectionGroup
+          label="Neutral"
+          lightSwatches={SIDEBAR_THEMES_NEUTRAL}
+          darkSwatches={SIDEBAR_THEMES_NEUTRAL}
+          activeId={sidebarSwatchId}
+          defaultLight={defaultSidebar.bg}
+          defaultDark={defaultSidebar.bg}
+          onSelect={setSidebarSwatch}
+          onReset={(m) => setSidebarSwatch(m, null)}
         />
-        <ModeRow
-          mode="dark"
-          swatches={SIDEBAR_THEMES}
-          activeId={sidebarSwatchId.dark}
-          defaultColor={defaultSidebar.bg}
-          onSelect={(id) => setSidebarSwatch("dark", id)}
-          onReset={() => setSidebarSwatch("dark", null)}
+        <CollectionGroup
+          label="Tinted"
+          lightSwatches={SIDEBAR_THEMES_TINTED}
+          darkSwatches={SIDEBAR_THEMES_TINTED}
+          activeId={sidebarSwatchId}
+          defaultLight={defaultSidebar.bg}
+          defaultDark={defaultSidebar.bg}
+          onSelect={setSidebarSwatch}
+          onReset={(m) => setSidebarSwatch(m, null)}
         />
       </div>
 
-      <div className="space-y-3 border-t border-card-border pt-5">
+      <div className="space-y-4 border-t border-card-border pt-5">
         <h3 className="text-sm font-medium text-foreground">Main Content Color</h3>
-        <ModeRow
-          mode="light"
-          swatches={CONTENT_SWATCHES_LIGHT}
-          activeId={contentSwatchId.light}
-          defaultColor={CONTENT_SWATCHES_LIGHT[0].bg}
-          onSelect={(id) => setContentSwatch("light", id)}
-          onReset={() => setContentSwatch("light", null)}
+        <CollectionGroup
+          label="Soft"
+          lightSwatches={CONTENT_SWATCHES_LIGHT_SOFT}
+          darkSwatches={CONTENT_SWATCHES_DARK_SOFT}
+          activeId={contentSwatchId}
+          defaultLight={defaultContentLight}
+          defaultDark={defaultContentDark}
+          onSelect={setContentSwatch}
+          onReset={(m) => setContentSwatch(m, null)}
         />
-        <ModeRow
-          mode="dark"
-          swatches={CONTENT_SWATCHES_DARK}
-          activeId={contentSwatchId.dark}
-          defaultColor={CONTENT_SWATCHES_DARK[0].bg}
-          onSelect={(id) => setContentSwatch("dark", id)}
-          onReset={() => setContentSwatch("dark", null)}
+        <CollectionGroup
+          label="Bold"
+          lightSwatches={CONTENT_SWATCHES_LIGHT_BOLD}
+          darkSwatches={CONTENT_SWATCHES_DARK_BOLD}
+          activeId={contentSwatchId}
+          defaultLight={defaultContentLight}
+          defaultDark={defaultContentDark}
+          onSelect={setContentSwatch}
+          onReset={(m) => setContentSwatch(m, null)}
+        />
+      </div>
+
+      <div className="space-y-4 border-t border-card-border pt-5">
+        <div>
+          <h3 className="text-sm font-medium text-foreground">Accent Color</h3>
+          <p className="mt-1 text-xs text-muted">
+            Applies to headers, primary &amp; active buttons, the active sidebar
+            link, focus rings, and other primary-colored elements.
+          </p>
+        </div>
+        <CollectionGroup
+          label="Vivid"
+          lightSwatches={ACCENT_SWATCHES_VIVID}
+          darkSwatches={ACCENT_SWATCHES_VIVID}
+          activeId={accentSwatchId}
+          defaultLight={ACCENT_DEFAULT_HEX}
+          defaultDark={ACCENT_DEFAULT_HEX}
+          onSelect={setAccentSwatch}
+          onReset={(m) => setAccentSwatch(m, null)}
+        />
+        <CollectionGroup
+          label="Muted"
+          lightSwatches={ACCENT_SWATCHES_MUTED}
+          darkSwatches={ACCENT_SWATCHES_MUTED}
+          activeId={accentSwatchId}
+          defaultLight={ACCENT_DEFAULT_HEX}
+          defaultDark={ACCENT_DEFAULT_HEX}
+          onSelect={setAccentSwatch}
+          onReset={(m) => setAccentSwatch(m, null)}
         />
       </div>
     </div>

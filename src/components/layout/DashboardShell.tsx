@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import CorporateSidebar from '@/components/corporate/CorporateSidebar'
 import ResidentialSidebar from '@/components/residential/ResidentialSidebar'
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth.store'
 import { useTheme } from '@/components/providers/theme-provider'
 import { useAppearance } from '@/components/providers/appearance-provider'
 import { getContentSwatchById } from '@/lib/utils/content-theme'
+import { getAccentThemeById } from '@/lib/utils/accent-theme'
 
 interface Props {
   children: React.ReactNode
@@ -21,11 +22,34 @@ export default function DashboardShell({ children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const { theme } = useTheme()
-  const { contentSwatchId } = useAppearance()
+  const { contentSwatchId, accentSwatchId } = useAppearance()
 
   const isAdmin = user?.role === 'admin'
   const isResidential = user?.role === 'residential'
   const contentSwatch = getContentSwatchById(theme, contentSwatchId[theme])
+  const accent = getAccentThemeById(accentSwatchId[theme])
+
+  // Drive the accent override from :root so it also reaches portaled UI
+  // (dialogs, dropdowns, popovers, toasts) that renders outside this subtree.
+  // Covers headers, primary/active buttons, the active sidebar link background,
+  // focus rings, badges — anything using primary / primary-dark. Cleared on
+  // unmount so it never leaks onto the marketing/auth pages.
+  useEffect(() => {
+    const root = document.documentElement
+    const vars: Record<string, string | undefined> = {
+      '--primary': accent?.primary,
+      '--primary-light': accent?.primaryLight,
+      '--primary-dark': accent?.primaryDark,
+      '--primary-foreground': accent?.primaryForeground,
+    }
+    for (const [key, value] of Object.entries(vars)) {
+      if (value) root.style.setProperty(key, value)
+      else root.style.removeProperty(key)
+    }
+    return () => {
+      for (const key of Object.keys(vars)) root.style.removeProperty(key)
+    }
+  }, [accent])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
