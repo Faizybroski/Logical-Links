@@ -69,7 +69,12 @@ export function useDecideResidentialQuote() {
   return useMutation({
     mutationFn: (dto: DecideAutoQuoteDto) =>
       api.post<ApiResponse<Quotation>>("/api/v1/quotations/residential-quote/decide", dto),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      // Accepting with rewards applied changes the customer's points balance.
+      qc.invalidateQueries({ queryKey: ["rewards-credit-summary"] });
+      qc.invalidateQueries({ queryKey: ["rewards-credit-history"] });
+    },
   });
 }
 

@@ -3,20 +3,35 @@
 import { useState, useEffect } from 'react'
 import {
   Building2, Save, Calendar, Hash, Globe, MapPin,
-  User, Mail, Phone, Receipt,
+  User, Mail, Phone, Receipt, Briefcase, Factory,
+  Package, Truck, FileText, DollarSign, Award,
 } from 'lucide-react'
-import { useMyProfile, useUpdateMyCompanyLogo, useUpdateMyCompany } from '@/hooks/use-accounts'
+import {
+  useMyProfile, useUpdateMyCompanyLogo, useUpdateMyCompany,
+  useMyAccountStats, useMyAccountActivity,
+} from '@/hooks/use-accounts'
+import { useTiers } from '@/hooks/use-tiers'
+import { getTierProgress } from '@/lib/tiers'
+import { KpiCard } from '@/components/deliveries/kpi-card'
+import { TierDetailsSheet } from '@/components/deliveries/sheets/tier-details-sheet'
+import { ActivityFeed } from '@/components/accounts/activity-feed'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { SecuritySection } from '@/components/company/SecuritySection'
 import { uploadCompanyLogo, removeCompanyLogo } from '@/lib/upload-images'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/api'
 
+function money(n: number) {
+  return n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })
+}
+
 const inputClass =
   "w-full rounded-xl border border-card-border bg-background py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
 
 type CompanyInfoForm = {
   accountName: string
+  businessType: string
+  industry: string
   abn: string
   website: string
   addressLine1: string
@@ -48,10 +63,19 @@ export default function CompanyProfilePage() {
   const updateLogoMutation   = useUpdateMyCompanyLogo()
   const updateCompanyMutation = useUpdateMyCompany()
 
+  const { data: statsRes }    = useMyAccountStats()
+  const { data: activityRes, isLoading: activityLoading } = useMyAccountActivity()
+  const { data: tiersRes }    = useTiers()
+  const stats = statsRes?.data
+  const activity = activityRes?.data ?? []
+  const tiers = tiersRes?.data ?? []
+  const tierProgress = tiers.length > 0 ? getTierProgress(stats?.deliveredShipments ?? 0, tiers) : null
+
   const [uploading, setUploading] = useState(false)
+  const [tierSheetOpen, setTierSheetOpen] = useState(false)
 
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoForm>({
-    accountName: '', abn: '', website: '',
+    accountName: '', businessType: '', industry: '', abn: '', website: '',
     addressLine1: '', addressCity: '', addressState: '', addressPostcode: '', addressCountry: '',
   })
   const [primaryContact, setPrimaryContact] = useState<PrimaryContactForm>({
@@ -65,6 +89,8 @@ export default function CompanyProfilePage() {
     if (!account) return
     setCompanyInfo({
       accountName:     account.account_name ?? '',
+      businessType:    account.business_type ?? '',
+      industry:        account.industry ?? '',
       abn:             account.abn ?? '',
       website:         account.website ?? '',
       addressLine1:    account.address_line1 ?? '',
@@ -115,7 +141,7 @@ export default function CompanyProfilePage() {
   function handleSaveCompanyInfo(e: React.FormEvent) {
     e.preventDefault()
     if (!companyInfo.accountName.trim()) return
-    updateCompanyMutation.mutate(companyInfo, {
+    updateCompanyMutation.mutate({ ...companyInfo }, {
       onSuccess: () => toast.success('Company information updated'),
       onError:   (err) => toast.error(errorMessage(err, 'Failed to update company information')),
     })
@@ -165,12 +191,54 @@ export default function CompanyProfilePage() {
 
             <div className="border-t border-card-border pt-4 space-y-1">
               <p className="text-lg font-semibold text-foreground">{account.account_name}</p>
+              <p className="text-xs text-muted">Customer ID: {account.customer_id}</p>
               <p className="text-xs text-muted flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                Active since {new Date(account.created_at).toLocaleDateString()}
+                Customer since {new Date(account.created_at).toLocaleDateString()}
               </p>
+              {tierProgress && (
+                <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                  <Award className="h-3 w-3" /> {tierProgress.current.name}
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Account overview — stats */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <KpiCard title="Total Shipments"  value={stats?.totalShipments ?? 0}  icon={Package}    chartColor="#C89B3C" isLoading={!stats} subtitle="" />
+            <KpiCard title="Active Shipments" value={stats?.activeShipments ?? 0} icon={Truck}      chartColor="#3B82F6" isLoading={!stats} subtitle="" />
+            <KpiCard title="Open Quotes"      value={stats?.openQuotes ?? 0}      icon={FileText}   chartColor="#8B5CF6" isLoading={!stats} subtitle="" />
+            <KpiCard title="Total Spend"      value={stats ? money(stats.totalSpend) : '—'} icon={DollarSign} chartColor="#22C55E" isLoading={!stats} subtitle="" />
+          </div>
+
+          {/* Partner Tier */}
+          {tierProgress && (
+            <div className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">Partner Tier</h2>
+                <button
+                  type="button"
+                  onClick={() => setTierSheetOpen(true)}
+                  className="text-sm font-medium text-primary hover:opacity-80"
+                >
+                  View Tier Details
+                </button>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <p className="text-lg font-semibold text-foreground">{tierProgress.current.name}</p>
+                <p className="text-sm text-muted">
+                  {(stats?.deliveredShipments ?? 0)}{tierProgress.next ? ` / ${tierProgress.next.min_deliveries}` : ''} shipments
+                </p>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/8">
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${tierProgress.progressPct}%` }} />
+              </div>
+              <p className="text-xs text-muted">
+                {tierProgress.next ? `Next tier: ${tierProgress.next.name}` : 'Highest tier reached'}
+              </p>
+            </div>
+          )}
 
           {/* Section 1: Company Information */}
           <form onSubmit={handleSaveCompanyInfo} className="rounded-3xl border border-card-border bg-card p-6 shadow-sm space-y-4">
@@ -187,6 +255,35 @@ export default function CompanyProfilePage() {
                   placeholder="Company name"
                   className={inputClass}
                 />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Business Type</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                  <input
+                    type="text"
+                    value={companyInfo.businessType}
+                    onChange={(e) => setCompanyInfo({ ...companyInfo, businessType: e.target.value })}
+                    placeholder="e.g. Corporation"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Industry</label>
+                <div className="relative">
+                  <Factory className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                  <input
+                    type="text"
+                    value={companyInfo.industry}
+                    onChange={(e) => setCompanyInfo({ ...companyInfo, industry: e.target.value })}
+                    placeholder="e.g. Logistics"
+                    className={inputClass}
+                  />
+                </div>
               </div>
             </div>
 
@@ -370,8 +467,18 @@ export default function CompanyProfilePage() {
             </button>
           </form>
 
+          {/* Recent Activity */}
+          <ActivityFeed title="Recent Activity" items={activity} isLoading={activityLoading} max={12} />
+
           {/* Section 4: Security */}
           <SecuritySection />
+
+          <TierDetailsSheet
+            open={tierSheetOpen}
+            onClose={() => setTierSheetOpen(false)}
+            delivered={stats?.deliveredShipments ?? 0}
+            tiers={tiers}
+          />
         </>
       ) : (
         <div className="rounded-3xl border border-card-border bg-card p-10 text-center text-sm text-muted">

@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, Mail, User, Phone, Building2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, Phone, Building2, Briefcase, Factory, Hash, Globe, MapPin, Receipt, type LucideIcon } from "lucide-react";
 import { z } from "zod";
 
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
+
+const corpText = z.string().optional().or(z.literal(""));
 
 const registerSchema = z
   .object({
@@ -26,13 +28,67 @@ const registerSchema = z
       .min(8, "Password must be at least 8 characters")
       .regex(/[A-Z]/, "Must contain at least one uppercase letter")
       .regex(/[0-9]/, "Must contain at least one number"),
+    // Corporate company profile (parity with the admin review + company pages)
+    businessType: corpText,
+    industry: corpText,
+    abn: corpText,
+    website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+    addressLine1: corpText,
+    addressCity: corpText,
+    addressState: corpText,
+    addressPostcode: corpText,
+    addressCountry: corpText,
+    billingEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
+    accountsPayableEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
   })
-  .refine((data) => data.accountType !== "corporate" || !!data.company, {
-    message: "Company name is required",
-    path: ["company"],
+  .superRefine((data, ctx) => {
+    if (data.accountType !== "corporate") return;
+    const required: [keyof RegisterForm, string][] = [
+      ["company", "Company name is required"],
+      ["businessType", "Business type is required"],
+      ["industry", "Industry is required"],
+      ["addressLine1", "Business address is required"],
+      ["addressCity", "City is required"],
+      ["addressState", "State / province is required"],
+      ["addressPostcode", "Postcode is required"],
+    ];
+    for (const [field, message] of required) {
+      if (!data[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [field] });
+    }
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+
+const inputCls =
+  "h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
+const plainInputCls =
+  "h-11 w-full rounded-xl border border-card-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
+
+function IconInput({
+  icon: Icon, name, value, onChange, placeholder, type = "text", error,
+}: {
+  icon: LucideIcon;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  type?: string;
+  error?: string;
+}) {
+  return (
+    <div>
+      <div className="relative">
+        <Icon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+        <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} className={inputCls} />
+      </div>
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <label className="mb-2 block text-sm font-medium text-foreground">{children}</label>;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -49,6 +105,17 @@ export default function RegisterPage() {
     lastName: "",
     company: "",
     phone: "",
+    businessType: "",
+    industry: "",
+    abn: "",
+    website: "",
+    addressLine1: "",
+    addressCity: "",
+    addressState: "",
+    addressPostcode: "",
+    addressCountry: "",
+    billingEmail: "",
+    accountsPayableEmail: "",
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterForm, string>>>({});
 
@@ -95,8 +162,23 @@ export default function RegisterPage() {
         email: result.data.email,
         password: result.data.password,
         fullName,
-        company: result.data.accountType === "corporate" ? result.data.company : undefined,
         phone: result.data.phone,
+        ...(result.data.accountType === "corporate"
+          ? {
+              company:              result.data.company,
+              businessType:         result.data.businessType,
+              industry:             result.data.industry,
+              abn:                  result.data.abn,
+              website:              result.data.website,
+              addressLine1:         result.data.addressLine1,
+              addressCity:          result.data.addressCity,
+              addressState:         result.data.addressState,
+              addressPostcode:      result.data.addressPostcode,
+              addressCountry:       result.data.addressCountry,
+              billingEmail:         result.data.billingEmail,
+              accountsPayableEmail: result.data.accountsPayableEmail,
+            }
+          : {}),
       });
 
       setAuth({
@@ -148,7 +230,7 @@ export default function RegisterPage() {
 
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              {isCorporate ? "Create Shipping Company" : "Create Your Account"}
+              {isCorporate ? "Create Company Account" : "Create Your Account"}
             </h1>
             <p className="mt-2 text-sm text-muted">
               {isCorporate
@@ -219,22 +301,74 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Company (corporate only) */}
+            {/* Company details (corporate only) — parity with the admin review
+                page and the customer's own company profile */}
             {isCorporate && (
-              <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">Company Name</label>
-                <div className="relative">
-                  <Building2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-                  <input
-                    type="text"
-                    name="company"
-                    value={form.company}
-                    onChange={handleChange}
-                    placeholder="Logical Links Inc."
-                    className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  />
+              <div className="space-y-5 rounded-2xl border border-card-border/70 bg-background/40 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">Company Details</p>
+
+                <div>
+                  <FieldLabel>Company Name</FieldLabel>
+                  <IconInput icon={Building2} name="company" value={form.company ?? ""} onChange={handleChange} placeholder="Logical Links Inc." error={fieldErrors.company} />
                 </div>
-                {fieldErrors.company && <p className="mt-1 text-xs text-danger">{fieldErrors.company}</p>}
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel>Business Type</FieldLabel>
+                    <IconInput icon={Briefcase} name="businessType" value={form.businessType ?? ""} onChange={handleChange} placeholder="e.g. Corporation" error={fieldErrors.businessType} />
+                  </div>
+                  <div>
+                    <FieldLabel>Industry</FieldLabel>
+                    <IconInput icon={Factory} name="industry" value={form.industry ?? ""} onChange={handleChange} placeholder="e.g. Logistics" error={fieldErrors.industry} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel>Business Number <span className="font-normal text-muted">(optional)</span></FieldLabel>
+                    <IconInput icon={Hash} name="abn" value={form.abn ?? ""} onChange={handleChange} placeholder="ABN / registration no." error={fieldErrors.abn} />
+                  </div>
+                  <div>
+                    <FieldLabel>Website <span className="font-normal text-muted">(optional)</span></FieldLabel>
+                    <IconInput icon={Globe} name="website" value={form.website ?? ""} onChange={handleChange} placeholder="https://example.com" error={fieldErrors.website} />
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>Business Address</FieldLabel>
+                  <IconInput icon={MapPin} name="addressLine1" value={form.addressLine1 ?? ""} onChange={handleChange} placeholder="Street address" error={fieldErrors.addressLine1} />
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div>
+                      <input name="addressCity" value={form.addressCity ?? ""} onChange={handleChange} placeholder="City" className={plainInputCls} />
+                      {fieldErrors.addressCity && <p className="mt-1 text-xs text-danger">{fieldErrors.addressCity}</p>}
+                    </div>
+                    <div>
+                      <input name="addressState" value={form.addressState ?? ""} onChange={handleChange} placeholder="State / Province" className={plainInputCls} />
+                      {fieldErrors.addressState && <p className="mt-1 text-xs text-danger">{fieldErrors.addressState}</p>}
+                    </div>
+                    <div>
+                      <input name="addressPostcode" value={form.addressPostcode ?? ""} onChange={handleChange} placeholder="Postcode" className={plainInputCls} />
+                      {fieldErrors.addressPostcode && <p className="mt-1 text-xs text-danger">{fieldErrors.addressPostcode}</p>}
+                    </div>
+                    <input name="addressCountry" value={form.addressCountry ?? ""} onChange={handleChange} placeholder="Country" className={plainInputCls} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel>Billing Email <span className="font-normal text-muted">(optional)</span></FieldLabel>
+                    <IconInput icon={Mail} name="billingEmail" type="email" value={form.billingEmail ?? ""} onChange={handleChange} placeholder="billing@example.com" error={fieldErrors.billingEmail} />
+                  </div>
+                  <div>
+                    <FieldLabel>Accounts Payable Email <span className="font-normal text-muted">(optional)</span></FieldLabel>
+                    <IconInput icon={Receipt} name="accountsPayableEmail" type="email" value={form.accountsPayableEmail ?? ""} onChange={handleChange} placeholder="ap@example.com" error={fieldErrors.accountsPayableEmail} />
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted">
+                  You&apos;ll be the company&apos;s primary contact and Company Admin. You can add
+                  teammates and edit these details later from your company profile.
+                </p>
               </div>
             )}
 

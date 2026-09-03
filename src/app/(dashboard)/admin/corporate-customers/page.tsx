@@ -34,9 +34,10 @@ import type { FilterDef } from "@/components/ui/table-filters";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import type { SortDir } from "@/hooks/use-table-filters";
 
-import { useAccounts } from "@/hooks/use-accounts";
+import { useAccounts, useReconsiderAccount, usePurgeAccount } from "@/hooks/use-accounts";
 import { useApproveUser } from "@/hooks/use-users";
 import { usePermission } from "@/hooks/use-permission";
+import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { Account, AccountProfile } from "@/types/api.types";
@@ -119,12 +120,13 @@ function ActionsCell({ account }: { account: Account }) {
   const admin    = getAdmin(account.profiles);
   const approveMut = useApproveUser(admin?.id ?? "");
   const canEdit = usePermission("customers.edit");
+  const [rejectOpen, setRejectOpen] = useState(false);
 
   async function handle(isApproved: boolean) {
     if (!admin) { toast.error("No company admin found for this corporate customer"); return; }
     try {
       await approveMut.mutateAsync(isApproved);
-      toast.success(isApproved ? `${account.account_name} approved` : `${account.account_name} rejected`);
+      toast.success(isApproved ? `${account.account_name} approved` : "Approval revoked");
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -133,35 +135,78 @@ function ActionsCell({ account }: { account: Account }) {
   if (!canEdit) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="outline" className="h-8 w-8 border-card-border bg-transparent hover:border-primary/30 hover:bg-primary/5">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 rounded-xl border border-card-border bg-card shadow-lg">
-        {admin ? (
-          admin.is_approved ? (
-            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => handle(false)} disabled={approveMut.isPending}>
-              <XCircle className="h-4 w-4" /> Revoke Approval
-            </DropdownMenuItem>
-          ) : (
-            <>
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-green-700 focus:text-green-700" onClick={() => handle(true)} disabled={approveMut.isPending}>
-                <ShieldCheck className="h-4 w-4" /> Approve
-              </DropdownMenuItem>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="outline" className="h-8 w-8 border-card-border bg-transparent hover:border-primary/30 hover:bg-primary/5">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48 rounded-xl border border-card-border bg-card shadow-lg">
+          {admin ? (
+            admin.is_approved ? (
               <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => handle(false)} disabled={approveMut.isPending}>
-                <XCircle className="h-4 w-4" /> Reject
+                <XCircle className="h-4 w-4" /> Revoke Approval
               </DropdownMenuItem>
-            </>
-          )
-        ) : (
-          <DropdownMenuItem disabled className="gap-2 rounded-lg text-muted">
-            <UserCircle2 className="h-4 w-4" /> No admin assigned
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            ) : (
+              <>
+                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-green-700 focus:text-green-700" onClick={() => handle(true)} disabled={approveMut.isPending}>
+                  <ShieldCheck className="h-4 w-4" /> Approve
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={(e) => { e.preventDefault(); setRejectOpen(true); }}>
+                  <XCircle className="h-4 w-4" /> Reject
+                </DropdownMenuItem>
+              </>
+            )
+          ) : (
+            <DropdownMenuItem disabled className="gap-2 rounded-lg text-muted">
+              <UserCircle2 className="h-4 w-4" /> No admin assigned
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <RejectAccountDialog
+        accountId={account.account_id}
+        accountName={account.account_name}
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+      />
+    </>
+  );
+}
+
+function RejectedActionsCell({ account }: { account: Account }) {
+  const canEdit = usePermission("customers.edit");
+  const canDelete = usePermission("customers.delete");
+  const reconsiderMut = useReconsiderAccount(account.account_id);
+  const purgeMut = usePurgeAccount(account.account_id);
+
+  async function reconsider() {
+    try {
+      await reconsiderMut.mutateAsync();
+      toast.success(`${account.account_name} reopened for review`);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+  async function purge() {
+    if (!confirm(`Permanently delete ${account.account_name} and ALL of its data now?`)) return;
+    try {
+      await purgeMut.mutateAsync();
+      toast.success("Account permanently deleted");
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {canEdit && (
+        <Button size="sm" variant="outline" onClick={reconsider} disabled={reconsiderMut.isPending}
+          className="h-8 rounded-lg px-3 text-xs">Reconsider</Button>
+      )}
+      {canDelete && (
+        <Button size="sm" variant="outline" onClick={purge} disabled={purgeMut.isPending}
+          className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50">Purge</Button>
+      )}
+    </div>
   );
 }
 
@@ -170,6 +215,7 @@ function ActionsCell({ account }: { account: Account }) {
 const FILTER_DEFAULTS = {
   search:   "",
   isActive: "",
+  status:   "active",
   dateFrom: "",
   dateTo:   "",
   sortBy:   "",
@@ -209,16 +255,20 @@ export default function CorporateCustomersPage() {
     return () => clearTimeout(searchTimer.current);
   }, [filters.search]);
 
+  const status = (filters.status || "active") as "active" | "rejected";
+  const isRejectedView = status === "rejected";
+
   const query = useMemo(() => ({
     page,
     limit: 20,
+    status,
     ...(debouncedSearch && { search: debouncedSearch }),
     ...(filters.isActive && { isActive: filters.isActive as "true" | "false" }),
     ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
     ...(filters.dateTo   && { dateTo:   filters.dateTo }),
     ...(sortBy           && { sortBy: sortBy as any }),
     ...(sortDir          && { sortDir }),
-  }), [debouncedSearch, filters.isActive, filters.dateFrom, filters.dateTo, page, sortBy, sortDir]);
+  }), [debouncedSearch, filters.isActive, filters.dateFrom, filters.dateTo, page, sortBy, sortDir, status]);
 
   const { data: res, isLoading } = useAccounts(query);
   const allAccounts = res?.data ?? [];
@@ -299,24 +349,41 @@ export default function CorporateCustomersPage() {
           );
         },
       },
-      {
-        id: "status",
-        header: () => sh("Status", "is_active"),
-        cell: ({ row }) => <StatusPill active={row.original.is_active} />,
-      },
+      isRejectedView
+        ? {
+            id: "purge",
+            header: "Purge date",
+            cell: ({ row }) => (
+              <span className="text-xs text-red-600">
+                {row.original.purge_after ? formatDate(row.original.purge_after) : "—"}
+              </span>
+            ),
+          }
+        : {
+            id: "status",
+            header: () => sh("Status", "is_active"),
+            cell: ({ row }) => <StatusPill active={row.original.is_active} />,
+          },
       {
         id: "registered",
-        header: () => sh("Registered", "created_at"),
-        cell: ({ row }) => <span className="text-xs text-muted">{formatDate(row.original.created_at)}</span>,
+        header: () => sh(isRejectedView ? "Rejected" : "Registered", isRejectedView ? "created_at" : "created_at"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted">
+            {formatDate(isRejectedView ? (row.original.rejected_at ?? row.original.created_at) : row.original.created_at)}
+          </span>
+        ),
       },
       {
         id: "actions",
         header: "",
-        cell: ({ row }) => <ActionsCell account={row.original} />,
+        cell: ({ row }) =>
+          isRejectedView
+            ? <RejectedActionsCell account={row.original} />
+            : <ActionsCell account={row.original} />,
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortBy, sortDir],
+    [sortBy, sortDir, isRejectedView],
   );
 
   return (
@@ -328,13 +395,29 @@ export default function CorporateCustomersPage() {
           <p className="mt-2 text-sm text-muted">Monitor and manage all registered corporate customers.</p>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-3">
-          <KpiCard title="Total Corporate Customers" value={stats.total}   icon={Building2}    chartColor="#C89B3C" isLoading={isLoading} />
-          <KpiCard title="Approved"                   value={stats.approved} icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
-          <KpiCard title="Pending Approval"            value={stats.pending}  icon={Clock}        chartColor="#EAB308" isLoading={isLoading} />
+        <div className="inline-flex rounded-xl border border-card-border bg-card p-1">
+          {(["active", "rejected"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilters({ status: s, page: "1" })}
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
+                status === s ? "bg-primary text-sidebar" : "text-muted hover:text-foreground"
+              }`}
+            >
+              {s === "active" ? "Active" : "Rejected"}
+            </button>
+          ))}
         </div>
 
-        {!isLoading && canEditCustomers && pendingAccounts.length > 0 && <PendingApprovals accounts={pendingAccounts} />}
+        {!isRejectedView && (
+          <div className="grid gap-5 sm:grid-cols-3">
+            <KpiCard title="Total Corporate Customers" value={stats.total}   icon={Building2}    chartColor="#C89B3C" isLoading={isLoading} />
+            <KpiCard title="Approved"                   value={stats.approved} icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
+            <KpiCard title="Pending Approval"            value={stats.pending}  icon={Clock}        chartColor="#EAB308" isLoading={isLoading} />
+          </div>
+        )}
+
+        {!isRejectedView && !isLoading && canEditCustomers && pendingAccounts.length > 0 && <PendingApprovals accounts={pendingAccounts} />}
 
         <DataTable<Account>
           title="Corporate Customers List"
@@ -410,12 +493,13 @@ function PendingApprovals({ accounts }: { accounts: Account[] }) {
 function PendingAccountRow({ account }: { account: Account }) {
   const admin = getAdmin(account.profiles);
   const approveMut = useApproveUser(admin?.id ?? "");
+  const [rejectOpen, setRejectOpen] = useState(false);
 
   async function handle(isApproved: boolean) {
     if (!admin) return;
     try {
       await approveMut.mutateAsync(isApproved);
-      toast.success(isApproved ? `${account.account_name} approved` : `${account.account_name} rejected`);
+      toast.success(isApproved ? `${account.account_name} approved` : "Approval revoked");
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -423,6 +507,12 @@ function PendingAccountRow({ account }: { account: Account }) {
 
   return (
     <div className="flex items-center justify-between gap-4 px-6 py-4">
+      <RejectAccountDialog
+        accountId={account.account_id}
+        accountName={account.account_name}
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+      />
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-xs font-bold text-yellow-700">
           {initials(account.account_name, "CO")}
@@ -438,7 +528,7 @@ function PendingAccountRow({ account }: { account: Account }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Button size="sm" variant="outline" disabled={!admin || approveMut.isPending} onClick={() => handle(false)}
+        <Button size="sm" variant="outline" disabled={!admin} onClick={() => setRejectOpen(true)}
           className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50 hover:border-red-300">
           <XCircle className="mr-1 h-3.5 w-3.5" />Reject
         </Button>

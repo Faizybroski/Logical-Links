@@ -20,6 +20,25 @@ export function useRewardsCreditHistory(options?: { enabled?: boolean }) {
   });
 }
 
+// ── Admin: a residential customer's rewards (read-only) ─────────────────────
+export function useCustomerRewardsCreditSummary(profileId: string) {
+  return useQuery({
+    queryKey: ["rewards-credit-summary", "customer", profileId],
+    queryFn:  () => api.get<ApiResponse<RewardsCreditSummary>>(`/api/v1/rewards-credit/customers/${profileId}/summary`),
+    enabled:  !!profileId,
+    staleTime: 30_000,
+  });
+}
+
+export function useCustomerRewardsCreditHistory(profileId: string) {
+  return useQuery({
+    queryKey: ["rewards-credit-history", "customer", profileId],
+    queryFn:  () => api.get<ApiResponse<RewardsCreditHistoryEntry[]>>(`/api/v1/rewards-credit/customers/${profileId}/history`),
+    enabled:  !!profileId,
+    staleTime: 30_000,
+  });
+}
+
 export function useApplyRewardsCredit(quotationId: string) {
   const qc = useQueryClient();
   return useMutation({

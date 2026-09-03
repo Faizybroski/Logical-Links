@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FileQuestion, MapPin, Loader2, PackageSearch, AlertCircle, History } from "lucide-react";
+import { FileQuestion, MapPin, Loader2, PackageSearch, AlertCircle, History, Gift } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import { useServiceLevels } from "@/hooks/use-service-levels";
 import { useAdditionalCharges } from "@/hooks/use-additional-charges";
 import { useCalculatePrice } from "@/hooks/use-pricing";
 import { useMe } from "@/hooks/use-users";
+import { useRewardsCreditSummary } from "@/hooks/use-rewards-credit";
 import { useDecideResidentialQuote, useQuotations } from "@/hooks/use-quotations";
 import type { DecideAutoQuoteDto, PriceBreakdown } from "@/types/api.types";
 
@@ -74,6 +75,17 @@ export default function ResidentialQuotationsPage() {
   const [decidedStatus, setDecidedStatus] = useState<"accepted" | "rejected" | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [applyRewards, setApplyRewards] = useState(false);
+
+  const { data: rewardsRes } = useRewardsCreditSummary();
+  const rewardsPoints = rewardsRes?.data.points ?? 0;
+  const rewardsCredit = rewardsRes?.data.creditAvailable ?? 0;
+  // Preview only — the backend re-caps against the authoritative quote total.
+  const quoteTotal = breakdown?.subtotal ?? 0;
+  const rewardsDiscount = applyRewards
+    ? Math.min(rewardsCredit, Math.round(quoteTotal * 0.5 * 100) / 100)
+    : 0;
+  const netTotal = Math.max(0, quoteTotal - rewardsDiscount);
 
   const calculateMut = useCalculatePrice();
   const decideMut = useDecideResidentialQuote();
@@ -192,7 +204,9 @@ export default function ResidentialQuotationsPage() {
       notes: notes.trim() || null,
       additionalChargeKeys: Array.from(selectedCharges),
       decision,
-      ...(decision === "accept" ? { termsVersion: TERMS_VERSION, acknowledged: true } : {}),
+      ...(decision === "accept"
+        ? { termsVersion: TERMS_VERSION, acknowledged: true, applyRewards }
+        : {}),
     };
   }
 
@@ -220,6 +234,7 @@ export default function ResidentialQuotationsPage() {
   function startOver() {
     setBreakdown(null);
     setDecidedStatus(null);
+    setApplyRewards(false);
     setOrigin(EMPTY_ADDRESS);
     setDestination(EMPTY_ADDRESS);
     setServiceType("");
@@ -432,10 +447,49 @@ export default function ResidentialQuotationsPage() {
                       <p className="text-xs text-muted">No charges on this quote.</p>
                     )}
                     <div className="border-t border-card-border pt-1.5">
-                      <Row label="Total" value={breakdown.subtotal} bold />
+                      <Row label={rewardsDiscount > 0 ? "Subtotal" : "Total"} value={quoteTotal} bold={rewardsDiscount === 0} />
                     </div>
+                    {rewardsDiscount > 0 && (
+                      <>
+                        <div className="flex items-center justify-between text-green-600">
+                          <span>Rewards discount</span><span>−${rewardsDiscount.toFixed(2)}</span>
+                        </div>
+                        <div className="border-t border-card-border pt-1.5">
+                          <Row label="Total" value={netTotal} bold />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
+
+                {/* Rewards points — residential members with a balance */}
+                {rewardsPoints > 0 && decidedStatus !== "rejected" && (
+                  <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-card-border px-5 py-3.5">
+                      <Gift className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-semibold text-foreground">Rewards Points</h3>
+                    </div>
+                    <div className="space-y-2.5 p-5 text-sm">
+                      <p className="text-muted">
+                        {rewardsPoints.toLocaleString()} points available
+                        <span className="text-xs"> (${rewardsCredit.toFixed(2)} credit)</span>
+                      </p>
+                      <label className="flex items-start gap-2 text-foreground">
+                        <Checkbox
+                          checked={applyRewards}
+                          onCheckedChange={(c) => setApplyRewards(c === true)}
+                          className="mt-0.5"
+                        />
+                        <span>
+                          Apply my rewards points
+                          <span className="block text-xs text-muted">
+                            Covers up to 50% of a quote — ${Math.min(rewardsCredit, quoteTotal * 0.5).toFixed(2)} on this one
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
 
                 {decidedStatus === "rejected" ? (
                   <div className="rounded-2xl border border-card-border bg-card/50 p-3 text-center text-xs font-medium text-muted">
@@ -510,7 +564,16 @@ export default function ResidentialQuotationsPage() {
                           {q.origin_address ?? q.origin_city} → {q.destination_address ?? q.destination_city} · {fmtDate(q.issue_date)}
                         </p>
                       </div>
-                      <span className="shrink-0 font-semibold tabular-nums text-foreground">${q.total.toFixed(2)}</span>
+                      <span className="shrink-0 text-right tabular-nums">
+                        {(q.rewards_credit_applied ?? 0) > 0 ? (
+                          <>
+                            <span className="block text-xs text-muted line-through">${q.total.toFixed(2)}</span>
+                            <span className="font-semibold text-foreground">${(q.total - q.rewards_credit_applied).toFixed(2)}</span>
+                          </>
+                        ) : (
+                          <span className="font-semibold text-foreground">${q.total.toFixed(2)}</span>
+                        )}
+                      </span>
                     </button>
                   </li>
                 ))}

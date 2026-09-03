@@ -27,7 +27,10 @@ export default function DashboardShell({ children }: Props) {
   const isAdmin = user?.role === 'admin'
   const isResidential = user?.role === 'residential'
   const contentSwatch = getContentSwatchById(theme, contentSwatchId[theme])
-  const accent = getAccentThemeById(accentSwatchId[theme])
+  // Accent customization is an admin-portal-only feature — customer portals
+  // (corporate / residential) always use the globals.css default accent, even
+  // if a stale localStorage selection is present.
+  const accent = isAdmin ? getAccentThemeById(accentSwatchId[theme]) : undefined
 
   // Drive the accent override from :root so it also reaches portaled UI
   // (dialogs, dropdowns, popovers, toasts) that renders outside this subtree.

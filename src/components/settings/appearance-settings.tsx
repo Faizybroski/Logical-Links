@@ -158,6 +158,9 @@ function CollectionGroup({
 
 export function AppearanceSettings() {
   const user = useAuthStore((s) => s.user);
+  // Accent color is an admin-portal-only customization — customer portals
+  // (corporate / residential) don't get the picker.
+  const isAdmin = user?.role === "admin";
   const {
     sidebarSwatchId,
     contentSwatchId,
@@ -228,35 +231,37 @@ export function AppearanceSettings() {
         />
       </div>
 
-      <div className="space-y-4 border-t border-card-border pt-5">
-        <div>
-          <h3 className="text-sm font-medium text-foreground">Accent Color</h3>
-          <p className="mt-1 text-xs text-muted">
-            Applies to headers, primary &amp; active buttons, the active sidebar
-            link, focus rings, and other primary-colored elements.
-          </p>
+      {isAdmin && (
+        <div className="space-y-4 border-t border-card-border pt-5">
+          <div>
+            <h3 className="text-sm font-medium text-foreground">Accent Color</h3>
+            <p className="mt-1 text-xs text-muted">
+              Applies to headers, primary &amp; active buttons, the active sidebar
+              link, focus rings, and other primary-colored elements.
+            </p>
+          </div>
+          <CollectionGroup
+            label="Vivid"
+            lightSwatches={ACCENT_SWATCHES_VIVID}
+            darkSwatches={ACCENT_SWATCHES_VIVID}
+            activeId={accentSwatchId}
+            defaultLight={ACCENT_DEFAULT_HEX}
+            defaultDark={ACCENT_DEFAULT_HEX}
+            onSelect={setAccentSwatch}
+            onReset={(m) => setAccentSwatch(m, null)}
+          />
+          <CollectionGroup
+            label="Muted"
+            lightSwatches={ACCENT_SWATCHES_MUTED}
+            darkSwatches={ACCENT_SWATCHES_MUTED}
+            activeId={accentSwatchId}
+            defaultLight={ACCENT_DEFAULT_HEX}
+            defaultDark={ACCENT_DEFAULT_HEX}
+            onSelect={setAccentSwatch}
+            onReset={(m) => setAccentSwatch(m, null)}
+          />
         </div>
-        <CollectionGroup
-          label="Vivid"
-          lightSwatches={ACCENT_SWATCHES_VIVID}
-          darkSwatches={ACCENT_SWATCHES_VIVID}
-          activeId={accentSwatchId}
-          defaultLight={ACCENT_DEFAULT_HEX}
-          defaultDark={ACCENT_DEFAULT_HEX}
-          onSelect={setAccentSwatch}
-          onReset={(m) => setAccentSwatch(m, null)}
-        />
-        <CollectionGroup
-          label="Muted"
-          lightSwatches={ACCENT_SWATCHES_MUTED}
-          darkSwatches={ACCENT_SWATCHES_MUTED}
-          activeId={accentSwatchId}
-          defaultLight={ACCENT_DEFAULT_HEX}
-          defaultDark={ACCENT_DEFAULT_HEX}
-          onSelect={setAccentSwatch}
-          onReset={(m) => setAccentSwatch(m, null)}
-        />
-      </div>
+      )}
     </div>
   );
 }

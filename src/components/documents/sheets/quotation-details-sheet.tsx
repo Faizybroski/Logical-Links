@@ -394,41 +394,43 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                       Available: <span className="font-semibold">{rewardsPoints.toLocaleString()} points</span>{" "}
                       <span className="text-muted">(${rewardsCredit.toFixed(2)} delivery credit)</span>
                     </p>
-                    <label className="flex items-center gap-2 text-sm text-foreground">
-                      <Checkbox
-                        checked={applyRewards}
-                        disabled={rewardsAlreadyApplied || applyRewardsMut.isPending || quotation.status !== "sent"}
-                        onCheckedChange={(checked) => handleApplyRewardsToggle(checked === true)}
-                      />
-                      Apply My Rewards Points
-                    </label>
+                    {quotation.status === "sent" && !rewardsAlreadyApplied && (
+                      <>
+                        <p className="text-xs text-muted">
+                          Rewards can cover up to 50% of a quote — this one, up to{" "}
+                          <span className="font-semibold text-foreground">
+                            ${Math.min(rewardsCredit, quotation.total * 0.5).toFixed(2)}
+                          </span>.
+                        </p>
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <Checkbox
+                            checked={applyRewards}
+                            disabled={applyRewardsMut.isPending}
+                            onCheckedChange={(checked) => handleApplyRewardsToggle(checked === true)}
+                          />
+                          Apply My Rewards Points
+                        </label>
+                      </>
+                    )}
                     {rewardsAlreadyApplied && (
-                      <div className="space-y-1 rounded-lg border border-card-border bg-background p-3 text-sm">
-                        <div className="flex items-center justify-between text-muted">
-                          <span>Original Quote Amount</span>
-                          <span>${quotation.total.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-muted">
-                          <span>Rewards Credit Applied</span>
-                          <span>−${quotation.rewards_credit_applied.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between border-t border-card-border pt-1.5 font-semibold text-foreground">
-                          <span>Total Amount Due</span>
-                          <span>${(quotation.total - quotation.rewards_credit_applied).toFixed(2)}</span>
-                        </div>
-                      </div>
+                      <p className="flex items-center gap-1.5 text-sm font-medium text-green-600">
+                        <Gift className="h-3.5 w-3.5 shrink-0" />
+                        ${quotation.rewards_credit_applied.toFixed(2)} in rewards applied — see the total below.
+                      </p>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Totals (merged with what used to be a separate "Summary" card — they showed the same numbers) */}
+              {/* Totals — the single source of truth for the amount due
+                  (rewards credit is folded in here when applied) */}
               <PricingSummary
                 subtotal={quotation.subtotal}
                 discount={quotation.discount}
                 taxRate={quotation.tax_rate}
                 tax={quotation.tax}
                 total={quotation.total}
+                rewardsCreditApplied={quotation.rewards_credit_applied ?? 0}
                 itemsCount={items.length}
                 readOnly
               />

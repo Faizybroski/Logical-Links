@@ -1,6 +1,7 @@
 "use client";
 
-import { Truck, type LucideIcon } from "lucide-react";
+import type { CSSProperties } from "react";
+import { ArrowRight, type LucideIcon } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -31,6 +32,10 @@ export interface KpiCardProps {
   onClick?: () => void;
   // 0-100 — renders a thin progress bar under the subtitle instead of the sparkline.
   progressPct?: number;
+  // When set, renders a "<label> →" call-to-action line pinned to the bottom of
+  // the card and turns on an accent-colored hover treatment (border + label
+  // shift to chartColor). Pair with onClick.
+  actionLabel?: string;
 }
 
 // ─── Custom recharts tooltip ──────────────────────────────────────────────────
@@ -65,6 +70,7 @@ export function KpiCard({
   className,
   onClick,
   progressPct,
+  actionLabel,
 }: KpiCardProps) {
   const isUp = trend !== "down";
   const gradientId = `kpi-grad-${title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -104,11 +110,17 @@ export function KpiCard({
             }
           : undefined
       }
+      style={
+        actionLabel
+          ? ({ "--kpi-accent": chartColor } as CSSProperties)
+          : undefined
+      }
       className={cn(
         "group relative overflow-hidden rounded-[22px] border border-card-border bg-card",
         "px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-5",
         "shadow-sm transition-all duration-300",
         "hover:-translate-y-0.75 hover:shadow-md",
+        actionLabel && "hover:border-[var(--kpi-accent)]",
         onClick && "cursor-pointer",
         className,
       )}
@@ -215,6 +227,14 @@ export function KpiCard({
               />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Call-to-action footer */}
+      {actionLabel && (
+        <div className="relative mt-4 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted transition-colors duration-300 group-hover:text-[var(--kpi-accent)]">
+          {actionLabel}
+          <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
         </div>
       )}
     </div>

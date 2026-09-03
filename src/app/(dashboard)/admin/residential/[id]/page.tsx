@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/deliveries/status-badge";
 import { SupportCaseStatusBadge } from "@/components/documents/document-status-badge";
 import { CaseDetailsSheet } from "@/components/support/case-details-sheet";
 import { DeliveryDetailsSheet } from "@/components/deliveries/sheets/delivery-details-sheet";
+import { CustomerRewardsPanel } from "@/components/rewards/customer-rewards-panel";
 
 import { useUser } from "@/hooks/use-users";
 import { useDeliveries } from "@/hooks/use-deliveries";
@@ -144,6 +145,9 @@ export default function ResidentialCustomerDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Rewards */}
+            <CustomerRewardsPanel profileId={customerId} />
 
             {/* Deliveries */}
             <Card className="border border-card-border shadow-sm">

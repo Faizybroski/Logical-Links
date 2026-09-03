@@ -9,6 +9,9 @@ interface Props {
   currency?: string;
   amountPaid?: number;
   balanceDue?: number;
+  /** Residential rewards credit redeemed against this quotation. When > 0 (and
+   *  readOnly) a "Rewards Credit" line + a net "Total Due" are shown below Total. */
+  rewardsCreditApplied?: number;
   /** Optional recap rows shown above Subtotal — merged in from what used to be a separate "Summary" card. */
   itemsCount?: number;
   distanceKm?: number | null;
@@ -33,6 +36,7 @@ export function PricingSummary({
   currency = "CAD",
   amountPaid,
   balanceDue,
+  rewardsCreditApplied = 0,
   itemsCount,
   distanceKm,
   onDiscountChange,
@@ -142,6 +146,24 @@ export function PricingSummary({
               {fmt(total, currency)}
             </span>
           </div>
+
+          {/* Rewards credit (residential) — net amount actually owed */}
+          {readOnly && rewardsCreditApplied > 0 && (
+            <>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-muted">Rewards Credit</span>
+                <span className="text-sm font-medium tabular-nums text-green-600">
+                  − {fmt(rewardsCreditApplied, currency)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-primary/20 mt-1 pt-3 pb-1">
+                <span className="text-sm font-bold text-foreground">Total Due</span>
+                <span className="text-base font-bold text-primary tabular-nums">
+                  {fmt(Math.max(0, total - rewardsCreditApplied), currency)}
+                </span>
+              </div>
+            </>
+          )}
 
           {/* Invoice-only: amount paid + balance due */}
           {amountPaid !== undefined && (

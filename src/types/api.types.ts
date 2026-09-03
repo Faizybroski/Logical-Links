@@ -74,9 +74,44 @@ export type Account = {
   credit_limit: number;
   payment_terms: number;
   is_active: boolean;
+  business_type: string | null;
+  industry: string | null;
+  // Computed by the API from account_code: "REQ-2026-00027" while the request
+  // is pending/rejected, "LLC-CORP-00027" once approved.
+  request_id: string;
+  customer_id: string;
+  account_code?: string | null;
+  // Review / rejection lifecycle
+  reviewed_at: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  review_note?: string | null;      // admin-only, absent on the /me response
+  purge_after: string | null;
   created_at: string;
   updated_at: string;
   profiles?: AccountProfile[];
+};
+
+export type AccountActivity = {
+  id: string;
+  event_type:
+    | "submitted" | "reviewed" | "approved" | "rejected" | "reconsidered"
+    | "restored" | "admin_added" | "terms_accepted" | "tier_changed"
+    | "account_updated" | "note_added";
+  description: string;
+  actor_id: string | null;
+  actor_label: string | null;
+  internal: boolean;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type AccountStats = {
+  totalShipments: number;
+  activeShipments: number;
+  deliveredShipments: number;
+  openQuotes: number;
+  totalSpend: number;
 };
 
 export type CreateAccountDto = {
@@ -104,6 +139,8 @@ export type CreateAccountDto = {
 
 export type UpdateAccountDto = Partial<CreateAccountDto> & {
   isActive?: boolean;
+  businessType?: string;
+  industry?: string;
 };
 
 export type UpdateOwnCompanyDto = {
@@ -120,6 +157,8 @@ export type UpdateOwnCompanyDto = {
   contactPhone?: string;
   billingEmail?: string;
   accountsPayableEmail?: string;
+  businessType?: string;
+  industry?: string;
 };
 
 export type ListAccountsQuery = {
@@ -127,6 +166,7 @@ export type ListAccountsQuery = {
   limit?:    number;
   search?:   string;
   isActive?: "true" | "false";
+  status?:   "active" | "rejected";
   dateFrom?: string;
   dateTo?:   string;
   sortBy?:   "account_name" | "is_active" | "created_at";
@@ -703,6 +743,8 @@ export type DecideAutoQuoteDto = AutoQuoteRequestFields & {
   decision:     "accept" | "decline";
   termsVersion?: string;
   acknowledged?: boolean;
+  /** Residential only: redeem rewards points toward this quote (capped at 50% of total). */
+  applyRewards?: boolean;
 };
 
 // Corporate manual quote request — no price yet; admin prices it

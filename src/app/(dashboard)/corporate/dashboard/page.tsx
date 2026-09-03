@@ -96,7 +96,7 @@ export default function CorporateDashboard() {
   const tierProgress = tiers.length > 0 ? getTierProgress(delivered, tiers) : null
 
   const tierKpi = {
-    title:      tierProgress?.current.name ?? 'Partner Tier',
+    title:      'Partner Tier',
     value:      tierProgress?.current.name ?? '—',
     icon:       Award,
     chartColor: '#8B5CF6',
@@ -153,6 +153,7 @@ export default function CorporateDashboard() {
             subtitle={tierKpi.subtitle}
             progressPct={tierKpi.progressPct}
             onClick={tierKpi.onClick}
+            actionLabel="See details"
           />
         </div>
 
