@@ -24,6 +24,7 @@ import {
   Award,
   Gift,
   DollarSign,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
@@ -45,6 +46,7 @@ const baseNavigation = [
   { label: "Rewards", href: "/admin/rewards", icon: Gift, permission: "rewards.view" },
   { label: "Tiers", href: "/admin/tiers", icon: Award, permission: "tiers.view" },
   { label: "Support", href: "/admin/support", icon: LifeBuoy, permission: "support.view" },
+  { label: "Contact Messages", href: "/admin/contact-messages", icon: Mail, permission: "support.view" },
   { label: "Alerts", href: "/admin/notifications", icon: Bell, permission: null },
   { label: "Customization", href: "/admin/customization", icon: Settings, permission: "settings.general" },
   { label: "Admin Profile", href: "/admin/profile", icon: User, permission: null },

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse } from "@/lib/api";
-import type { AdminRoleDef, AdminRoleValue, PermissionsMatrixResponse, RolePermissionGrant } from "@/types/api.types";
+import type { AdminRoleDef, AdminRoleValue, PermissionScope, PermissionsMatrixResponse, RolePermissionGrant } from "@/types/api.types";
 
 const KEYS = {
   matrix: ["admin-role-permissions"] as const,
@@ -19,9 +19,29 @@ export function useRolePermissionsMatrix(options?: { enabled?: boolean }) {
 export function useUpdateRolePermission() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ role, permissionKey, granted }: { role: AdminRoleValue; permissionKey: string; granted: boolean }) =>
-      api.patch<ApiResponse<RolePermissionGrant>>(`/api/v1/admin/roles/${role}/${permissionKey}`, { granted }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.matrix }),
+    mutationFn: ({ role, permissionKey, granted, scope }: { role: AdminRoleValue; permissionKey: string; granted: boolean; scope?: PermissionScope }) =>
+      api.patch<ApiResponse<RolePermissionGrant>>(`/api/v1/admin/roles/${role}/${permissionKey}`, { granted, scope }),
+    onSuccess: (res) => {
+      const updated = res.data;
+      // Patch the cached matrix with the server's authoritative row immediately —
+      // don't rely solely on invalidate+refetch, which can lose a race with a
+      // fast second render and leave the UI showing the pre-update value.
+      qc.setQueryData<ApiResponse<PermissionsMatrixResponse>>(KEYS.matrix, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            matrix: old.data.matrix.map((row) =>
+              row.admin_role === updated.admin_role && row.permission_key === updated.permission_key
+                ? { ...row, granted: updated.granted, scope: updated.scope }
+                : row,
+            ),
+          },
+        };
+      });
+      qc.invalidateQueries({ queryKey: KEYS.matrix });
+    },
   });
 }
 

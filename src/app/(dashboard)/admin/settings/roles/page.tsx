@@ -28,6 +28,7 @@ import {
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +44,7 @@ import {
   useDeleteAdminRole,
 } from "@/hooks/use-admin-role-permissions";
 import { usePermission } from "@/hooks/use-permission";
-import type { AdminRoleDef, PermissionDef } from "@/types/api.types";
+import type { AdminRoleDef, PermissionDef, PermissionScope } from "@/types/api.types";
 
 const ROLE_ICONS: Record<string, LucideIcon> = {
   ceo: Crown,
@@ -72,6 +73,11 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 const CEO_LOCKED_PERMISSION = "employees.manage_permissions";
+
+// Categories where a "this staff member's own/assigned records only" filter
+// is actually implemented server-side (see deliveries/quotations/invoices
+// repositories) — every other category keeps just the single granted checkbox.
+const SCOPABLE_CATEGORIES = new Set(["Delivery Management", "Quotations", "Invoices"]);
 
 function CategoryIcon({ category }: { category: string }) {
   const Icon = CATEGORY_ICONS[category] ?? ShieldCheck;
@@ -208,6 +214,12 @@ export default function RolesPermissionsPage() {
     return map;
   }, [matrix]);
 
+  const scopeMap = useMemo(() => {
+    const map = new Map<string, PermissionScope>();
+    matrix.forEach((row) => map.set(`${row.admin_role}:${row.permission_key}`, row.scope));
+    return map;
+  }, [matrix]);
+
   const categories = useMemo(() => {
     const byCategory = new Map<string, PermissionDef[]>();
     permissions.forEach((p) => {
@@ -236,6 +248,15 @@ export default function RolesPermissionsPage() {
       await updateMut.mutateAsync({ role, permissionKey, granted });
     } catch (err) {
       toast.error((err as Error).message ?? "Failed to update permission");
+    }
+  }
+
+  async function toggleScope(role: string, permissionKey: string, granted: boolean, limitToOwn: boolean) {
+    try {
+      await updateMut.mutateAsync({ role, permissionKey, granted, scope: limitToOwn ? "own" : "all" });
+      toast.success(limitToOwn ? "Now limited to own/assigned records only" : "Now visible for all records");
+    } catch (err) {
+      toast.error((err as Error).message ?? "Failed to update permission scope");
     }
   }
 
@@ -406,7 +427,9 @@ export default function RolesPermissionsPage() {
                           </TableCell>
                           {roles.map((role) => {
                             const granted = grantMap.get(`${role.slug}:${perm.key}`) ?? false;
+                            const scope = scopeMap.get(`${role.slug}:${perm.key}`) ?? "all";
                             const locked = role.slug === "ceo" && perm.key === CEO_LOCKED_PERMISSION;
+                            const scopable = SCOPABLE_CATEGORIES.has(currentCategory ?? "");
                             return (
                               <TableCell key={role.slug} className="px-4 py-3 text-center">
                                 {locked ? (
@@ -417,11 +440,26 @@ export default function RolesPermissionsPage() {
                                     <Lock className="h-3.5 w-3.5" />
                                   </span>
                                 ) : (
-                                  <Switch
-                                    checked={granted}
-                                    disabled={updateMut.isPending}
-                                    onCheckedChange={(checked) => toggle(role.slug, perm.key, checked)}
-                                  />
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    <Switch
+                                      checked={granted}
+                                      disabled={updateMut.isPending}
+                                      onCheckedChange={(checked) => toggle(role.slug, perm.key, checked)}
+                                    />
+                                    {scopable && granted && (
+                                      <label
+                                        className="flex items-center gap-1.5 text-[10px] font-medium text-muted"
+                                        title="Only see records this role's own staff member is assigned to, instead of every record"
+                                      >
+                                        <Checkbox
+                                          checked={scope === "own"}
+                                          disabled={updateMut.isPending}
+                                          onCheckedChange={(checked) => toggleScope(role.slug, perm.key, granted, checked === true)}
+                                        />
+                                        Own only
+                                      </label>
+                                    )}
+                                  </div>
                                 )}
                               </TableCell>
                             );

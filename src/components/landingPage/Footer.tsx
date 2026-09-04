@@ -618,7 +618,7 @@ export default function Footer() {
             </div>
           </div>
           <Link
-            href="/#quote"
+            href="/contact-support"
             className="inline-flex items-center gap-2 self-start rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[#0b0b0d] transition hover:bg-primary-dark md:self-auto"
           >
             Contact Support

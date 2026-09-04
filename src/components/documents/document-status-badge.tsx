@@ -1,6 +1,6 @@
 "use client";
 
-import type { QuotationStatus, InvoiceStatus, SupportCaseStatus } from "@/types/api.types";
+import type { QuotationStatus, InvoiceStatus, SupportCaseStatus, ContactMessageStatus } from "@/types/api.types";
 import {
   QUOTATION_STATUS_LABELS,
   QUOTATION_STATUS_COLORS,
@@ -8,6 +8,8 @@ import {
   INVOICE_STATUS_COLORS,
   SUPPORT_CASE_STATUS_LABELS,
   SUPPORT_CASE_STATUS_COLORS,
+  CONTACT_MESSAGE_STATUS_LABELS,
+  CONTACT_MESSAGE_STATUS_COLORS,
 } from "@/types/api.types";
 
 // "Sent" is a corporate-only concept — it means an admin has priced and issued
@@ -41,6 +43,16 @@ export function SupportCaseStatusBadge({ status }: { status: SupportCaseStatus }
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${SUPPORT_CASE_STATUS_COLORS[status]}`}
     >
       {SUPPORT_CASE_STATUS_LABELS[status]}
+    </span>
+  );
+}
+
+export function ContactMessageStatusBadge({ status }: { status: ContactMessageStatus }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${CONTACT_MESSAGE_STATUS_COLORS[status]}`}
+    >
+      {CONTACT_MESSAGE_STATUS_LABELS[status]}
     </span>
   );
 }

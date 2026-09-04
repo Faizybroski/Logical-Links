@@ -257,10 +257,17 @@ export type PermissionDef = {
   sort_order: number;
 };
 
+// "own" is only meaningful (and only offered in the UI) for permission keys
+// under categories Delivery Management, Quotations and Invoices — the
+// categories where a "this staff member's own/assigned records only" filter
+// is actually implemented server-side.
+export type PermissionScope = "all" | "own";
+
 export type RolePermissionGrant = {
   admin_role:     AdminRoleValue;
   permission_key: string;
   granted:        boolean;
+  scope:          PermissionScope;
 };
 
 export type PermissionsMatrixResponse = {
@@ -1337,4 +1344,51 @@ export type ListSupportCasesQuery = {
   search?: string;
   /** Admin-only: view all cases raised by a specific user. */
   userId?: string;
+};
+
+// ── Contact Support (public contact form) ───────────────────────────────────────
+
+export type ContactMessageStatus = "new" | "in_progress" | "resolved";
+
+export const CONTACT_MESSAGE_STATUS_LABELS: Record<ContactMessageStatus, string> = {
+  new:         "New",
+  in_progress: "In Progress",
+  resolved:    "Resolved",
+};
+
+export const CONTACT_MESSAGE_STATUS_COLORS: Record<ContactMessageStatus, string> = {
+  new:         "bg-blue-50 text-blue-700 border-blue-200",
+  in_progress: "bg-amber-50 text-amber-700 border-amber-200",
+  resolved:    "bg-green-50 text-green-700 border-green-200",
+};
+
+export type ContactMessage = {
+  id:         string;
+  name:       string;
+  email:      string;
+  phone:      string | null;
+  subject:    string;
+  message:    string;
+  status:     ContactMessageStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SubmitContactMessageDto = {
+  name:    string;
+  email:   string;
+  phone?:  string;
+  subject: string;
+  message: string;
+};
+
+export type UpdateContactMessageStatusDto = {
+  status: ContactMessageStatus;
+};
+
+export type ListContactMessagesQuery = {
+  page?:   number;
+  limit?:  number;
+  status?: ContactMessageStatus;
+  search?: string;
 };
