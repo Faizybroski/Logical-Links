@@ -71,8 +71,8 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-2">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
 
         {/* Header */}
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -126,12 +126,12 @@ export default function AdminDashboard() {
               </div>
             )}
             {canViewCustomers && !statsLoading && pendingApprovals > 0 && (
-              <div className="flex items-center gap-3 rounded-2xl border border-danger/25 bg-danger/8 px-5 py-3">
-                <ShieldAlert className="h-5 w-5 shrink-0 text-danger" />
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-3">
+                <ShieldAlert className="h-5 w-5 shrink-0 text-primary" />
                 <p className="text-sm text-foreground">
-                  <strong>{pendingApprovals}</strong> corporate customer{pendingApprovals !== 1 ? 's' : ''} pending approval.{' '}
-                  <Link href="/admin/corporate-customers" className="underline font-medium text-danger">
-                    Review now
+                  <strong>{pendingApprovals}</strong> corporate customer{pendingApprovals !== 1 ? 's' : ''} in the pipeline.{' '}
+                  <Link href="/admin/corporate-customers" className="underline font-medium text-primary">
+                    View pipeline
                   </Link>
                 </p>
               </div>

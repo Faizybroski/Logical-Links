@@ -1,22 +1,38 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Mail, Phone, Building2, CheckCircle2, Clock, Save, Calendar } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { User, Mail, Phone, Building2, CheckCircle2, Clock, Save, Calendar, Trash2 } from 'lucide-react'
 import { useMe, useUpdateMe } from '@/hooks/use-users'
-import { useMyProfile } from '@/hooks/use-accounts'
+import { useMyProfile, useDeactivateMyAccount } from '@/hooks/use-accounts'
 import { useAuthStore } from '@/store/auth.store'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { CompanyLogo } from '@/components/ui/company-logo'
 import { uploadUserAvatar, removeUserAvatar } from '@/lib/upload-images'
 import { AppearanceSettings } from '@/components/settings/appearance-settings'
 import { toast } from 'sonner'
 
 export default function CorporateProfilePage() {
+  const router = useRouter()
   const { data: res, isLoading } = useMe()
   const updateMe = useUpdateMe()
+  const deactivateAccount = useDeactivateMyAccount()
   const patchUser = useAuthStore((s) => s.patchUser)
+  const clearAuth = useAuthStore((s) => s.clearAuth)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const profile = res?.data
+
+  async function handleDeactivateAccount() {
+    try {
+      await deactivateAccount.mutateAsync()
+      clearAuth()
+      router.push('/login')
+    } catch (err) {
+      toast.error((err as Error).message ?? 'Failed to deactivate account')
+    }
+  }
 
   const { data: accountRes } = useMyProfile()
   const account = accountRes?.data
@@ -81,7 +97,7 @@ export default function CorporateProfilePage() {
   const roleLabel = 'Company Admin'
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-5">
+    <div className="mx-auto w-full max-w-2xl space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">My Profile</h1>
@@ -274,8 +290,40 @@ export default function CorporateProfilePage() {
           </form>
 
           <AppearanceSettings />
+
+          {profile?.companyRole === 'company_admin' && (
+            <div className="rounded-3xl border border-red-200 bg-red-50/40 p-6 shadow-sm space-y-3">
+              <div>
+                <h2 className="text-base font-semibold text-red-700">Deactivate company account</h2>
+                <p className="mt-1 text-sm text-muted">
+                  Ends portal access for <span className="font-medium text-foreground">{account?.account_name ?? 'your company'}</span> and
+                  signs you out. Your deliveries, quotes and invoices are retained, and an
+                  administrator can reactivate the account later.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                className="flex items-center gap-2 rounded-xl border border-red-300 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Deactivate company account
+              </button>
+            </div>
+          )}
         </>
       )}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDeactivateAccount}
+        loading={deactivateAccount.isPending}
+        title="Deactivate company account"
+        description="This ends portal access for your company and signs you out. Your deliveries, quotes and invoices are kept, and an administrator can reactivate the account."
+        confirmLabel="Deactivate"
+        requireText="DEACTIVATE"
+      />
     </div>
   )
 }

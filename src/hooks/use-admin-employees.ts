@@ -54,3 +54,12 @@ export function useUpdateAdminEmployee(id: string) {
     },
   });
 }
+
+export function useDeleteAdminEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.delete<ApiResponse<null>>(`/api/v1/admin/employees/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}

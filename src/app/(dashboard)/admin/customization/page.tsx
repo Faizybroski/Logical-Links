@@ -513,7 +513,7 @@ export default function AdminSystemDataPage() {
   const [activeTab, setActiveTab] = useState<Tab>("locations");
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">System Data</h1>
         <p className="mt-0.5 text-sm text-muted">Manage locations and statuses used across the platform.</p>

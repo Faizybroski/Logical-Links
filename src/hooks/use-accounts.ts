@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse, type PaginatedResponse } from "@/lib/api";
 import type {
-  Account, AccountActivity, AccountStats,
+  Account, AccountActivity, AccountStats, CorporatePipelineStatus,
   CreateAccountDto, UpdateAccountDto, UpdateOwnCompanyDto, ListAccountsQuery,
 } from "@/types/api.types";
 
@@ -25,7 +25,8 @@ export function useAccounts(
   if (query.limit)                  params.set("limit",    String(query.limit));
   if (query.search)                 params.set("search",   query.search);
   if (query.isActive !== undefined) params.set("isActive", query.isActive);
-  if (query.status)                 params.set("status",   query.status);
+  if (query.pipelineStatus)         params.set("pipelineStatus", query.pipelineStatus);
+  if (query.rejected)               params.set("rejected", query.rejected);
   if (query.dateFrom)               params.set("dateFrom", query.dateFrom);
   if (query.dateTo)                 params.set("dateTo",   query.dateTo);
   if (query.sortBy)                 params.set("sortBy",   query.sortBy);
@@ -84,6 +85,35 @@ export function useDeleteAccount() {
     mutationFn: (id: string) =>
       api.delete<ApiResponse<null>>(`/api/v1/accounts/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+// One-field pipeline-stage change (list row menu + detail page control).
+export function useSetAccountPipelineStatus(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (pipelineStatus: CorporatePipelineStatus) =>
+      api.patch<ApiResponse<Account>>(`/api/v1/accounts/${id}`, { pipelineStatus }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+      qc.invalidateQueries({ queryKey: KEYS.activity(id) });
+    },
+  });
+}
+
+// A corporate customer closing their own company account (soft delete, hidden).
+export function useDeleteMyAccount() {
+  return useMutation({
+    mutationFn: () => api.delete<ApiResponse<null>>("/api/v1/accounts/me"),
+  });
+}
+
+// A corporate customer marking their own account "lost" — portal access ends
+// but the record stays in the admin pipeline (reversible).
+export function useDeactivateMyAccount() {
+  return useMutation({
+    mutationFn: () => api.post<ApiResponse<null>>("/api/v1/accounts/me/deactivate", {}),
   });
 }
 

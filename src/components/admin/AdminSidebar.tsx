@@ -33,6 +33,12 @@ import { useAppearance } from "@/components/providers/appearance-provider";
 import { useAuthStore } from "@/store/auth.store";
 import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
 import { ADMIN_ROLE_LABELS } from "@/types/api.types";
 
@@ -140,6 +146,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const sidebarTheme = getSidebarThemeById(sidebarSwatchId[theme]) ?? getSidebarTheme(user?.id);
 
   return (
+    <TooltipProvider>
     <aside
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
@@ -211,34 +218,39 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                title={!isExpanded ? item.label : undefined}
-                className={cn(
-                  "group flex items-center rounded-xl text-[13px] font-medium transition-all duration-200",
-                  isExpanded
-                    ? "gap-2.5 px-3 py-2.5"
-                    : "justify-center px-0 py-3",
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    className={cn(
+                      "group flex items-center rounded-xl text-[13px] font-medium transition-all duration-200",
+                      isExpanded
+                        ? "gap-2.5 px-3 py-2.5"
+                        : "justify-center px-0 py-3",
 
-                  active
-                    ? isExpanded
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-primary"
-                    : "text-zinc-300 hover:bg-sidebar-secondary hover:text-white",
+                      active
+                        ? isExpanded
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "text-primary"
+                        : "text-zinc-300 hover:bg-sidebar-secondary hover:text-white",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 shrink-0 transition-all duration-200",
+                        active &&
+                          !isExpanded &&
+                          "text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]",
+                      )}
+                    />
+                    {isExpanded && <span>{item.label}</span>}
+                  </Link>
+                </TooltipTrigger>
+                {!isExpanded && (
+                  <TooltipContent side="right">{item.label}</TooltipContent>
                 )}
-              >
-                <Icon
-                  className={cn(
-                    "h-4 w-4 shrink-0 transition-all duration-200",
-                    active &&
-                      !isExpanded &&
-                      "text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]",
-                  )}
-                />
-                {isExpanded && <span>{item.label}</span>}
-              </Link>
+              </Tooltip>
             );
           })}
         </div>
@@ -279,18 +291,22 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
             />
           </div>
         )}
-        <button
-          type="button"
-          onClick={signOut}
-          title={!isExpanded ? "Sign Out" : undefined}
-          className={cn(
-            "flex w-full items-center rounded-xl text-[13px] font-medium text-zinc-400 transition-colors hover:bg-sidebar-secondary hover:text-white",
-            isExpanded ? "gap-2.5 px-3 py-2" : "justify-center px-0 py-3",
-          )}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {isExpanded && "Sign Out"}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={signOut}
+              className={cn(
+                "flex w-full items-center rounded-xl text-[13px] font-medium text-zinc-400 transition-colors hover:bg-sidebar-secondary hover:text-white",
+                isExpanded ? "gap-2.5 px-3 py-2" : "justify-center px-0 py-3",
+              )}
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              {isExpanded && "Sign Out"}
+            </button>
+          </TooltipTrigger>
+          {!isExpanded && <TooltipContent side="right">Sign Out</TooltipContent>}
+        </Tooltip>
         <div className="hidden sm:block relative">
           {controlOpen && (
             <div className="absolute bottom-12 left-0 w-60 overflow-hidden rounded-lg border border-sidebar-border bg-[#232323] shadow-2xl">
@@ -361,5 +377,6 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
         )}
       </div>
     </aside>
+    </TooltipProvider>
   );
 }

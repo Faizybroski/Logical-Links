@@ -143,7 +143,8 @@ export function EditDeliverySheet({ open, onClose, loadId }: EditDeliverySheetPr
   }
 
   const saving    = updateMut.isPending;
-  const canDelete = isAdmin && delivery && ["pending", "confirmed"].includes(delivery.status);
+  // A delivery can be deleted in any status (soft delete + audit trail).
+  const canDelete = isAdmin && !!delivery;
 
   return (
     <Sheet open={open} onClose={onClose} size="xl">

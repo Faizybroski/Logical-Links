@@ -72,7 +72,9 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   "Locations & Statuses": MapPin,
 };
 
-const CEO_LOCKED_PERMISSION = "employees.manage_permissions";
+// The CEO is the platform owner/founder — it always holds every permission and
+// its column is read-only (enforced server-side in admin-roles.service too).
+const OWNER_ROLE = "ceo";
 
 // Categories where a "this staff member's own/assigned records only" filter
 // is actually implemented server-side (see deliveries/quotations/invoices
@@ -279,8 +281,8 @@ export default function RolesPermissionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-2">
-      <div className="mx-auto max-w-6xl space-y-7">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -428,16 +430,17 @@ export default function RolesPermissionsPage() {
                           {roles.map((role) => {
                             const granted = grantMap.get(`${role.slug}:${perm.key}`) ?? false;
                             const scope = scopeMap.get(`${role.slug}:${perm.key}`) ?? "all";
-                            const locked = role.slug === "ceo" && perm.key === CEO_LOCKED_PERMISSION;
+                            const isOwner = role.slug === OWNER_ROLE;
                             const scopable = SCOPABLE_CATEGORIES.has(currentCategory ?? "");
                             return (
                               <TableCell key={role.slug} className="px-4 py-3 text-center">
-                                {locked ? (
+                                {isOwner ? (
                                   <span
-                                    className="inline-flex h-6 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"
-                                    title="The CEO role must always retain this permission"
+                                    className="inline-flex items-center gap-1.5 text-primary"
+                                    title="The CEO is the platform owner — full access, always. Permissions can't be changed."
                                   >
-                                    <Lock className="h-3.5 w-3.5" />
+                                    <Switch checked disabled />
+                                    <Lock className="h-3 w-3" />
                                   </span>
                                 ) : (
                                   <div className="flex flex-col items-center gap-1.5">
@@ -474,11 +477,19 @@ export default function RolesPermissionsPage() {
           </>
         )}
 
-        <div className="flex items-start gap-2 rounded-2xl border border-card-border bg-card p-4 text-xs text-muted">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-          <p>
-            Permission changes take effect the next time the affected employee logs in or their session refreshes (up to ~15 minutes).
-          </p>
+        <div className="space-y-2">
+          <div className="flex items-start gap-2 rounded-2xl border border-card-border bg-card p-4 text-xs text-muted">
+            <Crown className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p>
+              The <span className="font-medium text-foreground">CEO</span> is the platform owner and always has every permission — the CEO column is locked and can&apos;t be edited.
+            </p>
+          </div>
+          <div className="flex items-start gap-2 rounded-2xl border border-card-border bg-card p-4 text-xs text-muted">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p>
+              Permission changes take effect the next time the affected employee logs in or their session refreshes (up to ~15 minutes).
+            </p>
+          </div>
         </div>
       </div>
 

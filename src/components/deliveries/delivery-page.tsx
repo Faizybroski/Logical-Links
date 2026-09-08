@@ -253,7 +253,9 @@ export default function DeliveriesPage() {
   // Delivery status/history is admin-only — customers (residential and
   // corporate) can view it but never mutate it themselves.
   const canEdit   = (s: Delivery) => isAdmin && canEditPerm   && !["delivered", "cancelled"].includes(s.status);
-  const canDelete = (s: Delivery) => isAdmin && canDeletePerm && ["pending", "confirmed"].includes(s.status);
+  // A delivery can be deleted in any status — it's a soft delete with an audit
+  // trail (see deliveries.service deleteDelivery).
+  const canDelete = (_s: Delivery) => isAdmin && canDeletePerm;
   const canAssign = (s: Delivery) => isAdmin && canAssignPerm && s.status === "confirmed";
   const canChangeStatus = () => isAdmin && canUpdateStatusPerm;
 
@@ -362,8 +364,8 @@ export default function DeliveriesPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-2">
-      <div className="mx-auto max-w-7xl space-y-7">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>

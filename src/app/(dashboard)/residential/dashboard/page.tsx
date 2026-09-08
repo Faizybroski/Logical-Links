@@ -8,6 +8,7 @@ import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-d
 import { StatusBadge } from '@/components/deliveries/status-badge'
 import { KpiCard } from '@/components/deliveries/kpi-card'
 import { RewardsMemberCard } from '@/components/rewards/rewards-member-card'
+import { DeliveryLiveUpdates } from '@/components/deliveries/delivery-live-updates'
 
 export default function ResidentialDashboard() {
   const user = useAuthStore((s) => s.user)
@@ -56,8 +57,8 @@ export default function ResidentialDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-2">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
 
         {/* Header */}
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -70,6 +71,9 @@ export default function ResidentialDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Rotating live updates about the customer's active deliveries */}
+        <DeliveryLiveUpdates audience="residential" />
 
         {/* KPI cards */}
         <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">

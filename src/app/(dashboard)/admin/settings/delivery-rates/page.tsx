@@ -166,8 +166,8 @@ export default function DeliveryRateLibraryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-2">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div className="flex gap-2">
           <span className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-sidebar">Delivery Rates</span>
           <Link href="/admin/settings/additional-charges" className="rounded-full border border-card-border px-4 py-1.5 text-sm font-medium text-muted hover:text-foreground">

@@ -50,9 +50,53 @@ export type AccountProfile = {
   created_at: string;
 };
 
+// ── Corporate pipeline (CRM) status ──────────────────────────────────────────
+export type CorporatePipelineStatus =
+  | "prospect"
+  | "contacted"
+  | "interested"
+  | "onboarding"
+  | "active"
+  | "inactive"
+  | "lost";
+
+export const CORPORATE_PIPELINE_STATUSES: CorporatePipelineStatus[] = [
+  "prospect", "contacted", "interested", "onboarding", "active", "inactive", "lost",
+];
+
+// Portal login access is granted only while onboarding or active.
+export const CORPORATE_PORTAL_ACCESS_STATUSES: CorporatePipelineStatus[] = ["onboarding", "active"];
+
+// "rejected" is not a pickable pipeline stage — it's driven by the separate
+// Reject action (reason + 90-day retention). It's shown as a status when
+// account.rejected_at is set. Use `accountDisplayStatus()` to resolve it.
+export type AccountDisplayStatus = CorporatePipelineStatus | "rejected";
+
+export const CORPORATE_PIPELINE_STATUS_META: Record<
+  AccountDisplayStatus,
+  { label: string; description: string; badge: string; dot: string }
+> = {
+  prospect:   { label: "Prospect",    description: "Company identified as a potential customer, but not contacted yet.",         badge: "bg-slate-50 text-slate-700 border-slate-200",     dot: "bg-slate-400" },
+  contacted:  { label: "Contacted",   description: "You have reached out by email, phone, or another method.",                   badge: "bg-sky-50 text-sky-700 border-sky-200",           dot: "bg-sky-500" },
+  interested: { label: "Interested",  description: "They have shown interest but haven't started shipping yet.",                 badge: "bg-violet-50 text-violet-700 border-violet-200",  dot: "bg-violet-500" },
+  onboarding: { label: "Onboarding",  description: "They have agreed to work with you and are being set up.",                    badge: "bg-amber-50 text-amber-700 border-amber-200",     dot: "bg-amber-500" },
+  active:     { label: "Active",      description: "Established account and/or shipping with you.",                              badge: "bg-green-50 text-green-700 border-green-200",     dot: "bg-green-500" },
+  inactive:   { label: "Inactive",    description: "Previously active, but not currently shipping.",                             badge: "bg-zinc-100 text-zinc-600 border-zinc-200",       dot: "bg-zinc-400" },
+  lost:       { label: "Lost",        description: "Decided not to use Logical Links / chose another provider.",                 badge: "bg-red-50 text-red-700 border-red-200",           dot: "bg-red-500" },
+  rejected:   { label: "Rejected",    description: "Application declined. Data is retained for 90 days, then permanently deleted.", badge: "bg-red-100 text-red-800 border-red-300",        dot: "bg-red-600" },
+};
+
+/** The status to display for an account — "rejected" wins over the pipeline stage. */
+export function accountDisplayStatus(
+  a: { pipeline_status: CorporatePipelineStatus; rejected_at?: string | null },
+): AccountDisplayStatus {
+  return a.rejected_at ? "rejected" : a.pipeline_status;
+}
+
 export type Account = {
   account_id: string;
   account_name: string;
+  pipeline_status: CorporatePipelineStatus;
   abn: string | null;
   website: string | null;
   logo_url: string | null;
@@ -97,7 +141,7 @@ export type AccountActivity = {
   event_type:
     | "submitted" | "reviewed" | "approved" | "rejected" | "reconsidered"
     | "restored" | "admin_added" | "terms_accepted" | "tier_changed"
-    | "account_updated" | "note_added";
+    | "account_updated" | "note_added" | "status_changed";
   description: string;
   actor_id: string | null;
   actor_label: string | null;
@@ -116,6 +160,7 @@ export type AccountStats = {
 
 export type CreateAccountDto = {
   accountName: string;
+  pipelineStatus?: CorporatePipelineStatus;
   abn?: string;
   website?: string;
   contactName?: string;
@@ -141,6 +186,7 @@ export type UpdateAccountDto = Partial<CreateAccountDto> & {
   isActive?: boolean;
   businessType?: string;
   industry?: string;
+  pipelineStatus?: CorporatePipelineStatus;
 };
 
 export type UpdateOwnCompanyDto = {
@@ -166,10 +212,11 @@ export type ListAccountsQuery = {
   limit?:    number;
   search?:   string;
   isActive?: "true" | "false";
-  status?:   "active" | "rejected";
+  pipelineStatus?: CorporatePipelineStatus;
+  rejected?: "true" | "false";
   dateFrom?: string;
   dateTo?:   string;
-  sortBy?:   "account_name" | "is_active" | "created_at";
+  sortBy?:   "account_name" | "is_active" | "created_at" | "pipeline_status";
   sortDir?:  "asc" | "desc";
 };
 
@@ -246,6 +293,8 @@ export type UpdateAdminEmployeeDto = {
   phone?:     string;
   isActive?:  boolean;
   adminRole?: AdminRoleValue;
+  /** Admin-set password reset — requires the 'employees.reset_password' permission. */
+  password?:  string;
 };
 
 // ── Roles & Permissions ────────────────────────────────────────────────────────

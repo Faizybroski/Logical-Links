@@ -13,6 +13,8 @@ import {
   MoreVertical,
   UserX,
   UserCheck,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,10 +31,13 @@ import {
 import { KpiCard } from "@/components/deliveries/kpi-card";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 
-import { useAdminEmployees, useUpdateAdminEmployee } from "@/hooks/use-admin-employees";
+import { useAdminEmployees, useUpdateAdminEmployee, useDeleteAdminEmployee } from "@/hooks/use-admin-employees";
 import { useAdminRoles } from "@/hooks/use-admin-role-permissions";
 import { usePermission } from "@/hooks/use-permission";
+import { useAuthStore } from "@/store/auth.store";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EditProfileDialog } from "@/components/admin/edit-profile-dialog";
 import { ADMIN_ROLE_LABELS, type AdminEmployee, type AdminRoleDef, type AdminRoleValue } from "@/types/api.types";
 
 function roleLabel(role: string, roles: AdminRoleDef[]): string {
@@ -87,9 +92,18 @@ function RolePill({ role, roles }: { role: AdminRoleValue | null; roles: AdminRo
 }
 
 function ActionsCell({ employee, roles }: { employee: AdminEmployee; roles: AdminRoleDef[] }) {
+  const currentUserId = useAuthStore((s) => s.user?.id);
   const updateMut = useUpdateAdminEmployee(employee.id);
+  const deleteMut = useDeleteAdminEmployee();
   const canSuspend = usePermission("employees.suspend");
   const canManageRoles = usePermission("employees.manage_roles");
+  const canEdit = usePermission("employees.edit");
+  const canDelete = usePermission("employees.delete");
+  const canResetPassword = usePermission("employees.reset_password");
+  const isSelf = currentUserId === employee.id;
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   async function toggleActive() {
     try {
@@ -114,9 +128,32 @@ function ActionsCell({ employee, roles }: { employee: AdminEmployee; roles: Admi
     }
   }
 
-  if (!canSuspend && !canManageRoles) return null;
+  async function saveEdit(values: { fullName?: string; phone?: string; password?: string }) {
+    try {
+      await updateMut.mutateAsync(values);
+      toast.success(values.password ? "Employee updated — password reset" : "Employee updated");
+      setEditOpen(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  async function confirmDelete() {
+    try {
+      await deleteMut.mutateAsync(employee.id);
+      toast.success(`${employee.full_name ?? employee.email} removed`);
+      setDeleteOpen(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  const showDelete = canDelete && !isSelf;
+  const showEdit = canEdit || canResetPassword;
+  if (!canSuspend && !canManageRoles && !showEdit && !showDelete) return null;
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -131,6 +168,15 @@ function ActionsCell({ employee, roles }: { employee: AdminEmployee; roles: Admi
         align="end"
         className="w-48 rounded-xl border border-card-border bg-card shadow-lg"
       >
+        {showEdit && (
+          <DropdownMenuItem
+            className="cursor-pointer gap-2 rounded-lg"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+            {canEdit ? "Edit" : "Reset password"}
+          </DropdownMenuItem>
+        )}
         {canManageRoles && (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="cursor-pointer gap-2 rounded-lg">
@@ -173,8 +219,44 @@ function ActionsCell({ employee, roles }: { employee: AdminEmployee; roles: Admi
             )}
           </DropdownMenuItem>
         )}
+        {showDelete && (
+          <DropdownMenuItem
+            className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger"
+            onClick={() => setDeleteOpen(true)}
+            disabled={deleteMut.isPending}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <EditProfileDialog
+      open={editOpen}
+      onClose={() => setEditOpen(false)}
+      onSave={saveEdit}
+      initial={{ fullName: employee.full_name, phone: employee.phone }}
+      loading={updateMut.isPending}
+      title={canEdit ? "Edit employee" : "Reset password"}
+      showPasswordReset={canResetPassword}
+    />
+    <ConfirmDialog
+      open={deleteOpen}
+      onClose={() => setDeleteOpen(false)}
+      onConfirm={confirmDelete}
+      loading={deleteMut.isPending}
+      title="Delete employee"
+      description={
+        <>
+          {employee.full_name ?? employee.email} will be removed from the dashboard
+          and can no longer sign in. Their history is kept and this can be undone by
+          an administrator.
+        </>
+      }
+      confirmLabel="Delete"
+    />
+    </>
   );
 }
 
@@ -186,7 +268,10 @@ export default function AdminEmployeesPage() {
   const canCreate = usePermission("employees.create");
   const canSuspend = usePermission("employees.suspend");
   const canManageRoles = usePermission("employees.manage_roles");
-  const canShowActions = canSuspend || canManageRoles;
+  const canEditEmp = usePermission("employees.edit");
+  const canDeleteEmp = usePermission("employees.delete");
+  const canResetPwEmp = usePermission("employees.reset_password");
+  const canShowActions = canSuspend || canManageRoles || canEditEmp || canDeleteEmp || canResetPwEmp;
 
   const { data: res, isLoading } = useAdminEmployees({ limit: 100 }, { enabled: canView });
   const allEmployees = (res?.data ?? []) as AdminEmployee[];
@@ -296,8 +381,8 @@ export default function AdminEmployeesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-2">
-      <div className="mx-auto max-w-7xl space-y-7">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>

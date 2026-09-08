@@ -7,13 +7,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   Building2,
   CheckCircle2,
-  Clock,
   Phone,
-  XCircle,
-  ShieldCheck,
   MoreVertical,
-  UserCircle2,
   Plus,
+  Trash2,
+  TrendingUp,
+  XCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,9 +21,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { KpiCard } from "@/components/deliveries/kpi-card";
 import { DataTable } from "@/components/deliveries/deliveries-table";
@@ -34,13 +35,26 @@ import type { FilterDef } from "@/components/ui/table-filters";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import type { SortDir } from "@/hooks/use-table-filters";
 
-import { useAccounts, useReconsiderAccount, usePurgeAccount } from "@/hooks/use-accounts";
-import { useApproveUser } from "@/hooks/use-users";
+import {
+  useAccounts, useSetAccountPipelineStatus, useDeleteAccount,
+  useReconsiderAccount, usePurgeAccount,
+} from "@/hooks/use-accounts";
 import { usePermission } from "@/hooks/use-permission";
-import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import type { Account, AccountProfile } from "@/types/api.types";
+import { PipelineStatusBadge } from "@/components/accounts/pipeline-status-badge";
+import { AddCorporateCustomerSheet } from "@/components/accounts/add-corporate-customer-sheet";
+import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  CORPORATE_PIPELINE_STATUSES,
+  CORPORATE_PIPELINE_STATUS_META,
+  CORPORATE_PORTAL_ACCESS_STATUSES,
+  accountDisplayStatus,
+  type Account,
+  type AccountProfile,
+  type CorporatePipelineStatus,
+} from "@/types/api.types";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 
@@ -52,87 +66,43 @@ function formatDate(d: string) {
   });
 }
 
-function initials(name: string | null, fallback: string): string {
-  if (name) {
-    const parts = name.trim().split(" ");
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : parts[0].slice(0, 2).toUpperCase();
-  }
-  return fallback.slice(0, 2).toUpperCase();
-}
-
 function getAdmin(profiles?: AccountProfile[]): AccountProfile | undefined {
   return profiles?.find((p) => p.company_role === "company_admin");
 }
 
-function StatusPill({ active }: { active: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
-        active
-          ? "border-success/25 bg-success/10 text-green-700"
-          : "border-danger/25 bg-danger/10 text-red-700"
-      }`}
-    >
-      {active ? (
-        <>
-          <CheckCircle2 className="h-3 w-3" />
-          Active
-        </>
-      ) : (
-        <>
-          <XCircle className="h-3 w-3" />
-          Inactive
-        </>
-      )}
-    </span>
-  );
-}
-
-function ApprovalPill({ approved }: { approved: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
-        approved
-          ? "border-blue-200 bg-blue-50 text-blue-700"
-          : "border-warning/25 bg-warning/10 text-yellow-700"
-      }`}
-    >
-      {approved ? (
-        <>
-          <ShieldCheck className="h-3 w-3" />
-          Approved
-        </>
-      ) : (
-        <>
-          <Clock className="h-3 w-3" />
-          Pending
-        </>
-      )}
-    </span>
-  );
-}
+const IN_PIPELINE: CorporatePipelineStatus[] = ["prospect", "contacted", "interested", "onboarding"];
 
 /* ─── Actions cell ───────────────────────────────────────────────────────── */
 
 function ActionsCell({ account }: { account: Account }) {
-  const admin    = getAdmin(account.profiles);
-  const approveMut = useApproveUser(admin?.id ?? "");
   const canEdit = usePermission("customers.edit");
+  const canDelete = usePermission("customers.delete");
+  const statusMut = useSetAccountPipelineStatus(account.account_id);
+  const deleteMut = useDeleteAccount();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
-  async function handle(isApproved: boolean) {
-    if (!admin) { toast.error("No company admin found for this corporate customer"); return; }
+  async function setStatus(next: CorporatePipelineStatus) {
+    if (next === account.pipeline_status) return;
     try {
-      await approveMut.mutateAsync(isApproved);
-      toast.success(isApproved ? `${account.account_name} approved` : "Approval revoked");
+      await statusMut.mutateAsync(next);
+      toast.success(`${account.account_name} → ${CORPORATE_PIPELINE_STATUS_META[next].label}`);
     } catch (err) {
       toast.error((err as Error).message);
     }
   }
 
-  if (!canEdit) return null;
+  async function confirmDelete() {
+    try {
+      await deleteMut.mutateAsync(account.account_id);
+      toast.success(`${account.account_name} removed`);
+      setDeleteOpen(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  if (!canEdit && !canDelete) return null;
 
   return (
     <>
@@ -142,25 +112,41 @@ function ActionsCell({ account }: { account: Account }) {
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 rounded-xl border border-card-border bg-card shadow-lg">
-          {admin ? (
-            admin.is_approved ? (
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={() => handle(false)} disabled={approveMut.isPending}>
-                <XCircle className="h-4 w-4" /> Revoke Approval
-              </DropdownMenuItem>
-            ) : (
-              <>
-                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-green-700 focus:text-green-700" onClick={() => handle(true)} disabled={approveMut.isPending}>
-                  <ShieldCheck className="h-4 w-4" /> Approve
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger" onClick={(e) => { e.preventDefault(); setRejectOpen(true); }}>
-                  <XCircle className="h-4 w-4" /> Reject
-                </DropdownMenuItem>
-              </>
-            )
-          ) : (
-            <DropdownMenuItem disabled className="gap-2 rounded-lg text-muted">
-              <UserCircle2 className="h-4 w-4" /> No admin assigned
+        <DropdownMenuContent align="end" className="w-52 rounded-xl border border-card-border bg-card shadow-lg">
+          {canEdit && (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="cursor-pointer gap-2 rounded-lg">Set status</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="rounded-xl border border-card-border bg-card shadow-lg">
+                {CORPORATE_PIPELINE_STATUSES.map((s) => (
+                  <DropdownMenuItem
+                    key={s}
+                    className="cursor-pointer gap-2 rounded-lg"
+                    disabled={s === account.pipeline_status || statusMut.isPending}
+                    onClick={() => setStatus(s)}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${CORPORATE_PIPELINE_STATUS_META[s].dot}`} />
+                    {CORPORATE_PIPELINE_STATUS_META[s].label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          )}
+          {canEdit && !account.rejected_at &&
+            !CORPORATE_PORTAL_ACCESS_STATUSES.includes(account.pipeline_status) && (
+            <DropdownMenuItem
+              className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger"
+              onClick={(e) => { e.preventDefault(); setRejectOpen(true); }}
+            >
+              <XCircle className="h-4 w-4" /> Reject application
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem
+              className="cursor-pointer gap-2 rounded-lg text-danger focus:text-danger"
+              onClick={() => setDeleteOpen(true)}
+              disabled={deleteMut.isPending}
+            >
+              <Trash2 className="h-4 w-4" /> Delete
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -172,9 +158,26 @@ function ActionsCell({ account }: { account: Account }) {
         open={rejectOpen}
         onOpenChange={setRejectOpen}
       />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        loading={deleteMut.isPending}
+        title="Delete corporate customer"
+        description={
+          <>
+            {account.account_name} will be removed from the dashboard and its logins disabled.
+            Deliveries, invoices and history are kept and this can be undone by an administrator.
+          </>
+        }
+        confirmLabel="Delete"
+      />
     </>
   );
 }
+
+/* ─── Rejected-view actions ──────────────────────────────────────────────── */
 
 function RejectedActionsCell({ account }: { account: Account }) {
   const canEdit = usePermission("customers.edit");
@@ -213,23 +216,23 @@ function RejectedActionsCell({ account }: { account: Account }) {
 /* ─── Filter defaults ────────────────────────────────────────────────────── */
 
 const FILTER_DEFAULTS = {
-  search:   "",
-  isActive: "",
-  status:   "active",
-  dateFrom: "",
-  dateTo:   "",
-  sortBy:   "",
-  sortDir:  "",
-  page:     "1",
+  view:           "pipeline",   // "pipeline" | "rejected"
+  search:         "",
+  pipelineStatus: "",
+  dateFrom:       "",
+  dateTo:         "",
+  sortBy:         "",
+  sortDir:        "",
+  page:           "1",
 };
 
-const STATUS_OPTIONS = [
-  { value: "true",  label: "Active" },
-  { value: "false", label: "Inactive" },
-];
+const PIPELINE_OPTIONS = CORPORATE_PIPELINE_STATUSES.map((s) => ({
+  value: s,
+  label: CORPORATE_PIPELINE_STATUS_META[s].label,
+}));
 
 const FILTER_DEFS: FilterDef[] = [
-  { type: "select",    key: "isActive", label: "Status",          options: STATUS_OPTIONS },
+  { type: "select",    key: "pipelineStatus", label: "Pipeline stage",  options: PIPELINE_OPTIONS },
   { type: "dateRange", label: "Registered Date", fromKey: "dateFrom", toKey: "dateTo" },
 ];
 
@@ -246,6 +249,8 @@ export default function CorporateCustomersPage() {
   const page    = parseInt(filters.page || "1", 10);
   const sortBy  = filters.sortBy  || undefined;
   const sortDir = (filters.sortDir as SortDir) || null;
+  const view    = (filters.view || "pipeline") as "pipeline" | "rejected";
+  const isRejectedView = view === "rejected";
 
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -255,28 +260,27 @@ export default function CorporateCustomersPage() {
     return () => clearTimeout(searchTimer.current);
   }, [filters.search]);
 
-  const status = (filters.status || "active") as "active" | "rejected";
-  const isRejectedView = status === "rejected";
-
   const query = useMemo(() => ({
     page,
     limit: 20,
-    status,
+    ...(isRejectedView
+      ? { rejected: "true" as const }
+      : filters.pipelineStatus && { pipelineStatus: filters.pipelineStatus as CorporatePipelineStatus }),
     ...(debouncedSearch && { search: debouncedSearch }),
-    ...(filters.isActive && { isActive: filters.isActive as "true" | "false" }),
     ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
     ...(filters.dateTo   && { dateTo:   filters.dateTo }),
     ...(sortBy           && { sortBy: sortBy as any }),
     ...(sortDir          && { sortDir }),
-  }), [debouncedSearch, filters.isActive, filters.dateFrom, filters.dateTo, page, sortBy, sortDir, status]);
+  }), [isRejectedView, debouncedSearch, filters.pipelineStatus, filters.dateFrom, filters.dateTo, page, sortBy, sortDir]);
 
   const { data: res, isLoading } = useAccounts(query);
   const allAccounts = res?.data ?? [];
   const totalCount  = (res as any)?.meta?.total ?? 0;
 
-  const canEditCustomers = usePermission("customers.edit");
+  const canCreateCustomer = usePermission("customers.create");
   const canCreateDelivery = usePermission("deliveries.create");
   const [createOpen, setCreateOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   function handleSort(key: string, dir: SortDir) {
     setFilters({ sortBy: key && dir ? key : "", sortDir: dir ?? "", page: "1" });
@@ -294,20 +298,22 @@ export default function CorporateCustomersPage() {
     );
   }
 
+  // KPIs reflect the current (filtered) page's counts, same as before.
   const stats = useMemo(() => {
-    const approved = allAccounts.filter((a) => getAdmin(a.profiles)?.is_approved).length;
-    return { total: totalCount, approved, pending: allAccounts.length - approved };
+    const active = allAccounts.filter((a) => a.pipeline_status === "active").length;
+    const inPipeline = allAccounts.filter((a) => IN_PIPELINE.includes(a.pipeline_status)).length;
+    return { total: totalCount, active, inPipeline };
   }, [allAccounts, totalCount]);
-
-  const pendingAccounts = useMemo(
-    () => allAccounts.filter((a) => { const admin = getAdmin(a.profiles); return admin && !admin.is_approved; }),
-    [allAccounts],
-  );
 
   const filterChips = useMemo(() => {
     const chips = [];
-    if (filters.isActive)
-      chips.push({ key: "isActive", label: "Status", value: filters.isActive === "true" ? "Active" : "Inactive", onRemove: () => setFilter("isActive", "") });
+    if (filters.pipelineStatus)
+      chips.push({
+        key: "pipelineStatus",
+        label: "Stage",
+        value: CORPORATE_PIPELINE_STATUS_META[filters.pipelineStatus as CorporatePipelineStatus]?.label ?? filters.pipelineStatus,
+        onRemove: () => setFilter("pipelineStatus", ""),
+      });
     if (filters.dateFrom || filters.dateTo)
       chips.push({ key: "date", label: "Registered", value: `${filters.dateFrom || "…"} – ${filters.dateTo || "…"}`, onRemove: () => setFilters({ dateFrom: "", dateTo: "" }) });
     return chips;
@@ -336,18 +342,22 @@ export default function CorporateCustomersPage() {
         header: "Company Admin",
         cell: ({ row }) => {
           const admin = getAdmin(row.original.profiles);
-          if (!admin) return <span className="text-xs italic text-muted-light">No admin assigned</span>;
+          if (!admin) return <span className="text-xs italic text-muted-light">No login yet</span>;
           return (
             <div className="flex items-center gap-2">
               <UserAvatar name={admin.full_name} avatarUrl={admin.avatar_url} size="sm" rounded="xl" />
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-medium text-foreground">{admin.full_name ?? <span className="italic text-muted">No name</span>}</span>
                 {admin.phone && <span className="flex items-center gap-1 text-xs text-muted"><Phone className="h-3 w-3 shrink-0" />{admin.phone}</span>}
-                <div className="mt-0.5"><ApprovalPill approved={admin.is_approved} /></div>
               </div>
             </div>
           );
         },
+      },
+      {
+        id: "status",
+        header: () => sh("Status", "pipeline_status"),
+        cell: ({ row }) => <PipelineStatusBadge status={accountDisplayStatus(row.original)} />,
       },
       isRejectedView
         ? {
@@ -360,19 +370,10 @@ export default function CorporateCustomersPage() {
             ),
           }
         : {
-            id: "status",
-            header: () => sh("Status", "is_active"),
-            cell: ({ row }) => <StatusPill active={row.original.is_active} />,
+            id: "registered",
+            header: () => sh("Registered", "created_at"),
+            cell: ({ row }) => <span className="text-xs text-muted">{formatDate(row.original.created_at)}</span>,
           },
-      {
-        id: "registered",
-        header: () => sh(isRejectedView ? "Rejected" : "Registered", isRejectedView ? "created_at" : "created_at"),
-        cell: ({ row }) => (
-          <span className="text-xs text-muted">
-            {formatDate(isRejectedView ? (row.original.rejected_at ?? row.original.created_at) : row.original.created_at)}
-          </span>
-        ),
-      },
       {
         id: "actions",
         header: "",
@@ -387,37 +388,43 @@ export default function CorporateCustomersPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-2">
-      <div className="mx-auto max-w-7xl space-y-7">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Administration</p>
           <h1 className="mt-2 text-4xl font-bold text-foreground">Corporate Customers</h1>
-          <p className="mt-2 text-sm text-muted">Monitor and manage all registered corporate customers.</p>
+          <p className="mt-2 text-sm text-muted">
+            Track companies through the sales pipeline — from prospect to active customer.
+          </p>
         </div>
 
         <div className="inline-flex rounded-xl border border-card-border bg-card p-1">
-          {(["active", "rejected"] as const).map((s) => (
+          {(["pipeline", "rejected"] as const).map((v) => (
             <button
-              key={s}
-              onClick={() => setFilters({ status: s, page: "1" })}
+              key={v}
+              onClick={() => setFilters({ view: v, page: "1" })}
               className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
-                status === s ? "bg-primary text-sidebar" : "text-muted hover:text-foreground"
+                view === v ? "bg-primary text-sidebar" : "text-muted hover:text-foreground"
               }`}
             >
-              {s === "active" ? "Active" : "Rejected"}
+              {v}
             </button>
           ))}
         </div>
 
         {!isRejectedView && (
           <div className="grid gap-5 sm:grid-cols-3">
-            <KpiCard title="Total Corporate Customers" value={stats.total}   icon={Building2}    chartColor="#C89B3C" isLoading={isLoading} />
-            <KpiCard title="Approved"                   value={stats.approved} icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
-            <KpiCard title="Pending Approval"            value={stats.pending}  icon={Clock}        chartColor="#EAB308" isLoading={isLoading} />
+            <KpiCard title="Total Corporate Customers" value={stats.total}      icon={Building2}    chartColor="#C89B3C" isLoading={isLoading} />
+            <KpiCard title="Active"                     value={stats.active}     icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
+            <KpiCard title="In Pipeline"                value={stats.inPipeline} icon={TrendingUp}   chartColor="#8B5CF6" isLoading={isLoading} />
           </div>
         )}
 
-        {!isRejectedView && !isLoading && canEditCustomers && pendingAccounts.length > 0 && <PendingApprovals accounts={pendingAccounts} />}
+        {isRejectedView && (
+          <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-3 text-sm text-red-700">
+            Rejected applications are kept for 90 days so the decision can be reversed, then permanently deleted.
+          </div>
+        )}
 
         <DataTable<Account>
           title="Corporate Customers List"
@@ -427,12 +434,12 @@ export default function CorporateCustomersPage() {
           searchValue={filters.search}
           onSearchChange={(v) => setFilter("search", v)}
           onRowClick={(a) => router.push(`${basePath}/${a.account_id}`)}
-          searchPlaceholder="Search by company, email or admin name…"
+          searchPlaceholder="Search by company, code, email…"
           pageSize={20}
           totalCount={totalCount}
           page={page}
           onPageChange={(pg) => setFilter("page", String(pg))}
-          filterChips={filterChips}
+          filterChips={isRejectedView ? [] : filterChips}
           emptyState={
             <div className="flex flex-col items-center gap-2 py-4">
               <Building2 className="h-8 w-8 text-muted-light" />
@@ -441,102 +448,35 @@ export default function CorporateCustomersPage() {
           }
           headerActions={
             <div className="flex items-center gap-2">
-              {canCreateDelivery && (
+              {!isRejectedView && canCreateCustomer && (
+                <Button onClick={() => setAddOpen(true)} variant="outline" className="rounded-lg border-card-border">
+                  <Plus className="h-4 w-4" />
+                  Add Corporate Customer
+                </Button>
+              )}
+              {!isRejectedView && canCreateDelivery && (
                 <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
                   <Plus className="h-4 w-4" />
                   Create a Delivery
                 </Button>
               )}
-              <TableFilters
-                defs={FILTER_DEFS}
-                getValue={(key) => filters[key as keyof typeof FILTER_DEFAULTS] ?? ""}
-                onChange={(key, val) => setFilter(key as keyof typeof FILTER_DEFAULTS, val)}
-                onClearAll={clearAll}
-                activeCount={activeCount}
-                chips={filterChips}
-              />
+              {!isRejectedView && (
+                <TableFilters
+                  defs={FILTER_DEFS}
+                  getValue={(key) => filters[key as keyof typeof FILTER_DEFAULTS] ?? ""}
+                  onChange={(key, val) => setFilter(key as keyof typeof FILTER_DEFAULTS, val)}
+                  onClearAll={clearAll}
+                  activeCount={activeCount}
+                  chips={filterChips}
+                />
+              )}
             </div>
           }
         />
       </div>
 
+      <AddCorporateCustomerSheet open={addOpen} onClose={() => setAddOpen(false)} />
       <CreateDeliverySheet open={createOpen} onClose={() => setCreateOpen(false)} context="corporate" />
-    </div>
-  );
-}
-
-/* ─── Pending Approvals ──────────────────────────────────────────────────── */
-
-function PendingApprovals({ accounts }: { accounts: Account[] }) {
-  return (
-    <Card className="border border-warning/25 bg-warning/5 shadow-sm">
-      <CardHeader className="border-b border-warning/15 px-6 py-4">
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold text-yellow-700">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-warning/20">
-            <Clock className="h-3.5 w-3.5" />
-          </div>
-          Pending Approvals
-          <span className="ml-1 rounded-full bg-warning/25 px-2 py-0.5 text-xs font-bold tabular-nums text-yellow-800">
-            {accounts.length}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="divide-y divide-warning/10 p-0">
-        {accounts.map((account) => (
-          <PendingAccountRow key={account.account_id} account={account} />
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function PendingAccountRow({ account }: { account: Account }) {
-  const admin = getAdmin(account.profiles);
-  const approveMut = useApproveUser(admin?.id ?? "");
-  const [rejectOpen, setRejectOpen] = useState(false);
-
-  async function handle(isApproved: boolean) {
-    if (!admin) return;
-    try {
-      await approveMut.mutateAsync(isApproved);
-      toast.success(isApproved ? `${account.account_name} approved` : "Approval revoked");
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-4 px-6 py-4">
-      <RejectAccountDialog
-        accountId={account.account_id}
-        accountName={account.account_name}
-        open={rejectOpen}
-        onOpenChange={setRejectOpen}
-      />
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-xs font-bold text-yellow-700">
-          {initials(account.account_name, "CO")}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{account.account_name}</p>
-          {admin?.full_name && <p className="truncate text-xs text-muted">Admin: {admin.full_name}</p>}
-          {account.contact_phone && (
-            <p className="flex items-center gap-1 text-xs text-muted">
-              <Phone className="h-3 w-3 shrink-0" />{account.contact_phone}
-            </p>
-          )}
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Button size="sm" variant="outline" disabled={!admin} onClick={() => setRejectOpen(true)}
-          className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50 hover:border-red-300">
-          <XCircle className="mr-1 h-3.5 w-3.5" />Reject
-        </Button>
-        <Button size="sm" disabled={!admin || approveMut.isPending} onClick={() => handle(true)}
-          className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85">
-          <ShieldCheck className="mr-1 h-3.5 w-3.5" />Approve
-        </Button>
-      </div>
     </div>
   );
 }

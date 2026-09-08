@@ -153,8 +153,8 @@ export default function CorporateQuotationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-2">
-      <div className="mx-auto max-w-7xl space-y-6 sm:space-y-7">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Corporate Portal</p>

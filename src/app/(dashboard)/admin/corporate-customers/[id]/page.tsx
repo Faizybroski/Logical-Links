@@ -4,8 +4,8 @@ import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Mail, Phone, Calendar, CheckCircle2, Clock, ShieldCheck, XCircle,
-  ChevronRight, Building2, UserCircle2, Globe, Hash, MapPin, RotateCcw, Trash2,
+  ArrowLeft, Mail, Phone, Calendar, XCircle, RotateCcw, PauseCircle, PowerOff,
+  ChevronRight, Building2, UserCircle2, Globe, Hash, MapPin, Trash2,
   Briefcase, Factory, Package, Truck, FileText, DollarSign, Award, Users, Pencil,
 } from "lucide-react";
 
@@ -16,17 +16,26 @@ import { TierDetailsSheet } from "@/components/deliveries/sheets/tier-details-sh
 import { getTierProgress } from "@/lib/tiers";
 import {
   useAccount, useAccountStats, useAccountActivity,
-  useReconsiderAccount, usePurgeAccount, useUpdateAccount,
+  useUpdateAccount, useDeleteAccount, useSetAccountPipelineStatus,
+  useReconsiderAccount, usePurgeAccount,
 } from "@/hooks/use-accounts";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useApproveUser } from "@/hooks/use-users";
 import { useTiers } from "@/hooks/use-tiers";
 import { usePermission } from "@/hooks/use-permission";
 import { CorporateNotesSection } from "@/components/admin/CorporateNotesSection";
 import { ActivityFeed } from "@/components/accounts/activity-feed";
+import { PipelineStatusBadge } from "@/components/accounts/pipeline-status-badge";
+import { PipelineStatusSelect } from "@/components/accounts/pipeline-status-select";
 import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import type { Account, AccountProfile } from "@/types/api.types";
+import {
+  CORPORATE_PIPELINE_STATUS_META,
+  CORPORATE_PORTAL_ACCESS_STATUSES,
+  accountDisplayStatus,
+  type Account, type AccountProfile, type CorporatePipelineStatus,
+} from "@/types/api.types";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 
@@ -79,19 +88,6 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 }
 
-function StatusPill({ kind }: { kind: "active" | "pending" | "rejected" }) {
-  const map = {
-    active:   { cls: "border-success/25 bg-success/10 text-green-700", icon: <CheckCircle2 className="h-3 w-3" />, label: "Active" },
-    pending:  { cls: "border-warning/25 bg-warning/10 text-yellow-700", icon: <Clock className="h-3 w-3" />, label: "Pending" },
-    rejected: { cls: "border-danger/25 bg-danger/10 text-red-700", icon: <XCircle className="h-3 w-3" />, label: "Rejected" },
-  }[kind];
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${map.cls}`}>
-      {map.icon}{map.label}
-    </span>
-  );
-}
-
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export default function AdminCorporateCustomerDetailPage({
@@ -106,11 +102,13 @@ export default function AdminCorporateCustomerDetailPage({
   const canDelete = usePermission("customers.delete");
 
   const admin = getAdmin(account?.profiles);
+  const status = (account?.pipeline_status ?? "prospect") as CorporatePipelineStatus;
   const isRejected = !!account?.rejected_at;
-  const isApproved = !!admin?.is_approved && !isRejected;
-  const isPending = !isApproved && !isRejected;
+  const isActive = status === "active" && !isRejected;
+  const hasPortalAccess = CORPORATE_PORTAL_ACCESS_STATUSES.includes(status) && !isRejected;
+  const displayStatus = account ? accountDisplayStatus(account) : status;
 
-  const { data: statsRes } = useAccountStats(isApproved ? id : "");
+  const { data: statsRes } = useAccountStats(isActive ? id : "");
   const { data: activityRes, isLoading: activityLoading } = useAccountActivity(id);
   const { data: tiersRes } = useTiers();
 
@@ -118,16 +116,18 @@ export default function AdminCorporateCustomerDetailPage({
   const stats = statsRes?.data;
   const tiers = tiersRes?.data ?? [];
 
-  const reviewedByLabel = useMemo(
-    () => activity.find((a) => a.event_type === "rejected" || a.event_type === "reviewed")?.actor_label ?? null,
+  const lastStatusChange = useMemo(
+    () => activity.find((a) => a.event_type === "status_changed" || a.event_type === "admin_added") ?? null,
     [activity],
   );
 
-  const [rejectOpen, setRejectOpen] = useState(false);
   const [tierSheetOpen, setTierSheetOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
 
-  const approveMut = useApproveUser(admin?.id ?? "");
+  const statusMut = useSetAccountPipelineStatus(id);
+  const deleteMut = useDeleteAccount();
   const reconsiderMut = useReconsiderAccount(id);
   const purgeMut = usePurgeAccount(id);
 
@@ -153,18 +153,42 @@ export default function AdminCorporateCustomerDetailPage({
     );
   }
 
-  const handleApprove = async (approved: boolean) => {
-    if (!admin) { toast.error("No company admin on this account"); return; }
+  const handleSetStatus = async (next: CorporatePipelineStatus) => {
+    if (next === status) return;
     try {
-      await approveMut.mutateAsync(approved);
-      toast.success(approved ? `${account.account_name} approved` : `Approval revoked`);
+      await statusMut.mutateAsync(next);
+      toast.success(`Stage: ${CORPORATE_PIPELINE_STATUS_META[next].label}`);
+    } catch (err) { toast.error((err as Error).message); }
+  };
+
+  const handleSuspend = async () => {
+    if (!confirm(`Suspend ${account.account_name}? Portal access is paused; move them back to Active to restore it.`)) return;
+    try {
+      await statusMut.mutateAsync("inactive");
+      toast.success(`${account.account_name} suspended`);
+    } catch (err) { toast.error((err as Error).message); }
+  };
+
+  const handleDeactivate = async () => {
+    if (!confirm(`Deactivate ${account.account_name}? The account is marked Lost and portal access ends. This is reversible.`)) return;
+    try {
+      await statusMut.mutateAsync("lost");
+      toast.success(`${account.account_name} deactivated`);
+    } catch (err) { toast.error((err as Error).message); }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMut.mutateAsync(id);
+      toast.success("Corporate customer removed");
+      window.location.href = "/admin/corporate-customers";
     } catch (err) { toast.error((err as Error).message); }
   };
 
   const handleReconsider = async () => {
     try {
       await reconsiderMut.mutateAsync();
-      toast.success("Request reopened for review");
+      toast.success("Application reopened for review");
     } catch (err) { toast.error((err as Error).message); }
   };
 
@@ -177,14 +201,14 @@ export default function AdminCorporateCustomerDetailPage({
     } catch (err) { toast.error((err as Error).message); }
   };
 
-  const displayId = isApproved ? account.customer_id : account.request_id;
+  const displayId = isActive ? account.customer_id : account.request_id;
   const tierProgress = tiers.length > 0 ? getTierProgress(stats?.deliveredShipments ?? 0, tiers) : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="w-full">
       {/* Sticky header */}
       <div className="sticky top-0 z-20 border-b border-card-border bg-card/95 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-6 py-4">
+        <div className="mx-auto w-full max-w-7xl py-4">
           <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted">
             <Link href="/admin/corporate-customers" className="hover:text-foreground">Corporate Customers</Link>
             <ChevronRight className="h-3 w-3" />
@@ -197,26 +221,24 @@ export default function AdminCorporateCustomerDetailPage({
               </Link>
               <div>
                 <h1 className="text-xl font-bold text-foreground">{account.account_name}</h1>
-                <p className="text-xs text-muted">{isApproved ? "Corporate Customer" : "Corporate Account Request"} · {displayId}</p>
+                <p className="text-xs text-muted">{isRejected ? "Corporate Application" : "Corporate Customer"} · {displayId}</p>
               </div>
             </div>
-            <StatusPill kind={isApproved ? "active" : isRejected ? "rejected" : "pending"} />
+            <PipelineStatusBadge status={displayStatus} />
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+      <div className="mx-auto w-full max-w-7xl space-y-6 py-6">
         {/* Identity card */}
         <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
           <div className="flex flex-col items-center gap-6 p-8 sm:flex-row sm:items-start">
             <CompanyLogo name={account.account_name} logoUrl={account.logo_url} size="xl" rounded="2xl" />
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-2xl font-bold text-foreground">{account.account_name}</h2>
-              <p className="mt-0.5 text-sm text-muted">{isApproved ? "Customer" : "Request"} ID: {displayId}</p>
-              <p className="mt-0.5 text-sm text-muted">
-                {isApproved ? "Customer since " : "Submitted "}{fmtDate(account.created_at, true)}
-              </p>
-              {isApproved && tierProgress && (
+              <p className="mt-0.5 text-sm text-muted">Customer ID: {displayId}</p>
+              <p className="mt-0.5 text-sm text-muted">Added {fmtDate(account.created_at, true)}</p>
+              {isActive && tierProgress && (
                 <span className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info/10 px-3 py-1 text-xs font-semibold text-blue-700">
                   <Award className="h-3 w-3" /> {tierProgress.current.name}
                 </span>
@@ -224,20 +246,8 @@ export default function AdminCorporateCustomerDetailPage({
             </div>
 
             {/* Actions */}
-            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-              {isPending && canEdit && (
-                <>
-                  <Button onClick={() => handleApprove(true)} disabled={approveMut.isPending}
-                    className="rounded-lg bg-primary px-5 text-sm text-sidebar hover:bg-primary/85">
-                    <ShieldCheck className="mr-1.5 h-4 w-4" /> Approve
-                  </Button>
-                  <Button variant="outline" onClick={() => setRejectOpen(true)}
-                    className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
-                    <XCircle className="mr-1.5 h-4 w-4" /> Reject
-                  </Button>
-                </>
-              )}
-              {isRejected && (
+            <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+              {isRejected ? (
                 <>
                   {canEdit && (
                     <Button onClick={handleReconsider} disabled={reconsiderMut.isPending}
@@ -252,56 +262,96 @@ export default function AdminCorporateCustomerDetailPage({
                     </Button>
                   )}
                 </>
-              )}
-              {isApproved && canEdit && (
+              ) : (
                 <>
-                  <Button variant="outline" onClick={() => setAccessOpen(true)} className="rounded-lg px-5 text-sm">
-                    <Users className="mr-1.5 h-4 w-4" /> Manage Access
-                  </Button>
-                  <Button variant="outline" onClick={() => handleApprove(false)} disabled={approveMut.isPending}
-                    className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
-                    <XCircle className="mr-1.5 h-4 w-4" /> Revoke Approval
-                  </Button>
+                  {canEdit ? (
+                    <PipelineStatusSelect value={status} onChange={handleSetStatus} loading={statusMut.isPending} />
+                  ) : (
+                    <PipelineStatusBadge status={status} />
+                  )}
+                  {canEdit && (
+                    <Button variant="outline" onClick={() => setAccessOpen(true)} className="rounded-lg px-5 text-sm">
+                      <Users className="mr-1.5 h-4 w-4" /> Manage Access
+                    </Button>
+                  )}
+                  {/* Application phase (no portal access yet) → Reject.
+                      Portal phase (onboarding/active) → Suspend (pause) + Deactivate (they're gone). */}
+                  {canEdit && !hasPortalAccess && (
+                    <Button variant="outline" onClick={() => setRejectOpen(true)}
+                      className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
+                      <XCircle className="mr-1.5 h-4 w-4" /> Reject application
+                    </Button>
+                  )}
+                  {canEdit && hasPortalAccess && (
+                    <Button variant="outline" onClick={handleSuspend} disabled={statusMut.isPending}
+                      className="rounded-lg border-amber-200 px-5 text-sm text-amber-700 hover:bg-amber-50">
+                      <PauseCircle className="mr-1.5 h-4 w-4" /> Suspend
+                    </Button>
+                  )}
+                  {canEdit && status !== "lost" && (
+                    <Button variant="outline" onClick={handleDeactivate} disabled={statusMut.isPending}
+                      className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
+                      <PowerOff className="mr-1.5 h-4 w-4" /> Deactivate account
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button variant="outline" onClick={() => setDeleteOpen(true)} disabled={deleteMut.isPending}
+                      className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
+                      <Trash2 className="mr-1.5 h-4 w-4" /> Delete
+                    </Button>
+                  )}
                 </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Rejected: retention banner */}
-        {isRejected && (
-          <div className="rounded-2xl border border-danger/25 bg-danger/5 px-5 py-3 text-sm text-red-700">
-            Portal access is revoked. This request and its data are scheduled for permanent deletion on{" "}
-            <strong>{fmtDate(account.purge_after, true)}</strong>. Use <em>Reconsider</em> before then to restore it.
-          </div>
-        )}
-
-        {/* Review Decision (shown once reviewed) */}
-        {(isRejected || account.reviewed_at) && (
-          <Card title="Review Decision">
-            <dl className="space-y-2 text-sm">
-              <div className="flex gap-2"><dt className="w-36 shrink-0 text-muted">Status</dt>
-                <dd className="font-medium text-foreground">{isRejected ? "Rejected" : "Reviewed"}</dd></div>
+        {/* Rejected: retention banner + decision */}
+        {isRejected ? (
+          <Card title="Application Rejected">
+            <div className="space-y-3 text-sm">
+              <p className="text-red-700">
+                Portal access is revoked. Data is retained until{" "}
+                <strong>{fmtDate(account.purge_after, true)}</strong>, then permanently deleted.
+                Use <em>Reconsider</em> before then to restore it.
+              </p>
               {account.rejection_reason && (
-                <div className="flex gap-2"><dt className="w-36 shrink-0 text-muted">Reason</dt>
-                  <dd className="text-foreground">{account.rejection_reason}</dd></div>
+                <p><span className="text-muted">Reason:</span> <span className="text-foreground">{account.rejection_reason}</span></p>
               )}
-              <div className="flex gap-2"><dt className="w-36 shrink-0 text-muted">Portal Access</dt>
-                <dd className="text-foreground">{isApproved ? "Granted" : "Not granted"}</dd></div>
               {account.review_note && (
-                <div className="flex gap-2"><dt className="w-36 shrink-0 text-muted">Note</dt>
-                  <dd className="text-foreground">{account.review_note}</dd></div>
+                <p><span className="text-muted">Internal note:</span> <span className="text-foreground">{account.review_note}</span></p>
               )}
-              <div className="flex gap-2"><dt className="w-36 shrink-0 text-muted">Reviewed By</dt>
-                <dd className="text-foreground">{reviewedByLabel ?? "—"}</dd></div>
-              <div className="flex gap-2"><dt className="w-36 shrink-0 text-muted">Decision Date</dt>
-                <dd className="text-foreground">{fmtDate(account.rejected_at ?? account.reviewed_at, true)}</dd></div>
-            </dl>
+              <p className="text-xs text-muted">Rejected {fmtDate(account.rejected_at, true)}</p>
+            </div>
+          </Card>
+        ) : (
+          <Card title="Pipeline">
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-3">
+                <PipelineStatusBadge status={status} />
+                <span className="text-muted">{CORPORATE_PIPELINE_STATUS_META[status].description}</span>
+              </div>
+              <p className="text-xs text-muted">
+                Portal access is {hasPortalAccess ? (
+                  <span className="font-medium text-green-700">granted</span>
+                ) : (
+                  <span className="font-medium text-red-700">not granted</span>
+                )} at this stage
+                {admin ? "" : " — no login is attached to this company yet"}.
+              </p>
+              {lastStatusChange && (
+                <p className="text-xs text-muted">
+                  Last change: {lastStatusChange.description}
+                  {lastStatusChange.actor_label ? ` · ${lastStatusChange.actor_label}` : ""}
+                  {" · "}{fmtDate(lastStatusChange.created_at, true)}
+                </p>
+              )}
+            </div>
           </Card>
         )}
 
-        {/* Approved: stats + tier */}
-        {isApproved && (
+        {/* Active: stats + tier */}
+        {isActive && (
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <KpiCard title="Total Shipments" value={stats?.totalShipments ?? 0} icon={Package} chartColor="#C89B3C" isLoading={!stats} subtitle="" />
@@ -336,11 +386,11 @@ export default function AdminCorporateCustomerDetailPage({
         {/* Company / Application information */}
         <CompanyInfoCard account={account} canEdit={canEdit} />
 
-        {/* Applicant (request mode) */}
-        {!isApproved && (
-          <Card title="Applicant">
+        {/* Primary contact */}
+        {(admin?.full_name || account.contact_email || admin?.phone || account.contact_phone) && (
+          <Card title="Primary contact">
             <div className="space-y-3">
-              {admin?.full_name && <InfoRow icon={<UserCircle2 className="h-4 w-4" />} label="Applicant Name" value={admin.full_name} />}
+              {admin?.full_name && <InfoRow icon={<UserCircle2 className="h-4 w-4" />} label="Contact Name" value={admin.full_name} />}
               {account.contact_email && <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={account.contact_email} />}
               {(admin?.phone || account.contact_phone) && (
                 <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={(admin?.phone || account.contact_phone)!} />
@@ -351,7 +401,7 @@ export default function AdminCorporateCustomerDetailPage({
 
         {/* Activity */}
         <ActivityFeed
-          title={isApproved ? "Recent Activity" : "Application History"}
+          title="Activity"
           items={activity}
           isLoading={activityLoading}
         />
@@ -359,13 +409,6 @@ export default function AdminCorporateCustomerDetailPage({
         {/* Internal notes */}
         <CorporateNotesSection corporateId={id} />
       </div>
-
-      <RejectAccountDialog
-        accountId={id}
-        accountName={account.account_name}
-        open={rejectOpen}
-        onOpenChange={setRejectOpen}
-      />
 
       <TierDetailsSheet
         open={tierSheetOpen}
@@ -378,6 +421,30 @@ export default function AdminCorporateCustomerDetailPage({
         open={accessOpen}
         onClose={() => setAccessOpen(false)}
         profiles={account.profiles ?? []}
+        stageGrantsAccess={hasPortalAccess}
+      />
+
+      <RejectAccountDialog
+        accountId={id}
+        accountName={account.account_name}
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+      />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        loading={deleteMut.isPending}
+        title="Delete corporate customer"
+        description={
+          <>
+            {account.account_name} will be removed from the dashboard and its logins
+            disabled. Deliveries, invoices and history are kept, and this can be undone
+            by an administrator. Use <em>Purge</em> for a permanent wipe.
+          </>
+        }
+        confirmLabel="Delete"
       />
     </div>
   );
@@ -458,8 +525,8 @@ function LabeledInput({ icon, label, value, onChange, placeholder }: {
 
 /* ─── Manage Access sheet ─────────────────────────────────────────────────── */
 
-function ManageAccessSheet({ open, onClose, profiles }: {
-  open: boolean; onClose: () => void; profiles: AccountProfile[];
+function ManageAccessSheet({ open, onClose, profiles, stageGrantsAccess }: {
+  open: boolean; onClose: () => void; profiles: AccountProfile[]; stageGrantsAccess: boolean;
 }) {
   return (
     <Sheet open={open} onClose={onClose} size="md">
@@ -469,9 +536,16 @@ function ManageAccessSheet({ open, onClose, profiles }: {
           <p className="mt-0.5 text-xs text-muted">Users who can sign in to this company&apos;s portal</p>
         </div>
         <div className="flex-1 space-y-2 overflow-y-auto p-4">
+          {!stageGrantsAccess && (
+            <p className="rounded-xl border border-warning/25 bg-warning/5 px-4 py-3 text-xs text-yellow-700">
+              Portal access is controlled by the pipeline stage. Move this company to
+              <span className="font-medium"> Onboarding</span> or <span className="font-medium">Active</span> to
+              enable logins.
+            </p>
+          )}
           {profiles.length === 0 && <p className="p-4 text-sm text-muted">No users on this account.</p>}
           {profiles.map((p) => (
-            <AccessRow key={p.id} profile={p} />
+            <AccessRow key={p.id} profile={p} canToggle={stageGrantsAccess} />
           ))}
         </div>
       </div>
@@ -479,7 +553,7 @@ function ManageAccessSheet({ open, onClose, profiles }: {
   );
 }
 
-function AccessRow({ profile }: { profile: AccountProfile }) {
+function AccessRow({ profile, canToggle }: { profile: AccountProfile; canToggle: boolean }) {
   const approveMut = useApproveUser(profile.id);
   async function toggle(approved: boolean) {
     try {
@@ -495,16 +569,16 @@ function AccessRow({ profile }: { profile: AccountProfile }) {
           <p className="text-sm font-medium text-foreground">{profile.full_name ?? "No name"}</p>
           <p className="text-xs text-muted">
             {profile.company_role === "company_admin" ? "Company Admin" : "Employee"}
-            {" · "}{profile.is_approved ? "Active" : "Pending"}
+            {" · "}{profile.is_approved ? "Can sign in" : "No access"}
           </p>
         </div>
       </div>
-      {profile.is_approved ? (
+      {canToggle && (profile.is_approved ? (
         <Button size="sm" variant="outline" onClick={() => toggle(false)} disabled={approveMut.isPending}
           className="border-red-200 text-red-600 hover:bg-red-50">Revoke</Button>
       ) : (
-        <Button size="sm" onClick={() => toggle(true)} disabled={approveMut.isPending}>Approve</Button>
-      )}
+        <Button size="sm" onClick={() => toggle(true)} disabled={approveMut.isPending}>Grant</Button>
+      ))}
     </div>
   );
 }

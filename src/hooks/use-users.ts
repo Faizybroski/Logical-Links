@@ -55,6 +55,35 @@ export function useUpdateMe() {
   });
 }
 
+// Admin editing a residential customer's basic profile (customers.edit).
+export function useUpdateUser(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { fullName?: string; phone?: string }) =>
+      api.patch<ApiResponse<UserProfile>>(`/api/v1/users/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+    },
+  });
+}
+
+// Admin removing a residential customer (customers.delete) — soft delete.
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/users/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+// A residential customer closing their own account.
+export function useDeleteMe() {
+  return useMutation({
+    mutationFn: () => api.delete<ApiResponse<null>>("/api/v1/users/me"),
+  });
+}
+
 export function useApproveUser(id: string) {
   const qc = useQueryClient();
   return useMutation({

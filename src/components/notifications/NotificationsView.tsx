@@ -60,7 +60,7 @@ export function NotificationsView() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 lg:p-5">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

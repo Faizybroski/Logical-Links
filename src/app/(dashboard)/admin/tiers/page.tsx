@@ -121,8 +121,8 @@ export default function AdminTiersPage() {
   const [editTier, setEditTier] = useState<Tier | null>(null);
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-2">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
             Partner Tiers

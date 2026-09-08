@@ -102,8 +102,8 @@ export default function CreateAdminEmployeePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-8">
-      <div className="mx-auto max-w-xl">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-2xl">
         {/* Header */}
         <div className="mb-8 flex items-center gap-4">
           <Link

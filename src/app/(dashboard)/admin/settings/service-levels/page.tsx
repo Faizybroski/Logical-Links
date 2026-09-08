@@ -208,8 +208,8 @@ export default function ServiceLevelsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-2">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div className="flex gap-2">
           <Link href="/admin/settings/delivery-rates" className="rounded-full border border-card-border px-4 py-1.5 text-sm font-medium text-muted hover:text-foreground">
             Delivery Rates

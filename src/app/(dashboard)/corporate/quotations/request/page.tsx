@@ -252,8 +252,8 @@ export default function RequestCorporateQuotePage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background p-6 lg:p-2">
-        <div className="mx-auto max-w-2xl">
+      <div className="w-full">
+        <div className="mx-auto w-full max-w-2xl">
           <div className="flex flex-col items-center gap-4 rounded-3xl border border-card-border bg-card p-10 text-center shadow-sm">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-green-600">
               <CheckCircle2 className="h-7 w-7" />
@@ -276,8 +276,8 @@ export default function RequestCorporateQuotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-2">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Corporate Portal</p>
           <h1 className="mt-2 text-3xl font-bold text-foreground">Request a Quote</h1>

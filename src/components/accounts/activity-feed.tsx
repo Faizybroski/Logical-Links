@@ -2,7 +2,7 @@
 
 import {
   Clock, CheckCircle2, XCircle, RotateCcw, FileText, UserPlus,
-  ShieldCheck, Sparkles, PencilLine, type LucideIcon,
+  ShieldCheck, Sparkles, PencilLine, ArrowRightLeft, type LucideIcon,
 } from "lucide-react";
 import type { AccountActivity } from "@/types/api.types";
 
@@ -18,6 +18,7 @@ const ICONS: Record<AccountActivity["event_type"], LucideIcon> = {
   tier_changed:   Sparkles,
   account_updated:PencilLine,
   note_added:     PencilLine,
+  status_changed: ArrowRightLeft,
 };
 
 function shortDate(iso: string) {

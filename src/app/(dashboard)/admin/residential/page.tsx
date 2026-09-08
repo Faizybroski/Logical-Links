@@ -111,8 +111,8 @@ export default function ResidentialCustomersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-2">
-      <div className="mx-auto max-w-7xl space-y-7">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Administration</p>
           <h1 className="mt-2 text-4xl font-bold text-foreground">Residential Customers</h1>
