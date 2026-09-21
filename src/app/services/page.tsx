@@ -418,7 +418,7 @@ export default function ServicesPage() {
                   <button
                     type="button"
                     onClick={() => requestQuote(() => router.push("/#quote"))}
-                    className="mt-8 inline-block rounded-full bg-primary px-8 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-primary-dark"
+                    className="mt-8 inline-block rounded-[8px] bg-primary px-8 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-primary-dark"
                   >
                     Get a Quote
                   </button>

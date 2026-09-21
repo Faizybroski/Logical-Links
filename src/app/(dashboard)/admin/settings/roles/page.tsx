@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { KpiCard } from "@/components/deliveries/kpi-card";
 import { cn } from "@/lib/utils/cn";
 
@@ -209,6 +210,7 @@ export default function RolesPermissionsPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [renaming, setRenaming] = useState<AdminRoleDef | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminRoleDef | null>(null);
 
   const grantMap = useMemo(() => {
     const map = new Map<string, boolean>();

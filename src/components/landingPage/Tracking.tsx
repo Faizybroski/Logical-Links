@@ -32,7 +32,7 @@ export default function Tracking() {
             <div className="w-full mt-10">
               <Link
                 href="/register"
-                className="flex w-full flex-1 justify-center items-center py-3 text-sm font-medium text-center text-white outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+                className="flex w-full flex-1 justify-center items-center py-3 text-sm font-medium text-center text-white outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"
               >
                 Get a Quote
               </Link>

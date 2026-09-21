@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   useDeliveryRates,
   useCreateDeliveryRate,
@@ -154,12 +155,14 @@ export default function DeliveryRateLibraryPage() {
   const deleteMut = useDeleteDeliveryRate();
 
   const [formTarget, setFormTarget] = useState<DeliveryRateCard | null | "new">(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeliveryRateCard | null>(null);
 
-  async function handleDelete(rate: DeliveryRateCard) {
-    if (!window.confirm(`Delete the "${rate.label}" rate card? This cannot be undone.`)) return;
+  async function handleDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteMut.mutateAsync(rate.rate_id);
+      await deleteMut.mutateAsync(deleteTarget.rate_id);
       toast.success("Delivery rate deleted");
+      setDeleteTarget(null);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -198,7 +201,7 @@ export default function DeliveryRateLibraryPage() {
           <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
             <div className="divide-y divide-card-border">
               {rates.map((rate) => (
-                <RateRow key={rate.rate_id} rate={rate} canEdit={canEdit} onEdit={() => setFormTarget(rate)} onDelete={() => handleDelete(rate)} />
+                <RateRow key={rate.rate_id} rate={rate} canEdit={canEdit} onEdit={() => setFormTarget(rate)} onDelete={() => setDeleteTarget(rate)} />
               ))}
             </div>
           </div>
@@ -208,6 +211,16 @@ export default function DeliveryRateLibraryPage() {
       {formTarget && (
         <RateFormDialog rate={formTarget === "new" ? null : formTarget} onClose={() => setFormTarget(null)} />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleteMut.isPending}
+        title="Delete delivery rate"
+        description={deleteTarget && <>Delete the &quot;{deleteTarget.label}&quot; rate card? This cannot be undone.</>}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

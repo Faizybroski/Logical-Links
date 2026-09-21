@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   useServiceLevels,
   useCreateServiceLevel,
@@ -196,12 +197,14 @@ export default function ServiceLevelsPage() {
   const deleteMut = useDeleteServiceLevel();
 
   const [formTarget, setFormTarget] = useState<ServiceLevel | null | "new">(null);
+  const [deleteTarget, setDeleteTarget] = useState<ServiceLevel | null>(null);
 
-  async function handleDelete(level: ServiceLevel) {
-    if (!window.confirm(`Delete the "${level.label}" service level? This cannot be undone.`)) return;
+  async function handleDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteMut.mutateAsync(level.level_id);
+      await deleteMut.mutateAsync(deleteTarget.level_id);
       toast.success("Service level deleted");
+      setDeleteTarget(null);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -242,7 +245,7 @@ export default function ServiceLevelsPage() {
           <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
             <div className="divide-y divide-card-border">
               {levels.map((level) => (
-                <LevelRow key={level.level_id} level={level} canEdit={canEdit} onEdit={() => setFormTarget(level)} onDelete={() => handleDelete(level)} />
+                <LevelRow key={level.level_id} level={level} canEdit={canEdit} onEdit={() => setFormTarget(level)} onDelete={() => setDeleteTarget(level)} />
               ))}
             </div>
           </div>
@@ -252,6 +255,16 @@ export default function ServiceLevelsPage() {
       {formTarget && (
         <LevelFormDialog level={formTarget === "new" ? null : formTarget} onClose={() => setFormTarget(null)} />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleteMut.isPending}
+        title="Delete service level"
+        description={deleteTarget && <>Delete the &quot;{deleteTarget.label}&quot; service level? This cannot be undone.</>}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

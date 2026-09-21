@@ -7,10 +7,12 @@ import {
   ArrowLeft, Mail, Phone, Calendar, XCircle, RotateCcw, PauseCircle, PowerOff,
   ChevronRight, Building2, UserCircle2, Globe, Hash, MapPin, Trash2,
   Briefcase, Factory, Package, Truck, FileText, DollarSign, Award, Users, Pencil,
+  CalendarClock, UserCog, PhoneCall,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { KpiCard } from "@/components/deliveries/kpi-card";
 import { TierDetailsSheet } from "@/components/deliveries/sheets/tier-details-sheet";
 import { getTierProgress } from "@/lib/tiers";
@@ -21,6 +23,7 @@ import {
 } from "@/hooks/use-accounts";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useApproveUser } from "@/hooks/use-users";
+import { useAdminEmployees } from "@/hooks/use-admin-employees";
 import { useTiers } from "@/hooks/use-tiers";
 import { usePermission } from "@/hooks/use-permission";
 import { CorporateNotesSection } from "@/components/admin/CorporateNotesSection";
@@ -125,6 +128,9 @@ export default function AdminCorporateCustomerDetailPage({
   const [accessOpen, setAccessOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [suspendOpen, setSuspendOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
 
   const statusMut = useSetAccountPipelineStatus(id);
   const deleteMut = useDeleteAccount();
@@ -162,18 +168,18 @@ export default function AdminCorporateCustomerDetailPage({
   };
 
   const handleSuspend = async () => {
-    if (!confirm(`Suspend ${account.account_name}? Portal access is paused; move them back to Active to restore it.`)) return;
     try {
       await statusMut.mutateAsync("inactive");
       toast.success(`${account.account_name} suspended`);
+      setSuspendOpen(false);
     } catch (err) { toast.error((err as Error).message); }
   };
 
   const handleDeactivate = async () => {
-    if (!confirm(`Deactivate ${account.account_name}? The account is marked Lost and portal access ends. This is reversible.`)) return;
     try {
       await statusMut.mutateAsync("lost");
       toast.success(`${account.account_name} deactivated`);
+      setDeactivateOpen(false);
     } catch (err) { toast.error((err as Error).message); }
   };
 
@@ -193,7 +199,6 @@ export default function AdminCorporateCustomerDetailPage({
   };
 
   const handlePurge = async () => {
-    if (!confirm(`Permanently delete ${account.account_name} and ALL of its data now? This cannot be undone.`)) return;
     try {
       await purgeMut.mutateAsync();
       toast.success("Account permanently deleted");
@@ -256,7 +261,7 @@ export default function AdminCorporateCustomerDetailPage({
                     </Button>
                   )}
                   {canDelete && (
-                    <Button variant="outline" onClick={handlePurge} disabled={purgeMut.isPending}
+                    <Button variant="outline" onClick={() => setPurgeOpen(true)} disabled={purgeMut.isPending}
                       className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
                       <Trash2 className="mr-1.5 h-4 w-4" /> Purge now
                     </Button>
@@ -283,13 +288,13 @@ export default function AdminCorporateCustomerDetailPage({
                     </Button>
                   )}
                   {canEdit && hasPortalAccess && (
-                    <Button variant="outline" onClick={handleSuspend} disabled={statusMut.isPending}
+                    <Button variant="outline" onClick={() => setSuspendOpen(true)} disabled={statusMut.isPending}
                       className="rounded-lg border-amber-200 px-5 text-sm text-amber-700 hover:bg-amber-50">
                       <PauseCircle className="mr-1.5 h-4 w-4" /> Suspend
                     </Button>
                   )}
                   {canEdit && status !== "lost" && (
-                    <Button variant="outline" onClick={handleDeactivate} disabled={statusMut.isPending}
+                    <Button variant="outline" onClick={() => setDeactivateOpen(true)} disabled={statusMut.isPending}
                       className="rounded-lg border-red-200 px-5 text-sm text-red-600 hover:bg-red-50">
                       <PowerOff className="mr-1.5 h-4 w-4" /> Deactivate account
                     </Button>
@@ -349,6 +354,9 @@ export default function AdminCorporateCustomerDetailPage({
             </div>
           </Card>
         )}
+
+        {/* Follow-up tracking (internal, admin-only) */}
+        {!isRejected && <FollowUpCard account={account} canEdit={canEdit} />}
 
         {/* Active: stats + tier */}
         {isActive && (
@@ -446,6 +454,52 @@ export default function AdminCorporateCustomerDetailPage({
         }
         confirmLabel="Delete"
       />
+
+      <ConfirmDialog
+        open={suspendOpen}
+        onClose={() => setSuspendOpen(false)}
+        onConfirm={handleSuspend}
+        loading={statusMut.isPending}
+        tone="default"
+        title="Suspend account"
+        description={
+          <>
+            Suspend {account.account_name}? Portal access is paused; move them back to
+            Active to restore it.
+          </>
+        }
+        confirmLabel="Suspend"
+      />
+
+      <ConfirmDialog
+        open={deactivateOpen}
+        onClose={() => setDeactivateOpen(false)}
+        onConfirm={handleDeactivate}
+        loading={statusMut.isPending}
+        title="Deactivate account"
+        description={
+          <>
+            Deactivate {account.account_name}? The account is marked Lost and portal
+            access ends. This is reversible.
+          </>
+        }
+        confirmLabel="Deactivate"
+      />
+
+      <ConfirmDialog
+        open={purgeOpen}
+        onClose={() => setPurgeOpen(false)}
+        onConfirm={handlePurge}
+        loading={purgeMut.isPending}
+        title="Purge account permanently"
+        description={
+          <>
+            Permanently delete {account.account_name} and ALL of its data now? This
+            cannot be undone.
+          </>
+        }
+        confirmLabel="Purge now"
+      />
     </div>
   );
 }
@@ -504,8 +558,133 @@ function CompanyInfoCard({ account, canEdit }: { account: Account; canEdit: bool
   );
 }
 
-function LabeledInput({ icon, label, value, onChange, placeholder }: {
-  icon: React.ReactNode; label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+/* ─── Follow-up tracking card (internal CRM — last/next contact, owner) ────── */
+
+function toDateInputValue(iso: string | null): string {
+  return iso ? iso.slice(0, 10) : "";
+}
+
+function FollowUpCard({ account, canEdit }: { account: Account; canEdit: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [lastContactedAt, setLastContactedAt] = useState(toDateInputValue(account.last_contacted_at));
+  const [nextFollowUpAt, setNextFollowUpAt] = useState(toDateInputValue(account.next_follow_up_at));
+  const [assignedEmployeeId, setAssignedEmployeeId] = useState(account.assigned_employee_id ?? "");
+  const updateMut = useUpdateAccount(account.account_id);
+
+  const { data: employeesRes } = useAdminEmployees({ limit: 200 }, { enabled: editing });
+  const employees = (employeesRes?.data ?? []).filter((e) => e.is_active);
+  const employeeOptions = employees.map((e) => ({
+    value: e.id,
+    label: e.full_name ?? e.email,
+    icon: <UserAvatar name={e.full_name} avatarUrl={e.avatar_url} size="xs" rounded="lg" />,
+  }));
+
+  function startEditing() {
+    setLastContactedAt(toDateInputValue(account.last_contacted_at));
+    setNextFollowUpAt(toDateInputValue(account.next_follow_up_at));
+    setAssignedEmployeeId(account.assigned_employee_id ?? "");
+    setEditing(true);
+  }
+
+  async function save() {
+    try {
+      await updateMut.mutateAsync({
+        lastContactedAt:    lastContactedAt || null,
+        nextFollowUpAt:     nextFollowUpAt  || null,
+        assignedEmployeeId: assignedEmployeeId || null,
+      });
+      toast.success("Follow-up details updated");
+      setEditing(false);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  const assignedEmployee = account.assigned_employee;
+  const overdue = !!account.next_follow_up_at && new Date(account.next_follow_up_at).getTime() < Date.now();
+
+  return (
+    <Card
+      title="Follow-up"
+      subtitle="Internal CRM tracking — not visible to the customer"
+      action={canEdit && (
+        editing ? (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" onClick={save} disabled={updateMut.isPending}>Save</Button>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={startEditing}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+          </Button>
+        )
+      )}
+    >
+      <div className="space-y-3">
+        {editing ? (
+          <>
+            <LabeledInput
+              icon={<PhoneCall className="h-4 w-4" />}
+              label="Last Contacted"
+              type="date"
+              value={lastContactedAt}
+              onChange={setLastContactedAt}
+            />
+            <LabeledInput
+              icon={<CalendarClock className="h-4 w-4" />}
+              label="Next Follow Up"
+              type="date"
+              value={nextFollowUpAt}
+              onChange={setNextFollowUpAt}
+            />
+            <div className="flex items-center gap-4 rounded-xl border border-card-border bg-background px-5 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <UserCog className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Assigned To</p>
+                <SearchableSelect
+                  value={assignedEmployeeId}
+                  onValueChange={setAssignedEmployeeId}
+                  options={employeeOptions}
+                  placeholder="Unassigned"
+                  searchPlaceholder="Search employees…"
+                  emptyText="No active employees"
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <InfoRow icon={<PhoneCall className="h-4 w-4" />} label="Last Contacted" value={fmtDate(account.last_contacted_at)} />
+            <InfoRow
+              icon={<CalendarClock className="h-4 w-4" />}
+              label="Next Follow Up"
+              value={account.next_follow_up_at ? `${fmtDate(account.next_follow_up_at)}${overdue ? " (overdue)" : ""}` : "—"}
+            />
+            <div className="flex items-center gap-4 rounded-xl border border-card-border bg-background px-5 py-4">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <UserCog className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">Assigned To</p>
+                {assignedEmployee ? (
+                  <div className="mt-1 flex items-center gap-2">
+                    <UserAvatar name={assignedEmployee.full_name} avatarUrl={assignedEmployee.avatar_url} size="xs" rounded="lg" />
+                    <span className="text-sm font-medium text-foreground">{assignedEmployee.full_name ?? "No name"}</span>
+                  </div>
+                ) : (
+                  <p className="mt-0.5 truncate text-sm font-medium text-muted">Unassigned</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function LabeledInput({ icon, label, value, onChange, placeholder, type = "text" }: {
+  icon: React.ReactNode; label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-card-border bg-background px-5 py-3">
@@ -513,6 +692,7 @@ function LabeledInput({ icon, label, value, onChange, placeholder }: {
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</p>
         <input
+          type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}

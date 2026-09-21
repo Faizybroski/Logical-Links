@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   useAdditionalCharges,
   useCreateCharge,
@@ -167,6 +168,7 @@ export default function AdditionalChargesLibraryPage() {
   const deleteMut = useDeleteCharge();
 
   const [formTarget, setFormTarget] = useState<AdditionalCharge | null | "new">(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdditionalCharge | null>(null);
 
   const grouped = useMemo(() => {
     const byCategory = new Map<string, AdditionalCharge[]>();
@@ -178,11 +180,12 @@ export default function AdditionalChargesLibraryPage() {
     return Array.from(byCategory.entries());
   }, [charges]);
 
-  async function handleDelete(charge: AdditionalCharge) {
-    if (!window.confirm(`Delete the "${charge.label}" charge? This cannot be undone.`)) return;
+  async function handleDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteMut.mutateAsync(charge.charge_id);
+      await deleteMut.mutateAsync(deleteTarget.charge_id);
       toast.success("Charge deleted");
+      setDeleteTarget(null);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -231,7 +234,7 @@ export default function AdditionalChargesLibraryPage() {
                       charge={charge}
                       canEdit={canEdit}
                       onEdit={() => setFormTarget(charge)}
-                      onDelete={() => handleDelete(charge)}
+                      onDelete={() => setDeleteTarget(charge)}
                     />
                   ))}
                 </div>
@@ -244,6 +247,16 @@ export default function AdditionalChargesLibraryPage() {
       {formTarget && (
         <ChargeFormDialog charge={formTarget === "new" ? null : formTarget} onClose={() => setFormTarget(null)} />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleteMut.isPending}
+        title="Delete charge"
+        description={deleteTarget && <>Delete the &quot;{deleteTarget.label}&quot; charge? This cannot be undone.</>}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

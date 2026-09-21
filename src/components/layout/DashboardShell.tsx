@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/auth.store'
 import { useTheme } from '@/components/providers/theme-provider'
 import { useAppearance } from '@/components/providers/appearance-provider'
 import { getContentSwatchById } from '@/lib/utils/content-theme'
-import { getAccentThemeById } from '@/lib/utils/accent-theme'
+import { getAccentThemeById, DEFAULT_ACCENT_ID } from '@/lib/utils/accent-theme'
 
 interface Props {
   children: React.ReactNode
@@ -29,8 +29,9 @@ export default function DashboardShell({ children }: Props) {
   const contentSwatch = getContentSwatchById(theme, contentSwatchId[theme])
   // Accent customization is an admin-portal-only feature — customer portals
   // (corporate / residential) always use the globals.css default accent, even
-  // if a stale localStorage selection is present.
-  const accent = isAdmin ? getAccentThemeById(accentSwatchId[theme]) : undefined
+  // if a stale localStorage selection is present. Admins fall back to the
+  // Stone default accent when no swatch is stored, instead of the site gold.
+  const accent = isAdmin ? (getAccentThemeById(accentSwatchId[theme]) ?? getAccentThemeById(DEFAULT_ACCENT_ID)) : undefined
 
   // Drive the accent override from :root so it also reaches portaled UI
   // (dialogs, dropdowns, popovers, toasts) that renders outside this subtree.

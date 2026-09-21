@@ -131,6 +131,11 @@ export type Account = {
   rejection_reason: string | null;
   review_note?: string | null;      // admin-only, absent on the /me response
   purge_after: string | null;
+  // CRM follow-up tracking (admin-only)
+  last_contacted_at: string | null;
+  next_follow_up_at: string | null;
+  assigned_employee_id: string | null;
+  assigned_employee?: { id: string; full_name: string | null; avatar_url: string | null } | null;
   created_at: string;
   updated_at: string;
   profiles?: AccountProfile[];
@@ -187,6 +192,10 @@ export type UpdateAccountDto = Partial<CreateAccountDto> & {
   businessType?: string;
   industry?: string;
   pipelineStatus?: CorporatePipelineStatus;
+  /** CRM follow-up tracking (admin-only). Pass null to clear. */
+  lastContactedAt?: string | null;
+  nextFollowUpAt?: string | null;
+  assignedEmployeeId?: string | null;
 };
 
 export type UpdateOwnCompanyDto = {

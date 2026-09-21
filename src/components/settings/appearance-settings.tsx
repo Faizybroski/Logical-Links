@@ -15,8 +15,7 @@ import {
   CONTENT_SWATCHES_DARK_BOLD,
 } from "@/lib/utils/content-theme";
 import {
-  ACCENT_THEMES_VIVID,
-  ACCENT_THEMES_MUTED,
+  ACCENT_THEMES,
   ACCENT_DEFAULT_HEX,
 } from "@/lib/utils/accent-theme";
 
@@ -24,8 +23,7 @@ type Mode = "light" | "dark";
 type SwatchLite = { id: string; name: string; bg: string };
 
 // The accent picker reuses ModeRow, which expects `{ id, name, bg }` swatches.
-const ACCENT_SWATCHES_VIVID: SwatchLite[] = ACCENT_THEMES_VIVID.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
-const ACCENT_SWATCHES_MUTED: SwatchLite[] = ACCENT_THEMES_MUTED.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
+const ACCENT_SWATCHES: SwatchLite[] = ACCENT_THEMES.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
 
 // Picks black or white for the checkmark so it stays visible against any swatch.
 function iconColorFor(hex: string): string {
@@ -241,19 +239,9 @@ export function AppearanceSettings() {
             </p>
           </div>
           <CollectionGroup
-            label="Vivid"
-            lightSwatches={ACCENT_SWATCHES_VIVID}
-            darkSwatches={ACCENT_SWATCHES_VIVID}
-            activeId={accentSwatchId}
-            defaultLight={ACCENT_DEFAULT_HEX}
-            defaultDark={ACCENT_DEFAULT_HEX}
-            onSelect={setAccentSwatch}
-            onReset={(m) => setAccentSwatch(m, null)}
-          />
-          <CollectionGroup
-            label="Muted"
-            lightSwatches={ACCENT_SWATCHES_MUTED}
-            darkSwatches={ACCENT_SWATCHES_MUTED}
+            label="Neutral"
+            lightSwatches={ACCENT_SWATCHES}
+            darkSwatches={ACCENT_SWATCHES}
             activeId={accentSwatchId}
             defaultLight={ACCENT_DEFAULT_HEX}
             defaultDark={ACCENT_DEFAULT_HEX}

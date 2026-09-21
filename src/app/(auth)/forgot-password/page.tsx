@@ -92,7 +92,7 @@ function ForgotPasswordForm() {
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-[8px] bg-primary px-4 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {status === 'loading' ? 'Sending…' : 'Send reset link'}
           </button>

@@ -89,14 +89,14 @@ export default function Header() {
           </a>
           <a
             href="/register"
-            className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-xs transition-colors"
+            className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-[8px] transition-colors"
           >
             Sign Up
           </a>
           <button
             type="button"
             onClick={() => requestQuote(() => goToSection("quote"))}
-            className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+            className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"
           >
             Request a Quote
           </button>
@@ -148,7 +148,7 @@ export default function Header() {
               <a
                 href="/register"
                 onClick={() => setOpen(false)}
-                className="flex-1 text-center px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-xs transition-colors"
+                className="flex-1 text-center px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-[8px] transition-colors"
               >
                 Sign Up
               </a>
@@ -160,7 +160,7 @@ export default function Header() {
                 requestQuote(() => goToSection("quote"));
                 setOpen(false);
               }}
-              className="mt-2 px-6 py-2 text-sm font-medium text-center outline outline-primary outline-offset-2 text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+              className="mt-2 px-6 py-2 text-sm font-medium text-center outline outline-primary outline-offset-2 text-white bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"
             >
               Get a Quote
             </button>

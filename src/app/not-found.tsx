@@ -120,7 +120,7 @@ export default function NotFound() {
             href="/"
             className="
               inline-flex h-12 items-center
-              justify-center gap-2 rounded-2xl
+              justify-center gap-2 rounded-[8px]
 
               bg-primary px-6
               text-sm font-semibold
@@ -140,7 +140,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             className="
               inline-flex h-12 items-center
-              justify-center gap-2 rounded-2xl
+              justify-center gap-2 rounded-[8px]
 
               border border-card-border
               bg-background px-6

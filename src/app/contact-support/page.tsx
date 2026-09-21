@@ -164,7 +164,7 @@ export default function ContactSupportPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-2 rounded-xs"
+                    className="mt-2"
                     onClick={() => setSubmitted(false)}
                   >
                     Send another message
@@ -239,7 +239,7 @@ export default function ContactSupportPage() {
                     <Button
                       type="submit"
                       disabled={submitting}
-                      className="w-full rounded-xs uppercase tracking-wide"
+                      className="w-full uppercase tracking-wide"
                     >
                       {submitting ? "Sending…" : "Send Message"}
                       <Send className="ml-2 h-4 w-4" />

@@ -7,7 +7,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   Building2,
   CheckCircle2,
-  Phone,
   MoreVertical,
   Plus,
   Trash2,
@@ -52,7 +51,6 @@ import {
   CORPORATE_PORTAL_ACCESS_STATUSES,
   accountDisplayStatus,
   type Account,
-  type AccountProfile,
   type CorporatePipelineStatus,
 } from "@/types/api.types";
 
@@ -64,10 +62,6 @@ function formatDate(d: string) {
     month: "short",
     day: "numeric",
   });
-}
-
-function getAdmin(profiles?: AccountProfile[]): AccountProfile | undefined {
-  return profiles?.find((p) => p.company_role === "company_admin");
 }
 
 const IN_PIPELINE: CorporatePipelineStatus[] = ["prospect", "contacted", "interested", "onboarding"];
@@ -184,6 +178,7 @@ function RejectedActionsCell({ account }: { account: Account }) {
   const canDelete = usePermission("customers.delete");
   const reconsiderMut = useReconsiderAccount(account.account_id);
   const purgeMut = usePurgeAccount(account.account_id);
+  const [purgeOpen, setPurgeOpen] = useState(false);
 
   async function reconsider() {
     try {
@@ -192,10 +187,10 @@ function RejectedActionsCell({ account }: { account: Account }) {
     } catch (err) { toast.error((err as Error).message); }
   }
   async function purge() {
-    if (!confirm(`Permanently delete ${account.account_name} and ALL of its data now?`)) return;
     try {
       await purgeMut.mutateAsync();
       toast.success("Account permanently deleted");
+      setPurgeOpen(false);
     } catch (err) { toast.error((err as Error).message); }
   }
 
@@ -206,9 +201,21 @@ function RejectedActionsCell({ account }: { account: Account }) {
           className="h-8 rounded-lg px-3 text-xs">Reconsider</Button>
       )}
       {canDelete && (
-        <Button size="sm" variant="outline" onClick={purge} disabled={purgeMut.isPending}
+        <Button size="sm" variant="outline" onClick={() => setPurgeOpen(true)} disabled={purgeMut.isPending}
           className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50">Purge</Button>
       )}
+
+      <ConfirmDialog
+        open={purgeOpen}
+        onClose={() => setPurgeOpen(false)}
+        onConfirm={purge}
+        loading={purgeMut.isPending}
+        title="Purge account permanently"
+        description={
+          <>Permanently delete {account.account_name} and ALL of its data now? This cannot be undone.</>
+        }
+        confirmLabel="Purge now"
+      />
     </div>
   );
 }
@@ -338,26 +345,45 @@ export default function CorporateCustomersPage() {
         },
       },
       {
-        id: "admin",
-        header: "Company Admin",
+        id: "status",
+        header: () => sh("Status", "pipeline_status"),
+        cell: ({ row }) => <PipelineStatusBadge status={accountDisplayStatus(row.original)} />,
+      },
+      {
+        id: "lastContacted",
+        header: "Last Contacted",
         cell: ({ row }) => {
-          const admin = getAdmin(row.original.profiles);
-          if (!admin) return <span className="text-xs italic text-muted-light">No login yet</span>;
+          const d = row.original.last_contacted_at;
+          return <span className="text-xs text-muted">{d ? formatDate(d) : "—"}</span>;
+        },
+      },
+      {
+        id: "nextFollowUp",
+        header: "Next Follow Up",
+        cell: ({ row }) => {
+          const d = row.original.next_follow_up_at;
+          if (!d) return <span className="text-xs text-muted">—</span>;
+          const overdue = new Date(d).getTime() < Date.now();
           return (
-            <div className="flex items-center gap-2">
-              <UserAvatar name={admin.full_name} avatarUrl={admin.avatar_url} size="sm" rounded="xl" />
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium text-foreground">{admin.full_name ?? <span className="italic text-muted">No name</span>}</span>
-                {admin.phone && <span className="flex items-center gap-1 text-xs text-muted"><Phone className="h-3 w-3 shrink-0" />{admin.phone}</span>}
-              </div>
-            </div>
+            <span className={`text-xs font-medium ${overdue ? "text-red-600" : "text-muted"}`}>
+              {formatDate(d)}{overdue && " (overdue)"}
+            </span>
           );
         },
       },
       {
-        id: "status",
-        header: () => sh("Status", "pipeline_status"),
-        cell: ({ row }) => <PipelineStatusBadge status={accountDisplayStatus(row.original)} />,
+        id: "assignedTo",
+        header: "Assigned To",
+        cell: ({ row }) => {
+          const emp = row.original.assigned_employee;
+          if (!emp) return <span className="text-xs italic text-muted-light">Unassigned</span>;
+          return (
+            <div className="flex items-center gap-2">
+              <UserAvatar name={emp.full_name} avatarUrl={emp.avatar_url} size="sm" rounded="xl" />
+              <span className="text-sm font-medium text-foreground">{emp.full_name ?? "No name"}</span>
+            </div>
+          );
+        },
       },
       isRejectedView
         ? {

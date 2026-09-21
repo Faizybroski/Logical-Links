@@ -67,7 +67,7 @@ export default function About() {
         >
           {/* <Link
             href="/register"
-            className="px-16 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+            className="px-16 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"
           >
             Get a Quote
           </Link> */}

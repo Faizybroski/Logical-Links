@@ -103,7 +103,7 @@ export default function HowItWorks() {
         >
           {/* <Link
             href="/register"
-            className="px-10 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+            className="px-10 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"
           >
             Start Your Delivery
           </Link> */}

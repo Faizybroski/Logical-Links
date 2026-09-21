@@ -122,7 +122,7 @@ export default function LogisticsHero() {
                 />
                 <Button
                   size="lg"
-                  className="h-12 w-full bg-primary font-semibold text-white hover:bg-primary-dark rounded-xs"
+                  className="h-12 w-full bg-primary font-semibold text-white hover:bg-primary-dark"
                 >
                   Get My Quote →
                 </Button>

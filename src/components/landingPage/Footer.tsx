@@ -433,7 +433,7 @@ const socials = [
   { Icon: FaFacebookF, label: "Facebook", href: "#" },
   { Icon: FaXTwitter, label: "X", href: "#" },
   { Icon: FaLinkedinIn, label: "LinkedIn", href: "#" },
-  { Icon: FaInstagram, label: "Instagram", href: "#" },
+  { Icon: FaInstagram, label: "Instagram", href: "https://www.instagram.com/logicallinks/" },
 ];
 
 const legal = [
@@ -558,12 +558,10 @@ export default function Footer() {
               <li className="flex gap-3">
                 <Phone className="h-4 w-4 shrink-0 text-primary" />
                 <a
-                  href="tel:+18005644225"
+                  href="tel:+14373356305"
                   className="text-white/70 transition-colors hover:text-primary"
                 >
-                  1-800-LOGICAL
-                  <br />
-                  (1-800-564-4225)
+                  437-335-6305
                 </a>
               </li>
               <li className="flex gap-3">
@@ -619,7 +617,7 @@ export default function Footer() {
           </div>
           <Link
             href="/contact-support"
-            className="inline-flex items-center gap-2 self-start rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[#0b0b0d] transition hover:bg-primary-dark md:self-auto"
+            className="inline-flex items-center gap-2 self-start rounded-[8px] bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[#0b0b0d] transition hover:bg-primary-dark md:self-auto"
           >
             Contact Support
             <ArrowRight className="h-4 w-4" />

@@ -105,10 +105,7 @@ export function RejectAccountDialog({
             Reject {accountName}
           </DialogTitle>
           <DialogDescription>
-            The applicant is emailed a decision notice for the reason you choose.
-            Portal access is revoked immediately. The application and associated
-            data are retained for 90 days in case the decision needs to be
-            revised, then permanently deleted.
+            Portal access is revoked immediately upon rejection. The application and associated data are retained for 90 days in case the decision needs to be reviewed or revised. After 90 days, the application data is permanently deleted in accordance with our data retention policy.
           </DialogDescription>
         </DialogHeader>
 

@@ -139,7 +139,7 @@ export default function LLCPage() {
 
           <Link
             href="/register"
-            className="mt-8 inline-block px-6 py-3 text-sm font-semibold text-white bg-primary hover:bg-primary-dark rounded-xs shadow-sm transition-colors"
+            className="mt-8 inline-block px-6 py-3 text-sm font-semibold text-white bg-primary hover:bg-primary-dark rounded-[8px] shadow-sm transition-colors"
           >
             Get Started
           </Link>

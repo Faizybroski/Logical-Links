@@ -439,7 +439,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex h-12 w-full items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-sidebar hover:bg-primary-dark disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center rounded-[8px] bg-primary text-sm font-semibold text-sidebar hover:bg-primary-dark disabled:opacity-60"
             >
               {loading ? "Creating account..." : "Create Account"}
             </button>
