@@ -39,7 +39,8 @@ export const metadata: Metadata = {
     default: 'Logical Links',
     template: '%s | Logical Links',
   },
-  description: 'Premium tyres and autoparts — shop, compare, and book fitting online.',
+  description:
+    'Logical Links delivers for homes and businesses. Get an instant quote, book a delivery, and track it in real time.',
 }
 
 export default function RootLayout({
