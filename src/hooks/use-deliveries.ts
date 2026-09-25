@@ -34,6 +34,7 @@ function buildQuery(params: ListDeliveriesQuery): string {
   if (params.updatedTo)     q.set("updatedTo",     params.updatedTo);
   if (params.sortBy)        q.set("sortBy",        params.sortBy);
   if (params.sortDir)       q.set("sortDir",       params.sortDir);
+  if (params.archived)      q.set("archived",      "true");
   const s = q.toString();
   return s ? `?${s}` : "";
 }
@@ -83,6 +84,24 @@ export function useDeleteDelivery() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       api.delete<ApiResponse<null>>(`/api/v1/deliveries/${id}`, { reason }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+export function useArchiveDelivery() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      api.post<ApiResponse<Delivery>>(`/api/v1/deliveries/${id}/archive`, { reason }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+export function useUnarchiveDelivery() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      api.post<ApiResponse<Delivery>>(`/api/v1/deliveries/${id}/unarchive`, {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   });
 }

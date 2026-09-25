@@ -420,6 +420,8 @@ export type Delivery = {
   created_by_role: 'admin' | 'corporate' | null;
   created_at: string;
   updated_at: string;
+  /** Set when this delivery has been filed into "Archived Deliveries" — hidden from every other workspace view. */
+  archived_at: string | null;
 
   // Joined (Supabase uses the table name as the relation key)
   accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null; logo_url?: string | null };
@@ -521,6 +523,8 @@ export type ListDeliveriesQuery = {
   updatedTo?:     string;
   sortBy?:        "load_number" | "status" | "shipment_type" | "created_at" | "updated_at";
   sortDir?:       "asc" | "desc";
+  /** When true, list only archived deliveries; omitted excludes them from every other workspace view. */
+  archived?:      boolean;
 };
 
 // ── Corporate Notes (internal / admin-only) ─────────────────────────────────────

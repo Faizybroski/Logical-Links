@@ -9,6 +9,8 @@ import {
   FileText,
   Receipt,
   Clock,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -97,10 +99,14 @@ type ColumnsOptions = {
   canDelete: (s: Delivery) => boolean;
   canAssign: (s: Delivery) => boolean;
   canChangeStatus: (s: Delivery) => boolean;
+  canArchive: (s: Delivery) => boolean;
+  canUnarchive: (s: Delivery) => boolean;
   onEdit?: (s: Delivery) => void;
   onDelete: (s: Delivery) => void;
   onAssign: (s: Delivery) => void;
   onStatusChange: (s: Delivery) => void;
+  onArchive: (s: Delivery) => void;
+  onUnarchive: (s: Delivery) => void;
   onCreateQuotation?: (s: Delivery) => void;
   onCreateInvoice?: (s: Delivery) => void;
   sortBy?: string;
@@ -116,10 +122,14 @@ export function getDeliveryColumns({
   canDelete,
   canAssign,
   canChangeStatus,
+  canArchive,
+  canUnarchive,
   onEdit,
   onDelete,
   onAssign,
   onStatusChange,
+  onArchive,
+  onUnarchive,
   onCreateQuotation,
   onCreateInvoice,
   sortBy = "",
@@ -204,12 +214,16 @@ export function getDeliveryColumns({
         const assignable = canAssign(s);
         const transitions = STATUS_TRANSITIONS[s.status] ?? [];
         const statusChangeable = transitions.length > 0 && canChangeStatus(s);
+        const archivable = canArchive(s);
+        const unarchivable = canUnarchive(s);
 
         const hasAnyAction =
           editable ||
           deletable ||
           assignable ||
           statusChangeable ||
+          archivable ||
+          unarchivable ||
           !!onCreateQuotation ||
           !!onCreateInvoice;
         if (!hasAnyAction) return null;
@@ -293,6 +307,30 @@ export function getDeliveryColumns({
                           <Receipt className="mr-2 h-4 w-4" />
                           Create Invoice
                         </Link>
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+
+                {isAdmin && (archivable || unarchivable) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    {archivable && (
+                      <DropdownMenuItem
+                        onClick={() => onArchive(s)}
+                        className="cursor-pointer"
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive
+                      </DropdownMenuItem>
+                    )}
+                    {unarchivable && (
+                      <DropdownMenuItem
+                        onClick={() => onUnarchive(s)}
+                        className="cursor-pointer"
+                      >
+                        <ArchiveRestore className="mr-2 h-4 w-4" />
+                        Unarchive
                       </DropdownMenuItem>
                     )}
                   </>

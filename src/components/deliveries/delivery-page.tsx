@@ -9,6 +9,7 @@ import { DataTable } from "@/components/deliveries/deliveries-table";
 import KpiGrid from "@/components/deliveries/kpi-grid";
 import { getDeliveryColumns } from "@/components/deliveries/columns";
 import { DeleteConfirmDialog } from "@/components/deliveries/dialogs/delete-confirmation-dialog";
+import { ArchiveConfirmDialog } from "@/components/deliveries/dialogs/archive-confirmation-dialog";
 import { StatusChangeDialog } from "@/components/deliveries/dialogs/status-change-dialog";
 import { AssignDialog } from "@/components/deliveries/dialogs/assign-dialog";
 import { TableFilters } from "@/components/ui/table-filters";
@@ -25,6 +26,8 @@ import { usePermission } from "@/hooks/use-permission";
 import {
   useDeliveries,
   useDeleteDelivery,
+  useArchiveDelivery,
+  useUnarchiveDelivery,
   useUpdateDeliveryStatus,
   useAssignEmployees,
   useAssignableEmployees,
@@ -42,15 +45,16 @@ import { DELIVERY_STATUS_LABELS as STATUS_LABELS } from "@/types/api.types";
 
 // ── Workspace views ────────────────────────────────────────────────────────────
 
-type WorkspaceViewKey = "all" | "active" | "scheduled" | "in_progress" | "completed" | "exceptions";
+type WorkspaceViewKey = "all" | "active" | "scheduled" | "in_progress" | "completed" | "exceptions" | "archived";
 
-const WORKSPACE_VIEWS: { key: WorkspaceViewKey; label: string; statuses: string | null }[] = [
-  { key: "all",         label: "All Deliveries", statuses: null },
-  { key: "active",      label: "Active",       statuses: "pending,confirmed,assigned" },
-  { key: "scheduled",   label: "Scheduled",    statuses: "confirmed" },
-  { key: "in_progress", label: "In Progress",  statuses: "picked_up,in_transit,out_for_delivery" },
-  { key: "completed",   label: "Completed",    statuses: "delivered" },
-  { key: "exceptions",  label: "Exceptions",   statuses: "cancelled" },
+const WORKSPACE_VIEWS: { key: WorkspaceViewKey; label: string; statuses: string | null; archived?: boolean }[] = [
+  { key: "all",         label: "All Deliveries",      statuses: null },
+  { key: "active",      label: "Active",              statuses: "pending,confirmed,assigned" },
+  { key: "scheduled",   label: "Scheduled",           statuses: "confirmed" },
+  { key: "in_progress", label: "In Progress",         statuses: "picked_up,in_transit,out_for_delivery" },
+  { key: "completed",   label: "Completed",           statuses: "delivered" },
+  { key: "exceptions",  label: "Exceptions",          statuses: "cancelled" },
+  { key: "archived",    label: "Archived Deliveries", statuses: null, archived: true },
 ];
 
 // ── Filter defaults ────────────────────────────────────────────────────────────
@@ -92,6 +96,7 @@ export default function DeliveriesPage() {
   const canDeletePerm     = usePermission("deliveries.delete");
   const canAssignPerm     = usePermission("deliveries.assign");
   const canUpdateStatusPerm = usePermission("deliveries.update_status");
+  const canArchivePerm    = usePermission("deliveries.archive");
   const canCreateQuotation = usePermission("quotations.create");
   const canCreateInvoice   = usePermission("invoices.create");
 
@@ -119,6 +124,7 @@ export default function DeliveriesPage() {
   const viewParam    = (searchParams.get("view") ?? "all") as WorkspaceViewKey;
   const activeView   = WORKSPACE_VIEWS.find((v) => v.key === viewParam) ?? WORKSPACE_VIEWS[0];
   const viewStatuses = activeView.statuses;
+  const viewArchived = activeView.archived ?? false;
 
   function setWorkspaceView(key: WorkspaceViewKey) {
     const params = new URLSearchParams(searchParams.toString());
@@ -154,6 +160,7 @@ export default function DeliveriesPage() {
 
   // ── Dialog state (table row actions) ──────────────────────────────────────
   const [deletingDelivery,  setDeletingDelivery]  = useState<Delivery | null>(null);
+  const [archivingDelivery, setArchivingDelivery] = useState<Delivery | null>(null);
   const [statusDelivery,    setStatusDelivery]    = useState<Delivery | null>(null);
   const [assigningDelivery, setAssigningDelivery] = useState<Delivery | null>(null);
 
@@ -188,6 +195,7 @@ export default function DeliveriesPage() {
     ...(viewStatuses
       ? { statuses: viewStatuses }
       : filters.status && { status: filters.status }),
+    ...(viewArchived           && { archived: true }),
     ...(filters.deliveryType  && { deliveryType: filters.deliveryType as "freight" | "last_mile" }),
     ...(filters.accountId     && isAdmin && { accountId: filters.accountId }),
     ...(filters.dateFrom      && { dateFrom: filters.dateFrom }),
@@ -197,7 +205,7 @@ export default function DeliveriesPage() {
     ...(sortBy                && { sortBy: sortBy as any }),
     ...(sortDir               && { sortDir }),
     ...accountScope,
-  }), [filters, debouncedSearch, page, sortBy, sortDir, isAdmin, user?.accountId, viewStatuses]);
+  }), [filters, debouncedSearch, page, sortBy, sortDir, isAdmin, user?.accountId, viewStatuses, viewArchived]);
 
   const { data: deliveriesRes, isLoading } = useDeliveries(deliveriesQuery);
   const { data: companiesRes } = useAccounts({ limit: 100 }, { enabled: isAdmin });
@@ -214,6 +222,7 @@ export default function DeliveriesPage() {
   const countInProgress  = useDeliveries({ statuses: "picked_up,in_transit,out_for_delivery",  limit: 1, ...accountScope });
   const countCompleted   = useDeliveries({ statuses: "delivered",                               limit: 1, ...accountScope });
   const countExceptions  = useDeliveries({ statuses: "cancelled",                               limit: 1, ...accountScope });
+  const countArchived    = useDeliveries({ archived: true,                                      limit: 1, ...accountScope });
 
   const navItems: WorkspaceNavItem[] = WORKSPACE_VIEWS.map((v) => {
     if (v.key === "all") return { key: v.key, label: v.label };
@@ -223,6 +232,7 @@ export default function DeliveriesPage() {
       in_progress: countInProgress,
       completed:   countCompleted,
       exceptions:  countExceptions,
+      archived:    countArchived,
     };
     const q = countMap[v.key];
     return {
@@ -235,6 +245,8 @@ export default function DeliveriesPage() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const deleteMut = useDeleteDelivery();
+  const archiveMut = useArchiveDelivery();
+  const unarchiveMut = useUnarchiveDelivery();
   const statusMut = useUpdateDeliveryStatus(statusDelivery?.shipment_id ?? "");
   const assignMut = useAssignEmployees(assigningDelivery?.shipment_id ?? "");
 
@@ -258,6 +270,11 @@ export default function DeliveriesPage() {
   const canDelete = (_s: Delivery) => isAdmin && canDeletePerm;
   const canAssign = (s: Delivery) => isAdmin && canAssignPerm && s.status === "confirmed";
   const canChangeStatus = () => isAdmin && canUpdateStatusPerm;
+  // Only terminal (completed/cancelled) deliveries can be filed away, and only
+  // from a non-archived view — the archived view surfaces "Unarchive" instead.
+  const canArchive = (s: Delivery) =>
+    isAdmin && canArchivePerm && !viewArchived && !s.archived_at && ["delivered", "cancelled"].includes(s.status);
+  const canUnarchive = (s: Delivery) => isAdmin && canArchivePerm && !!s.archived_at;
 
   // ── Sort handler ───────────────────────────────────────────────────────────
   function handleSort(key: string, dir: SortDir) {
@@ -275,6 +292,8 @@ export default function DeliveriesPage() {
         canDelete,
         canAssign,
         canChangeStatus,
+        canArchive,
+        canUnarchive,
         sortBy:  sortBy ?? "",
         sortDir,
         onSort:  handleSort,
@@ -282,11 +301,16 @@ export default function DeliveriesPage() {
         onDelete:          (s) => setDeletingDelivery(s),
         onAssign:          (s) => setAssigningDelivery(s),
         onStatusChange:    (s) => setStatusDelivery(s),
+        onArchive:         (s) => setArchivingDelivery(s),
+        onUnarchive:       (s) => unarchiveMut.mutate({ id: s.shipment_id }, {
+          onSuccess: () => toast.success(`Delivery ${s.load_number} unarchived`),
+          onError:   (err) => toast.error((err as Error).message),
+        }),
         onCreateQuotation: isAdmin && canCreateQuotation ? (s) => router.push(`${docBasePath}/quotations/create?loadId=${s.shipment_id}`) : undefined,
         onCreateInvoice:   isAdmin && canCreateInvoice   ? (s) => router.push(`${docBasePath}/invoices/create?loadId=${s.shipment_id}`) : undefined,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isAdmin, canEditPerm, canDeletePerm, canAssignPerm, canUpdateStatusPerm, canCreateQuotation, canCreateInvoice, basePath, docBasePath, sortBy, sortDir],
+    [isAdmin, canEditPerm, canDeletePerm, canAssignPerm, canUpdateStatusPerm, canArchivePerm, viewArchived, canCreateQuotation, canCreateInvoice, basePath, docBasePath, sortBy, sortDir],
   );
 
   // ── Filter chips ───────────────────────────────────────────────────────────
@@ -335,6 +359,17 @@ export default function DeliveriesPage() {
       await deleteMut.mutateAsync({ id: deletingDelivery.shipment_id, reason });
       toast.success(`Delivery ${deletingDelivery.load_number} deleted`);
       setDeletingDelivery(null);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  async function handleArchive(reason: string) {
+    if (!archivingDelivery) return;
+    try {
+      await archiveMut.mutateAsync({ id: archivingDelivery.shipment_id, reason: reason || undefined });
+      toast.success(`Delivery ${archivingDelivery.load_number} archived`);
+      setArchivingDelivery(null);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -455,6 +490,15 @@ export default function DeliveriesPage() {
           onClose={() => setDeletingDelivery(null)}
           onConfirm={handleDelete}
           loading={deleteMut.isPending}
+        />
+      )}
+      {archivingDelivery && (
+        <ArchiveConfirmDialog
+          delivery={archivingDelivery}
+          open={!!archivingDelivery}
+          onClose={() => setArchivingDelivery(null)}
+          onConfirm={handleArchive}
+          loading={archiveMut.isPending}
         />
       )}
       {statusDelivery && (
