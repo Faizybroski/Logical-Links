@@ -26,9 +26,14 @@ export default function LandingPage() {
         <span className="underline">Important Note:</span>{" "}
         <span>if you completely feel secure then transfer your delivery.</span>
       </div>
-      <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
-
-      {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
+      <div
+        className="bg-no-repeat bg-center pt-10"
+        style={{
+          backgroundImage: "url('/hero3.svg?v=2')",
+          backgroundSize: "100% 100%",
+        }}
+      >
+        {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
         <Header />
         <Hero />
       </div>

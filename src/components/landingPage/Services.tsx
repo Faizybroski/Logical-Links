@@ -58,11 +58,13 @@ export default function Services() {
             className="max-w-4xl"
           >
             <h2 className="text-3xl sm:text-6xl leading-tight font-bold text-white">
-              Tailored Logistics Services
+              {/* Tailored Logistics Services */}
+              Logistics Solutions
               <br />
               <span className="flex items-center gap-5">
                 <span className="h-2 w-10 rounded-full bg-primary" />
-                to Fit Your Business
+                {/* to Fit Your Business */}
+                Built Around Your Business
               </span>
             </h2>
 

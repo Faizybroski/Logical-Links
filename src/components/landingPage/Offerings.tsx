@@ -8,31 +8,31 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
 const services = [
-  { id: "01", title: "LLC", image: "/offer1.png", href: "/llc" },
-  { id: "02", title: "SERVICES", image: "/offer2.svg", href: "/services" },
-  { id: "03", title: "Access Hub", image: "/offer3.png", href: "/access-hub" },
+  { id: "01", title: "LLC", image: "/s1.svg", href: "/llc" },
+  { id: "02", title: "SERVICES", image: "/s2.svg", href: "/services" },
+  { id: "03", title: "Access Hub", image: "/s3.svg", href: "/access-hub" },
 ];
 
 const offerStatements = [
   {
-    label: "Core Promise",
-    text: "Reliable, cost-effective courier & logistics solutions—tailored shipping, tracking, and fulfilment services you can trust.",
+    label: "Transportation & Logistics:",
+    text: "Reliable, cost-effective transportation and logistics solutions tailored to your shipment, timeline, and business needs.",
   },
   {
-    label: "Last-Mile Delivery Focus",
-    text: "Fast and dependable last-mile delivery solutions designed to ensure timely and accurate final-mile fulfilment for every delivery.",
+    label: "Last-Mile Delivery:",
+    text: "Fast and dependable last-mile delivery solutions designed to ensure timely, accurate, and professional delivery to the final destination.",
   },
   {
-    label: "End-to-End Logistics Coordination",
-    text: "Streamlined logistics coordination from pickup to delivery, ensuring smooth operations, visibility, and control across the entire supply chain.",
+    label: "Logistics Coordination:",
+    text: "Streamlined logistics coordination from pickup to delivery, keeping shipments organized, communication clear, and operations running smoothly.",
   },
   {
-    label: "Specialized Transportation Services",
-    text: "Flexible transportation solutions tailored to unique cargo requirements, operational demands, and industry-specific logistics needs.",
+    label: "Specialized Transportation:",
+    text: "Flexible transportation solutions designed for unique cargo requirements, operational demands, and industry-specific shipping needs.",
   },
   {
-    label: "Real-Time Tracking & Transparency",
-    text: "Advanced tracking systems that provide real-time visibility, improved communication, and full delivery transparency from start to finish.",
+    label: "Shipment Tracking & Visibility:",
+    text: "Advanced tracking and communication tools providing real-time shipment visibility and delivery updates from pickup through final delivery.",
   },
 ];
 
@@ -49,7 +49,9 @@ export default function Offerings() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const goPrev = () =>
-    setActiveIndex((prev) => (prev - 1 + offerStatements.length) % offerStatements.length);
+    setActiveIndex(
+      (prev) => (prev - 1 + offerStatements.length) % offerStatements.length,
+    );
   const goNext = () =>
     setActiveIndex((prev) => (prev + 1) % offerStatements.length);
 
@@ -103,6 +105,9 @@ export default function Offerings() {
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="text-sm leading-relaxed text-black"
                 >
+                  <span className="font-bold">
+                    {offerStatements[activeIndex].label}
+                  </span>{" "}
                   {offerStatements[activeIndex].text}
                 </motion.p>
               </AnimatePresence>
@@ -150,21 +155,18 @@ export default function Offerings() {
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
             <p className="text-lg leading-relaxed text-black">
-              We provide end-to-end logistics and transportation solutions
-              designed to support efficient, reliable operations.
+              We provide reliable transportation and logistics solutions
+              designed around the needs of your business.
             </p>
             <p className="mt-6 text-lg leading-relaxed text-black">
-              Our services include logistics coordination, last-mile delivery,
-              and specialized transportation solutions tailored to a wide
-              range of operational needs. Every delivery is managed with
-              precision, transparency, and care to ensure consistency and
-              dependability across the supply chain.
+              From freight transportation and specialized solutions to last-mile
+              delivery and shipment coordination, we manage each shipment with
+              precision, transparency, and care—from pickup to final delivery.
             </p>
 
             <p className="mt-10 text-sm font-medium text-black">
-              Create experience with{" "}
-              <span className="font-bold">LOGICAL LINKS</span> and efficient
-              service.
+              Experience dependable service with{" "}
+              <span className="font-bold">LOGICAL LINKS</span>.
             </p>
           </motion.div>
         </div>
