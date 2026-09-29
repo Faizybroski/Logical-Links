@@ -15,6 +15,10 @@ const nav = [
   { label: "Contact", section: "quote" },
 ];
 
+// Shared timing for every scroll-driven header transition so the bar's
+// position, width and item spacing all move together.
+const HEADER_EASE = "duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]";
+
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -43,17 +47,23 @@ export default function Header() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       /* Floats with breathing room at the top of the page, then on scroll the
-         top gap collapses to zero, the bar spans the full width and a solid
-         backdrop fades in — all driven by the `scrolled` flag + CSS transitions. */
-      className={`fixed left-0 right-0 z-50 w-full transition-all duration-500 ease-out ${
-        scrolled ? "top-0 px-0 py-0" : "top-10 px-6 py-4"
+         top gap collapses to zero, the bar widens to span the full width, the
+         items spread out and a solid backdrop fades in — all driven by the
+         `scrolled` flag + CSS transitions. Transitions are limited to explicit
+         properties so they never fight framer-motion's transform on entry.
+         Only the home page has the notice bar above the hero, so only there
+         does the floating header need to clear it. */
+      className={`fixed left-0 right-0 z-50 w-full transition-[top,padding] ${HEADER_EASE} ${
+        scrolled
+          ? "top-0 px-0 py-0"
+          : `${pathname === "/" ? "top-10" : "top-2"} px-6 py-4`
       }`}
     >
       <div
-        className={`mx-auto flex items-center justify-between transition-all duration-500 ease-out ${
+        className={`mx-auto flex items-center justify-between transition-[max-width,padding,border-radius,background-color,box-shadow] ${HEADER_EASE} ${
           scrolled
-            ? "max-w-full rounded-none px-6 py-4 lg:px-10 bg-white/95 backdrop-blur-md shadow-md"
-            : "max-w-7xl rounded-xl px-6 py-3 bg-transparent"
+            ? "max-w-[100vw] rounded-none px-6 py-4 lg:px-10 bg-white/95 backdrop-blur-md shadow-md"
+            : "max-w-7xl rounded-xl px-6 py-3 bg-white/75 backdrop-blur-md shadow-sm"
         }`}
       >
         <button
@@ -66,7 +76,11 @@ export default function Header() {
         </button>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div
+          className={`hidden md:flex items-center transition-[gap] ${HEADER_EASE} ${
+            scrolled ? "gap-10 lg:gap-14" : "gap-8"
+          }`}
+        >
           {nav.map((n) => (
             <button
               key={n.label}
@@ -80,7 +94,11 @@ export default function Header() {
         </div>
 
         {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-3">
+        <div
+          className={`hidden md:flex items-center transition-[gap] ${HEADER_EASE} ${
+            scrolled ? "gap-4 lg:gap-5" : "gap-3"
+          }`}
+        >
           <a
             href="/login"
             className="text-sm font-medium text-black hover:text-primary transition-colors"

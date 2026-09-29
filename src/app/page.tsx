@@ -6,6 +6,7 @@ import LandingAuthRedirect from "@/components/layout/LandingAuthRedirect";
 import ScrollToHash from "@/components/layout/ScrollToHash";
 import Header from "@/components/landingPage/Header";
 import Hero from "@/components/landingPage/Hero";
+import HeroScrim from "@/components/landingPage/HeroScrim";
 import About from "@/components/landingPage/About";
 import HIW from "@/components/landingPage/HIW";
 import Testimonials from "@/components/landingPage/Testimonials";
@@ -27,13 +28,14 @@ export default function LandingPage() {
         <span>if you completely feel secure then transfer your delivery.</span>
       </div>
       <div
-        className="bg-no-repeat bg-center pt-10"
+        className="relative isolate bg-no-repeat bg-center min-h-[50vw] pt-10"
         style={{
-          backgroundImage: "url('/hero3.svg?v=2')",
+          backgroundImage: "url('/hero4.svg?v=3')",
           backgroundSize: "100% 100%",
         }}
       >
         {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
+        <HeroScrim />
         <Header />
         <Hero />
       </div>

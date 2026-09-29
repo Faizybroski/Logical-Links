@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LogIn, UserPlus, Truck, HeadphonesIcon, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/landingPage/Header";
+import HeroScrim from "@/components/landingPage/HeroScrim";
 import Footer from "@/components/landingPage/Footer";
 
 const hubLinks = [
@@ -41,10 +42,11 @@ const hubLinks = [
 export default function AccessHubPage() {
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
-      <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
+      <div className="relative isolate flex flex-col bg-[url('/access-bg.svg?v=2')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[50vw] pt-10">
+        <HeroScrim />
         <Header />
 
-        <section className="max-w-6xl mx-auto pt-32 pb-20 px-6 text-start">
+        <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -59,7 +61,7 @@ export default function AccessHubPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="text-base sm:text-xl font-medium text-gray-600 max-w-xl"
+            className="text-base sm:text-xl font-medium text-black max-w-xl"
           >
             Your single entry point to sign in, manage deliveries, and get
             support - all in one place.

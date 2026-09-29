@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/landingPage/Header";
+import HeroScrim from "@/components/landingPage/HeroScrim";
 import Footer from "@/components/landingPage/Footer";
 import { useQuoteGate } from "@/hooks/use-quote-gate";
 
@@ -318,12 +319,13 @@ export default function ServicesPage() {
 
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
-      <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
+      <div className="relative isolate flex flex-col bg-[url('/service-hero.svg?v=2')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[50vw] pt-10">
+        <HeroScrim />
 
       {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
         <Header />
 
-        <section className="max-w-6xl mx-auto pt-32 pb-20 px-6 text-start">
+        <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

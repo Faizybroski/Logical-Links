@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Mail, Phone, Send } from "lucide-react";
 import Header from "@/components/landingPage/Header";
+import HeroScrim from "@/components/landingPage/HeroScrim";
 import Footer from "@/components/landingPage/Footer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,10 +71,11 @@ export default function ContactSupportPage() {
 
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
-      <div className="bg-[url('/hero2.png')] bg-cover bg-center pt-10">
+      <div className="relative isolate flex flex-col bg-[url('/hero2.png')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[55.83vw] pt-10">
+        <HeroScrim />
         <Header />
 
-        <section className="max-w-6xl mx-auto pt-32 pb-20 px-6 text-start">
+        <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
