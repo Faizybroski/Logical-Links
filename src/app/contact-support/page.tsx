@@ -71,9 +71,9 @@ export default function ContactSupportPage() {
 
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
+      <Header />
       <div className="relative isolate flex flex-col bg-[url('/hero2.png')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[55.83vw] pt-10">
         <HeroScrim />
-        <Header />
 
         <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1

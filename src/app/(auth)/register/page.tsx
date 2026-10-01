@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, User, Phone, Building2, Briefcase, Factory, Hash, Globe, MapPin, Receipt, type LucideIcon } from "lucide-react";
@@ -9,55 +9,80 @@ import { z } from "zod";
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
+import GoogleButton, { AuthDivider } from "@/components/auth/GoogleButton";
+import {
+  clearPendingGoogleSignup,
+  loadPendingGoogleSignup,
+  type PendingGoogleSignup,
+} from "@/lib/google-auth";
 
 const corpText = z.string().optional().or(z.literal(""));
 
-const registerSchema = z
-  .object({
-    accountType: z.enum(["corporate", "residential"]),
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    company: z.string().min(2, "Company name is required").optional().or(z.literal("")),
-    phone: z
-      .string()
-      .min(7, "Phone number is too short")
-      .regex(/^[0-9+()\-\s]+$/, "Invalid phone number format"),
-    email: z.string().email("Invalid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Must contain at least one number"),
-    // Corporate company profile (parity with the admin review + company pages)
-    businessType: corpText,
-    industry: corpText,
-    abn: corpText,
-    website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
-    addressLine1: corpText,
-    addressCity: corpText,
-    addressState: corpText,
-    addressPostcode: corpText,
-    addressCountry: corpText,
-    billingEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
-    accountsPayableEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
-  })
-  .superRefine((data, ctx) => {
-    if (data.accountType !== "corporate") return;
-    const required: [keyof RegisterForm, string][] = [
-      ["company", "Company name is required"],
-      ["businessType", "Business type is required"],
-      ["industry", "Industry is required"],
-      ["addressLine1", "Business address is required"],
-      ["addressCity", "City is required"],
-      ["addressState", "State / province is required"],
-      ["addressPostcode", "Postcode is required"],
-    ];
-    for (const [field, message] of required) {
-      if (!data[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [field] });
-    }
-  });
+// Everything the form asks for besides credentials — required identically for
+// email sign-up and Google sign-up (Google only supplies email + password).
+const profileFields = z.object({
+  accountType: z.enum(["corporate", "residential"]),
+  firstName: z.string().trim().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().trim().min(2, "Last name must be at least 2 characters"),
+  company: z.string().min(2, "Company name is required").optional().or(z.literal("")),
+  phone: z
+    .string()
+    .min(7, "Phone number is too short")
+    .regex(/^[0-9+()\-\s]+$/, "Invalid phone number format"),
+  email: z.string().email("Invalid email address"),
+  // Corporate company profile (parity with the admin review + company pages)
+  businessType: corpText,
+  industry: corpText,
+  abn: corpText,
+  website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  addressLine1: corpText,
+  addressCity: corpText,
+  addressState: corpText,
+  addressPostcode: corpText,
+  addressCountry: corpText,
+  billingEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
+  accountsPayableEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
+});
 
-type RegisterForm = z.infer<typeof registerSchema>;
+const passwordField = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+  .regex(/[0-9]/, "Must contain at least one number");
+
+const CORPORATE_REQUIRED: [keyof RegisterForm, string][] = [
+  ["company", "Company name is required"],
+  ["businessType", "Business type is required"],
+  ["industry", "Industry is required"],
+  ["addressLine1", "Business address is required"],
+  ["addressCity", "City is required"],
+  ["addressState", "State / province is required"],
+  ["addressPostcode", "Postcode is required"],
+];
+
+function requireCorporateFields(data: Partial<RegisterForm>, ctx: z.RefinementCtx) {
+  if (data.accountType !== "corporate") return;
+  for (const [field, message] of CORPORATE_REQUIRED) {
+    if (!data[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [field] });
+  }
+}
+
+const registerSchema = profileFields.extend({ password: passwordField }).superRefine(requireCorporateFields);
+const googleRegisterSchema = profileFields.superRefine(requireCorporateFields);
+
+type RegisterForm = z.infer<typeof profileFields> & { password: string };
+
+type RegisterResponse = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: { id: string; email: string; role: "admin" | "corporate" | "residential"; companyRole: "company_admin" | "employee" | null; adminRole: string | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
+};
+
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  return { firstName: parts[0] ?? "", lastName: parts.slice(1).join(" ") };
+}
 
 const inputCls =
   "h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
@@ -119,6 +144,33 @@ export default function RegisterPage() {
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterForm, string>>>({});
 
+  // Set when a first-time Google user is sent here by the OAuth callback —
+  // email comes from Google and there's no password, but every other field is
+  // still required before the account is created.
+  const [googleSignup, setGoogleSignup] = useState<PendingGoogleSignup | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("via") !== "google") return;
+    const pending = loadPendingGoogleSignup();
+    if (!pending) return;
+    setGoogleSignup(pending);
+    setForm((prev) => ({
+      ...prev,
+      ...splitName(pending.fullName),
+      email: pending.email,
+      password: "",
+    }));
+  }, []);
+
+  function cancelGoogleSignup() {
+    clearPendingGoogleSignup();
+    setGoogleSignup(null);
+    setForm((prev) => ({ ...prev, email: "", firstName: "", lastName: "" }));
+    setFieldErrors({});
+    setError(null);
+    router.replace("/register");
+  }
+
   const isCorporate = form.accountType === "corporate";
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -137,7 +189,7 @@ export default function RegisterPage() {
     setError(null);
     setFieldErrors({});
 
-    const result = registerSchema.safeParse(form);
+    const result = (googleSignup ? googleRegisterSchema : registerSchema).safeParse(form);
     if (!result.success) {
       const formatted: Partial<Record<keyof RegisterForm, string>> = {};
       result.error.issues.forEach((issue) => {
@@ -152,15 +204,8 @@ export default function RegisterPage() {
     try {
       const fullName = `${result.data.firstName} ${result.data.lastName}`.trim();
 
-      const res = await api.post<ApiResponse<{
-        accessToken: string;
-        refreshToken: string;
-        expiresIn: number;
-        user: { id: string; email: string; role: "admin" | "corporate" | "residential"; companyRole: "company_admin" | "employee" | null; adminRole: string | null; permissions: string[]; fullName: string | null; avatarUrl: string | null; accountId: string | null };
-      }>>('/api/v1/auth/register', {
+      const profile = {
         accountType: result.data.accountType,
-        email: result.data.email,
-        password: result.data.password,
         fullName,
         phone: result.data.phone,
         ...(result.data.accountType === "corporate"
@@ -179,8 +224,20 @@ export default function RegisterPage() {
               accountsPayableEmail: result.data.accountsPayableEmail,
             }
           : {}),
-      });
+      };
 
+      const res = googleSignup
+        ? await api.post<ApiResponse<RegisterResponse>>("/api/v1/auth/register/google", {
+            signupToken: googleSignup.signupToken,
+            ...profile,
+          })
+        : await api.post<ApiResponse<RegisterResponse>>("/api/v1/auth/register", {
+            email: result.data.email,
+            password: form.password,
+            ...profile,
+          });
+
+      clearPendingGoogleSignup();
       setAuth({
         accessToken:  res.data.accessToken,
         refreshToken: res.data.refreshToken,
@@ -230,14 +287,38 @@ export default function RegisterPage() {
 
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              {isCorporate ? "Create Company Account" : "Create Your Account"}
+              {googleSignup
+                ? "Complete Your Sign-Up"
+                : isCorporate ? "Create Company Account" : "Create Your Account"}
             </h1>
             <p className="mt-2 text-sm text-muted">
-              {isCorporate
-                ? "Register your company and get started as Company Admin"
-                : "Sign up to book and track your own deliveries"}
+              {googleSignup
+                ? "Just a few more details to finish creating your account"
+                : isCorporate
+                  ? "Register your company and get started as Company Admin"
+                  : "Sign up to book and track your own deliveries"}
             </p>
           </div>
+
+          {googleSignup ? (
+            <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+              <p className="text-foreground">
+                Signed in with Google as <span className="font-semibold">{googleSignup.email}</span>
+              </p>
+              <button
+                type="button"
+                onClick={cancelGoogleSignup}
+                className="shrink-0 text-xs font-semibold text-primary hover:opacity-80"
+              >
+                Use email instead
+              </button>
+            </div>
+          ) : (
+            <>
+              <GoogleButton label="Sign up with Google" />
+              <AuthDivider>or sign up with email</AuthDivider>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Account type */}
@@ -399,14 +480,19 @@ export default function RegisterPage() {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
+                  readOnly={!!googleSignup}
                   placeholder="you@example.com"
-                  className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  className="h-12 w-full rounded-2xl border border-card-border bg-background pl-12 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:cursor-not-allowed read-only:opacity-70"
                 />
               </div>
+              {googleSignup && (
+                <p className="mt-1 text-xs text-muted">From your Google account — you&apos;ll sign in with Google.</p>
+              )}
               {fieldErrors.email && <p className="mt-1 text-xs text-danger">{fieldErrors.email}</p>}
             </div>
 
-            {/* Password */}
+            {/* Password — not needed for Google sign-up */}
+            {!googleSignup && (
             <div>
               <label className="mb-2 block text-sm font-medium text-foreground">Password</label>
               <div className="relative">
@@ -429,6 +515,7 @@ export default function RegisterPage() {
               </div>
               {fieldErrors.password && <p className="mt-1 text-xs text-danger">{fieldErrors.password}</p>}
             </div>
+            )}
 
             {error && (
               <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
@@ -441,7 +528,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="flex h-12 w-full items-center justify-center rounded-[8px] bg-primary text-sm font-semibold text-sidebar hover:bg-primary-dark disabled:opacity-60"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? "Creating account..." : googleSignup ? "Complete Sign-Up" : "Create Account"}
             </button>
           </form>
 

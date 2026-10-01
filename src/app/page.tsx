@@ -14,7 +14,7 @@ import Tracking from "@/components/landingPage/Tracking";
 import Offerings from "@/components/landingPage/Offerings";
 import Services from "@/components/landingPage/Services";
 import Technologies from "@/components/landingPage/Techonologies";
-import Quote from "@/components/landingPage/Quote";
+import Contact from "@/components/landingPage/Contact";
 import Milestones from "@/components/landingPage/Milestones";
 import Footer from "@/components/landingPage/Footer";
 
@@ -23,6 +23,7 @@ export default function LandingPage() {
     <div className="landing-page min-h-screen bg-white flex flex-col">
       <LandingAuthRedirect />
       <ScrollToHash />
+      <Header />
       <div className="text-center bg-primary text-white py-2 text-xs">
         <span className="underline">Important Note:</span>{" "}
         <span>if you completely feel secure then transfer your delivery.</span>
@@ -36,7 +37,6 @@ export default function LandingPage() {
       >
         {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
         <HeroScrim />
-        <Header />
         <Hero />
       </div>
       {/* <Tracking /> */}
@@ -46,7 +46,7 @@ export default function LandingPage() {
       {/* <Technologies /> */}
       <Offerings />
       {/* <Milestones /> */}
-      <Quote />
+      <Contact />
       <Testimonials />
       <Footer />
     </div>

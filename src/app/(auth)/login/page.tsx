@@ -12,6 +12,8 @@ import { api, type ApiResponse } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
 import { dashboardPathForRole } from '@/lib/utils/dashboard-path'
 import type { LoginResult } from '@/types/api.types'
+import GoogleButton, { AuthDivider } from '@/components/auth/GoogleButton'
+import { takePendingMfaChallenge } from '@/lib/google-auth'
 
 function LoginForm() {
   const router = useRouter()
@@ -38,6 +40,14 @@ function LoginForm() {
   // MFA challenge step — set once the password step reports mfaRequired.
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
   const [mfaCode, setMfaCode] = useState('')
+
+  // Google sign-in for an MFA-enabled account lands here (?mfa=1) with the
+  // challenge token handed over by the OAuth callback page.
+  useEffect(() => {
+    if (searchParams.get('mfa') !== '1') return
+    const token = takePendingMfaChallenge()
+    if (token) setChallengeToken(token)
+  }, [searchParams])
 
   function completeLogin(res: { data: Extract<LoginResult, { mfaRequired: false }> }) {
     const { accessToken, refreshToken, expiresIn, user } = res.data
@@ -183,6 +193,9 @@ function LoginForm() {
               Sign in to access your dashboard
             </p>
           </div>
+
+          <GoogleButton />
+          <AuthDivider>or sign in with email</AuthDivider>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}

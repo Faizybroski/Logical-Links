@@ -6,13 +6,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuoteGate } from "@/hooks/use-quote-gate";
+import { CONTACT_SECTION_ID, openContactForm } from "@/lib/contact-section";
 
 const nav = [
   { label: "Home", section: "hero" },
   { label: "About", section: "about" },
   { label: "Services", section: "services" },
   { label: "How It Works", section: "hiw" },
-  { label: "Contact", section: "quote" },
+  { label: "Contact", section: CONTACT_SECTION_ID },
 ];
 
 // Shared timing for every scroll-driven header transition so the bar's
@@ -34,6 +35,15 @@ export default function Header() {
     }
   };
 
+  // Skips the "How Can We Help?" chooser and opens the quote form directly.
+  const goToQuoteForm = () => {
+    if (pathname === "/") {
+      openContactForm("quote");
+    } else {
+      router.push("/#quote");
+    }
+  };
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
@@ -52,7 +62,10 @@ export default function Header() {
          `scrolled` flag + CSS transitions. Transitions are limited to explicit
          properties so they never fight framer-motion's transform on entry.
          Only the home page has the notice bar above the hero, so only there
-         does the floating header need to clear it. */
+         does the floating header need to clear it.
+         Render <Header /> as a direct child of the page root, never inside the
+         `relative isolate` hero wrapper — `isolate` would trap this z-50 in the
+         hero's stacking context and later sections would paint over it. */
       className={`fixed left-0 right-0 z-50 w-full transition-[top,padding] ${HEADER_EASE} ${
         scrolled
           ? "top-0 px-0 py-0"
@@ -113,7 +126,7 @@ export default function Header() {
           </a>
           <button
             type="button"
-            onClick={() => requestQuote(() => goToSection("quote"))}
+            onClick={() => requestQuote(goToQuoteForm)}
             className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"
           >
             Request a Quote
@@ -175,7 +188,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => {
-                requestQuote(() => goToSection("quote"));
+                requestQuote(goToQuoteForm);
                 setOpen(false);
               }}
               className="mt-2 px-6 py-2 text-sm font-medium text-center outline outline-primary outline-offset-2 text-white bg-primary hover:bg-primary-dark rounded-[8px] transition-colors"

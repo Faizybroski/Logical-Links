@@ -35,11 +35,16 @@ export default function About() {
           manage. We prioritize clear communication, on-time delivery, and
           precise execution, ensuring a smooth and efficient experience from
           start to finish. */}
-          At the core of Logical Links is a commitment to delivering reliable
+          {/* At the core of Logical Links is a commitment to delivering reliable
           logistics and transportation solutions tailored to the needs of every
           client. By combining advanced technology, industry expertise, and
           responsive service, we ensure every operation is managed with
-          precision, transparency, and care.
+          precision, transparency, and care. */}
+          Logical Links connects businesses with practical logistics and
+          transportation solutions designed to keep operations moving. From
+          freight coordination and specialized transportation to time-sensitive
+          deliveries, we bring together the right resources, planning, and
+          support for each requirement.
         </motion.p>
 
         <motion.p
@@ -53,10 +58,14 @@ export default function About() {
           position ourselves as leaders in the logistics and courier sector.
           With us, you're not just a customer — you're a valued partner, and we
           are dedicated to supporting your success every step of the way. */}
-          Through continuous improvement and operational discipline, we help
+          {/* Through continuous improvement and operational discipline, we help
           businesses move forward with confidence. At Logical Links, you're more
           than a customer - you're a valued partner, and your success drives
-          everything we do.
+          everything we do. */}
+          Our focus is straightforward: make logistics easier to manage, easier
+          to understand, and dependable from start to finish. We work closely
+          with our clients to coordinate each movement efficiently while keeping
+          communication clear and service responsive.
         </motion.p>
 
         <motion.div

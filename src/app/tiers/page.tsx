@@ -14,11 +14,9 @@ export default function TiersPage() {
 
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
+      <Header />
       <div className="relative isolate flex flex-col bg-[url('/hero2.png')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[55.83vw] pt-10">
         <HeroScrim />
-
-      {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
-        <Header />
 
         <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1

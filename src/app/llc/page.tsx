@@ -8,50 +8,60 @@ import Header from "@/components/landingPage/Header";
 import HeroScrim from "@/components/landingPage/HeroScrim";
 import Footer from "@/components/landingPage/Footer";
 
-const values = [
+const drivers = [
   {
     icon: ShieldCheck,
     title: "Reliability",
     description:
-      "Every delivery is managed with precision, transparency, and care from pickup to final delivery.",
+      "We understand that timing and dependability matter. Every movement is managed with care, communication, and attention to detail.",
   },
   {
     icon: Target,
     title: "Precision Execution",
     description:
-      "Advanced technology and industry expertise ensure operations run smoothly and on schedule.",
+      "Effective logistics requires planning and coordination. We combine operational discipline with technology to keep services organized and on track.",
   },
   {
     icon: Users,
     title: "Genuine Partnership",
     description:
-      "You're more than a customer - you're a valued partner, and your success drives everything we do.",
+      "You're more than a customer. We take the time to understand your needs and work with you to develop the right solution.",
   },
   {
     icon: Globe2,
     title: "Continuous Growth",
     description:
-      "Ongoing innovation and operational discipline keep us ahead as leaders in logistics and courier services.",
+      "We continue to improve our technology, processes, and capabilities so we can respond to changing customer needs and the evolving logistics landscape.",
   },
 ];
 
-const pillars = [
+interface Pillar {
+  id: string;
+  title: string;
+  image: string;
+  paragraphs: string[];
+  items?: { title: string; description: string }[];
+}
+
+const pillars: Pillar[] = [
   {
     id: "mission",
     title: "Our Mission",
     image: "/mission.jpg",
     paragraphs: [
-      "Our mission is to redefine logistics and transport by delivering solutions that go beyond movementâ€”building trust through reliability, innovation, and precision. We serve businesses and individuals with services that span freight, courier, medical deliveries, personal shopping, and premium transport.",
-      "With every delivery, every mile, and every client interaction, we are committed to setting new standards of excellence, ensuring safety, speed, and peace of mind always.",
+      "Our mission is to provide reliable, efficient, and technology-driven logistics and transportation solutions that keep what matters moving safely and efficiently.",
+      "We serve businesses, organizations, and individuals through freight, courier, medical delivery, and specialized transportation services, with a focus on safety, precision, transparency, and responsive service.",
+      "With every shipment, delivery, movement, and customer interaction, we strive to make the experience straightforward, dependable, and worthy of our customers' trust.",
     ],
   },
   {
     id: "vision",
     title: "Our Vision",
-    image: "/vission.png",
+    image: "/values-bg.svg",
     paragraphs: [
-      "Our vision is to set the benchmark for logistics and transport excellenceâ€”integrating innovation, precision, and sustainability to move businesses and communities forward. We aspire to be the partner of choice across freight, courier, and specialized services, recognized for redefining reliability and creating smarter, safer, and more connected supply chains.",
-      "By constantly evolving and leading with purpose, we aim to transform the future of logistics into one that empowers progress, delivers certainty, and builds enduring trust worldwide.",
+      "Our vision is to create a more connected, efficient, and dependable future for logistics and transportation.",
+      "We aim to become a trusted partner for businesses and customers by combining technology, operational expertise, and customer-focused service to create smarter solutions for an evolving world.",
+      "As we grow, we will continue to expand our capabilities, improve our processes, and adopt new technologies while remaining grounded in the principles that define LLC: reliability, accountability, care, and service.",
     ],
   },
   {
@@ -59,8 +69,15 @@ const pillars = [
     title: "Our Values",
     image: "/values.png",
     paragraphs: [
-      "Our business is built on a foundation of integrity, reliability, and a customer-first approach. We believe in doing what we promise, delivering every serviceâ€”whether logistics, courier, or personal transportâ€”with consistency and care.",
-      "Innovation drives us forward, as we continuously embrace new technologies and smarter processes to create safer, faster, and more efficient solutions. We place excellence at the center of everything we do, and we remain committed to sustainability and responsibility, ensuring our services positively impact both our clients and the communities we serve.",
+      "Our values shape how we operate, how we serve our customers, and how we approach every movement we manage.",
+    ],
+    items: [
+      { title: "Integrity", description: "We communicate honestly, act responsibly, and do what we say we will do." },
+      { title: "Reliability", description: "Our customers depend on us to follow through. We take that responsibility seriously and work to deliver consistently dependable service." },
+      { title: "Customer Focus", description: "Every customer has different needs. We listen, understand those needs, and build solutions around them." },
+      { title: "Innovation", description: "We embrace technology and smarter processes that improve visibility, efficiency, communication, and the overall customer experience." },
+      { title: "Excellence", description: "We take pride in our work and continually look for ways to improve our services and operations." },
+      { title: "Accountability", description: "We take ownership of our commitments, address challenges directly, and remain responsible for the service we provide." },
     ],
   },
 ];
@@ -68,11 +85,9 @@ const pillars = [
 export default function LLCPage() {
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
+      <Header />
       <div className="relative isolate flex flex-col bg-[url('/aboutus-hero.svg?v=2')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[50vw] pt-10">
         <HeroScrim />
-
-      {/* <div className="bg-[url('/hero3.webp')] bg-cover bg-center pt-10"> */}
-        <Header />
 
         <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1
@@ -107,36 +122,45 @@ export default function LLCPage() {
             About Us
           </h2>
           <p className="text-black leading-relaxed mb-4">
-            At LLC, we don&apos;t just deliver servicesâ€”we deliver certainty.
-            In an industry where reliability defines success, we set the
-            standard by combining unmatched expertise, advanced technology,
-            and a relentless commitment to excellence.
+            At LLC, we don&apos;t just provide logistics services &mdash; we
+            provide confidence in every move. We combine industry knowledge,
+            technology, and disciplined execution to deliver dependable
+            logistics and transportation solutions built around the needs of
+            our customers.
           </p>
           <p className="text-black leading-relaxed mb-4">
-            From managing complex logistics and time-sensitive courier
-            deliveries to transporting passengers in luxury, delivering
-            life-saving medical supplies, or providing seamless shopping and
-            delivery solutions, our promise is simple: we get it
-            doneâ€”safely, efficiently, and without compromise.
+            From freight and courier services to medical deliveries and
+            specialized transportation, every movement requires careful
+            planning, clear communication, and attention to detail. Our
+            approach is simple: understand what needs to be accomplished,
+            build the right solution, and follow through from start to
+            finish.
           </p>
           <p className="text-black leading-relaxed mb-4">
-            What makes us different is not only the breadth of our services
-            but the depth of our dedication. Every delivery, every ride, and
-            every delivery is managed with precision and care, supported by
-            real-time visibility, customized solutions, and a team that
-            operates around the clock to meet your needs without excuses.
+            What sets us apart is our commitment to reliability and service.
+            We use technology to improve visibility, streamline coordination,
+            and keep our customers informed throughout the process. Whether
+            we&apos;re handling a time-sensitive delivery, coordinating
+            freight, or supporting a specialized transportation requirement,
+            we approach every job with the same level of care and
+            accountability.
           </p>
           <p className="text-black leading-relaxed mb-4">
-            When others say &ldquo;good enough,&rdquo; we go
-            furtherâ€”optimizing costs, accelerating timelines, and
-            guaranteeing peace of mind at every step. With LLC, you gain more
-            than a provider; you gain a strategic partner who ensures your
-            business, your goods, and your lifestyle move forward without
-            interruption.
+            We believe logistics is about more than getting something from one
+            place to another. It&apos;s about keeping businesses operating,
+            supporting essential services, and helping our customers move
+            forward with confidence.
+          </p>
+          <p className="text-black leading-relaxed mb-4">
+            With LLC, you gain more than a service provider. You gain a
+            logistics partner focused on reliability, accountability, and
+            solutions that work.
           </p>
           <p className="text-black leading-relaxed font-semibold">
-            Choose confidence. Choose innovation. Choose LLCâ€”where
-            reliability is not promised, it&apos;s proven.
+            Choose confidence. Choose innovation.
+          </p>
+          <p className="text-black leading-relaxed font-semibold">
+            Choose LLC &mdash; where reliability is built into every move.
           </p>
 
           <Link
@@ -183,6 +207,20 @@ export default function LLCPage() {
                     {paragraph}
                   </p>
                 ))}
+                {pillar.items && (
+                  <div className="mt-6 space-y-4">
+                    {pillar.items.map((item) => (
+                      <div key={item.title}>
+                        <p className="font-semibold text-primary">
+                          {item.title}
+                        </p>
+                        <p className="text-black leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.section>
           ))}
@@ -200,9 +238,9 @@ export default function LLCPage() {
           </motion.h2>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {values.map((value, i) => (
+            {drivers.map((driver, i) => (
               <motion.div
-                key={value.title}
+                key={driver.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
@@ -210,13 +248,13 @@ export default function LLCPage() {
                 className="rounded-xs border border-gray-100 p-6 shadow-sm"
               >
                 <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <value.icon className="h-6 w-6" />
+                  <driver.icon className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-semibold text-black mb-2">
-                  {value.title}
+                  {driver.title}
                 </h3>
                 <p className="text-sm text-black leading-relaxed">
-                  {value.description}
+                  {driver.description}
                 </p>
               </motion.div>
             ))}

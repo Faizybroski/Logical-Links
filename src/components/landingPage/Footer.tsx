@@ -373,6 +373,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { openContactForm } from "@/lib/contact-section";
 import {
   MapPin,
   Phone,
@@ -454,6 +456,8 @@ function ColumnHeading({ children }: { children: React.ReactNode }) {
 }
 
 export default function Footer() {
+  const pathname = usePathname();
+
   return (
     <footer id="footer" className="bg-[#0b0b0d] text-white/70">
       {/* Top accent line */}
@@ -531,6 +535,14 @@ export default function Footer() {
                 <li key={label}>
                   <Link
                     href={href}
+                    onClick={(e) => {
+                      // Already on the homepage: a hash-only change won't
+                      // remount the Contact section, so open the form directly.
+                      if (href === "/#quote" && pathname === "/") {
+                        e.preventDefault();
+                        openContactForm("quote");
+                      }
+                    }}
                     className="flex items-center gap-3 text-sm text-white/70 transition-colors hover:text-primary"
                   >
                     <span className="text-primary">

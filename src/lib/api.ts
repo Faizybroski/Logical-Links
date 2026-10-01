@@ -25,7 +25,7 @@ type ApiInit = Omit<RequestInit, "body"> & { body?: unknown };
 
 // Never attempt token refresh for these paths — a 401 here means bad credentials,
 // not an expired session.
-const NO_REFRESH_PREFIXES = ["/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh"];
+const NO_REFRESH_PREFIXES = ["/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/google"];
 
 let refreshPromise: Promise<string | null> | null = null;
 

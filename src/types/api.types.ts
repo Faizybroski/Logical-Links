@@ -36,6 +36,19 @@ export type MfaChallengeRequired = {
 
 export type LoginResult = AuthTokens | MfaChallengeRequired;
 
+// POST /auth/google — a first-time Google user gets a sign-up token instead of
+// a session and must complete the sign-up form (POST /auth/register/google).
+export type GoogleSignupRequired = {
+  signupRequired: true;
+  signupToken: string;
+  email: string;
+  fullName: string;
+};
+
+export type GoogleAuthResult =
+  | GoogleSignupRequired
+  | ({ signupRequired: false } & LoginResult);
+
 // ── Accounts (Corporates) ───────────────────────────────────────────────────────
 
 export type AccountProfile = {

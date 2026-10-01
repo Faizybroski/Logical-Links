@@ -42,9 +42,9 @@ const hubLinks = [
 export default function AccessHubPage() {
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
+      <Header />
       <div className="relative isolate flex flex-col bg-[url('/access-bg.svg?v=2')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[50vw] pt-10">
         <HeroScrim />
-        <Header />
 
         <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
           <motion.h1
